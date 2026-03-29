@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Save, Loader2 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Save, Loader2, Camera } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +14,9 @@ const ProfilePage = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [profile, setProfile] = useState({
     display_name: "",
     username: "",
@@ -40,6 +43,7 @@ const ProfilePage = () => {
       .single()
       .then(({ data }) => {
         if (data) {
+          setAvatarUrl(data.avatar_url);
           setProfile({
             display_name: data.display_name ?? "",
             username: data.username ?? "",
@@ -95,6 +99,33 @@ const ProfilePage = () => {
   const update = (field: string, value: string) =>
     setProfile((p) => ({ ...p, [field]: value }));
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    setUploading(true);
+    const ext = file.name.split(".").pop();
+    const path = `${user.id}/avatar.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(path, file, { upsert: true });
+
+    if (uploadError) {
+      toast({ title: "Upload failed", description: uploadError.message, variant: "destructive" });
+      setUploading(false);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
+    const newUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+
+    await supabase.from("profiles").update({ avatar_url: newUrl }).eq("user_id", user.id);
+    setAvatarUrl(newUrl);
+    toast({ title: "Avatar updated", description: "Your new photo is live." });
+    setUploading(false);
+  };
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -119,11 +150,33 @@ const ProfilePage = () => {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex items-center gap-4">
-              <Avatar className="w-16 h-16">
-                <AvatarFallback className="bg-accent text-accent-foreground text-xl font-display">
-                  {(profile.display_name || "U").slice(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+              <div className="relative group">
+                <Avatar className="w-16 h-16">
+                  {avatarUrl && <AvatarImage src={avatarUrl} alt="Avatar" />}
+                  <AvatarFallback className="bg-accent text-accent-foreground text-xl font-display">
+                    {(profile.display_name || "U").slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  {uploading ? (
+                    <Loader2 className="w-5 h-5 text-white animate-spin" />
+                  ) : (
+                    <Camera className="w-5 h-5 text-white" />
+                  )}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarUpload}
+                />
+              </div>
               <div>
                 <p className="font-medium">{profile.display_name || "Unnamed"}</p>
                 <p className="text-sm text-muted-foreground">{user?.email}</p>

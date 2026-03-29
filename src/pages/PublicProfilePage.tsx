@@ -33,16 +33,17 @@ const PublicProfilePage = () => {
         setNotFound(true);
       } else {
         setProfile(data);
-        // Log the tap interaction (anonymous insert via edge function would be ideal,
-        // but for now we do a best-effort insert — RLS requires auth so this will
-        // silently fail for anonymous visitors. A future edge function can handle this.)
-        supabase.from("interaction_logs").insert({
-          user_id: data.user_id,
-          entity_id: `visitor_${Date.now()}`,
-          interaction_type: "profile_view",
-          occasion: "NFC Tap",
-          metadata: { source: "public_landing", ua: navigator.userAgent },
-        }).then(() => {});
+        // Log via edge function (works for anonymous visitors)
+        const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+        fetch(`https://${projectId}.supabase.co/functions/v1/log-interaction`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            target_user_id: data.user_id,
+            interaction_type: "profile_view",
+            metadata: { source: "public_landing", ua: navigator.userAgent },
+          }),
+        }).catch(() => {});
       }
       setLoading(false);
     };
@@ -67,14 +68,17 @@ const PublicProfilePage = () => {
   const handleDownloadCV = async () => {
     if (!profile?.cv_url) return;
 
-    // Log the CV download
-    supabase.from("interaction_logs").insert({
-      user_id: profile.user_id,
-      entity_id: `cv_download_${Date.now()}`,
-      interaction_type: "cv_download",
-      occasion: "CV Download",
-      metadata: { source: "public_landing", ua: navigator.userAgent },
-    }).then(() => {});
+    // Log via edge function
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+    fetch(`https://${projectId}.supabase.co/functions/v1/log-interaction`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        target_user_id: profile.user_id,
+        interaction_type: "cv_download",
+        metadata: { source: "public_landing", ua: navigator.userAgent },
+      }),
+    }).catch(() => {});
 
     window.open(profile.cv_url, "_blank");
   };
