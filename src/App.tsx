@@ -45,6 +45,7 @@ const App = () => (
             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
             <Route path="/p/:username" element={<PublicProfilePage />} />
             <Route path="/u/:code" element={<ShortUrlRedirect />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
       </BrowserRouter>
