@@ -91,6 +91,53 @@ export type Database = {
           },
         ]
       }
+      lead_captures: {
+        Row: {
+          created_at: string
+          id: string
+          metadata: Json | null
+          owner_user_id: string
+          persona_id: string
+          visitor_company: string | null
+          visitor_email: string
+          visitor_message: string | null
+          visitor_name: string | null
+          visitor_phone: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          owner_user_id: string
+          persona_id: string
+          visitor_company?: string | null
+          visitor_email: string
+          visitor_message?: string | null
+          visitor_name?: string | null
+          visitor_phone?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          owner_user_id?: string
+          persona_id?: string
+          visitor_company?: string | null
+          visitor_email?: string
+          visitor_message?: string | null
+          visitor_name?: string | null
+          visitor_phone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_captures_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nfc_cards: {
         Row: {
           created_at: string
@@ -131,6 +178,102 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      personas: {
+        Row: {
+          accent_color: string | null
+          availability_status: string | null
+          avatar_url: string | null
+          background_image_url: string | null
+          background_preset: string | null
+          bio: string | null
+          created_at: string
+          cv_url: string | null
+          display_name: string | null
+          email_public: string | null
+          github_url: string | null
+          glass_opacity: number | null
+          headline: string | null
+          id: string
+          is_active: boolean
+          is_private: boolean
+          label: string
+          linkedin_url: string | null
+          location: string | null
+          phone: string | null
+          pin_code: string | null
+          require_contact_exchange: boolean
+          show_availability: boolean | null
+          show_location: boolean | null
+          slug: string
+          updated_at: string
+          user_id: string
+          website: string | null
+          work_mode: string | null
+        }
+        Insert: {
+          accent_color?: string | null
+          availability_status?: string | null
+          avatar_url?: string | null
+          background_image_url?: string | null
+          background_preset?: string | null
+          bio?: string | null
+          created_at?: string
+          cv_url?: string | null
+          display_name?: string | null
+          email_public?: string | null
+          github_url?: string | null
+          glass_opacity?: number | null
+          headline?: string | null
+          id?: string
+          is_active?: boolean
+          is_private?: boolean
+          label?: string
+          linkedin_url?: string | null
+          location?: string | null
+          phone?: string | null
+          pin_code?: string | null
+          require_contact_exchange?: boolean
+          show_availability?: boolean | null
+          show_location?: boolean | null
+          slug: string
+          updated_at?: string
+          user_id: string
+          website?: string | null
+          work_mode?: string | null
+        }
+        Update: {
+          accent_color?: string | null
+          availability_status?: string | null
+          avatar_url?: string | null
+          background_image_url?: string | null
+          background_preset?: string | null
+          bio?: string | null
+          created_at?: string
+          cv_url?: string | null
+          display_name?: string | null
+          email_public?: string | null
+          github_url?: string | null
+          glass_opacity?: number | null
+          headline?: string | null
+          id?: string
+          is_active?: boolean
+          is_private?: boolean
+          label?: string
+          linkedin_url?: string | null
+          location?: string | null
+          phone?: string | null
+          pin_code?: string | null
+          require_contact_exchange?: boolean
+          show_availability?: boolean | null
+          show_location?: boolean | null
+          slug?: string
+          updated_at?: string
+          user_id?: string
+          website?: string | null
+          work_mode?: string | null
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -203,6 +346,38 @@ export type Database = {
           work_mode?: string | null
         }
         Relationships: []
+      }
+      short_links: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          persona_id: string | null
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          persona_id?: string | null
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          persona_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "short_links_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
