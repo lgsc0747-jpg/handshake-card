@@ -17,6 +17,7 @@ const NfcManagerPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [username, setUsername] = useState<string | null>(null);
+  const [shortCode, setShortCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [shortened, setShortened] = useState(false);
@@ -24,21 +25,47 @@ const NfcManagerPage = () => {
 
   useEffect(() => {
     if (!user) return;
-    supabase
-      .from("profiles")
-      .select("username")
-      .eq("user_id", user.id)
-      .single()
-      .then(({ data }) => {
-        setUsername(data?.username ?? null);
-        setLoading(false);
-      });
+
+    const init = async () => {
+      // Get username
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("user_id", user.id)
+        .single();
+
+      setUsername(profile?.username ?? null);
+
+      // Get or create short link
+      const { data: existingLink } = await supabase
+        .from("short_links")
+        .select("code")
+        .eq("user_id", user.id)
+        .limit(1)
+        .single();
+
+      if (existingLink) {
+        setShortCode(existingLink.code);
+      } else if (profile?.username) {
+        // Generate a random 6-char code
+        const code = crypto.randomUUID().replace(/-/g, "").slice(0, 8);
+        const { data: newLink } = await supabase
+          .from("short_links")
+          .insert({ user_id: user.id, code })
+          .select("code")
+          .single();
+        setShortCode(newLink?.code ?? null);
+      }
+
+      setLoading(false);
+    };
+
+    init();
   }, [user]);
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const fullUrl = username ? `${origin}/p/${username}` : "";
-  const shortCode = username ? btoa(username).replace(/=/g, "").slice(0, 6) : "";
-  const shortUrl = `${origin}/u/${shortCode}`;
+  const shortUrl = shortCode ? `${origin}/u/${shortCode}` : "";
   const displayUrl = shortened ? shortUrl : fullUrl;
 
   const handleCopy = async () => {
@@ -124,6 +151,9 @@ const NfcManagerPage = () => {
                 <Info className="w-3 h-3 mr-1" /> Short links save space on NFC chips
               </Badge>
             </div>
+            <p className="text-xs text-muted-foreground">
+              Short links are mapped to your account — even if you change your username, the link will always resolve correctly.
+            </p>
             <div className="flex gap-2 flex-wrap">
               <Button variant="outline" size="sm" onClick={() => window.open(fullUrl, "_blank")}>
                 <ExternalLink className="w-3.5 h-3.5 mr-1.5" /> Preview
@@ -176,7 +206,7 @@ const NfcManagerPage = () => {
             </div>
             <div className="p-3 rounded-lg bg-accent/10 border border-accent/20">
               <p className="text-xs">
-                <strong>Pro Tip:</strong> Use the short link to fit within the memory limits of most NFC chips (typically 137–504 bytes).
+                <strong>Pro Tip:</strong> Use the short link to fit within the memory limits of most NFC chips (typically 137–504 bytes). Short links are mapped to your account ID, so they never break even if you change your username.
               </p>
             </div>
           </div>
