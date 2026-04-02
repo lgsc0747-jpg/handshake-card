@@ -96,6 +96,9 @@ const Dashboard = () => {
               onColorChange={handleColorChange}
               saving={savingColor}
             />
+            <div className="mt-4">
+              <PersonaPieChart />
+            </div>
           </div>
         </div>
 

@@ -21,6 +21,7 @@ const mainItems = [
   { title: "NFC Manager", url: "/nfc-manager", icon: Smartphone },
   { title: "Personas", url: "/personas", icon: Users },
   { title: "Leads", url: "/leads", icon: Mail },
+  { title: "Design Studio", url: "/design-studio", icon: Palette },
   { title: "Interaction Logs", url: "/logs", icon: List },
   { title: "Categories", url: "/categories", icon: Tag },
   { title: "Profile", url: "/profile", icon: User },
