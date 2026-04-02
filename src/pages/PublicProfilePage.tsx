@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { InteractiveCard3D } from "@/components/InteractiveCard3D";
 import { SecurityGate } from "@/components/SecurityGate";
+import { CardDisabledPage } from "@/components/CardDisabledPage";
 import { downloadVCard } from "@/lib/vcard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +16,7 @@ interface PersonaData {
   id: string;
   slug: string;
   label: string;
+  is_active: boolean;
   is_private: boolean;
   pin_code: string | null;
   require_contact_exchange: boolean;
@@ -237,6 +239,11 @@ const PublicProfilePage = () => {
         </p>
       </div>
     );
+  }
+
+  // Kill-switch: persona is inactive
+  if (persona && !persona.is_active) {
+    return <CardDisabledPage ownerName={merged.display_name || username || undefined} />;
   }
 
   // Security gate check

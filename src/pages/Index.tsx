@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { AnalyticsChart } from "@/components/AnalyticsChart";
 import { WidgetManager } from "@/components/WidgetManager";
+import { PersonaPieChart } from "@/components/PersonaPieChart";
 import { ThemeDesigner } from "@/components/ThemeDesigner";
 import { useNfcData } from "@/hooks/useNfcData";
 import { useAuth } from "@/contexts/AuthContext";
@@ -95,6 +96,9 @@ const Dashboard = () => {
               onColorChange={handleColorChange}
               saving={savingColor}
             />
+            <div className="mt-4">
+              <PersonaPieChart />
+            </div>
           </div>
         </div>
 
