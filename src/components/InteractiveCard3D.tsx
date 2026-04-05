@@ -99,6 +99,7 @@ export const InteractiveCard3D = forwardRef<HTMLDivElement, InteractiveCard3DPro
     tertiaryColor,
     textColor = "#ffffff",
     cardBgImageUrl,
+    cardBgSize = "cover",
     glassOpacity = 0.15,
     linkedinUrl,
     githubUrl,
