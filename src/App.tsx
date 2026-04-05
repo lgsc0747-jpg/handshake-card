@@ -62,6 +62,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
           </DashboardThemeProvider>
+          <CookieConsentBanner />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

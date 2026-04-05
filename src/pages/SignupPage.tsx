@@ -101,7 +101,21 @@ const SignupPage = () => {
               <label className="text-sm text-muted-foreground">Password</label>
               <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
             </div>
-            <Button type="submit" className="w-full gradient-primary text-primary-foreground" disabled={loading}>
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="terms"
+                checked={agreedToTerms}
+                onCheckedChange={(v) => setAgreedToTerms(v === true)}
+                className="mt-0.5"
+              />
+              <label htmlFor="terms" className="text-xs text-muted-foreground leading-snug cursor-pointer">
+                I agree to the{" "}
+                <Link to="/terms" target="_blank" className="text-primary hover:underline">Terms of Service</Link>{" "}
+                and{" "}
+                <Link to="/privacy" target="_blank" className="text-primary hover:underline">Privacy Policy</Link>
+              </label>
+            </div>
+            <Button type="submit" className="w-full gradient-primary text-primary-foreground" disabled={loading || !agreedToTerms}>
               <UserPlus className="w-4 h-4 mr-1.5" />
               {loading ? "Creating account…" : "Create Account"}
             </Button>
