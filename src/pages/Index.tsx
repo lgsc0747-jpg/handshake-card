@@ -84,20 +84,13 @@ const Dashboard = () => {
         {/* Widgets */}
         <WidgetManager stats={stats} />
 
-        {/* Chart + Theme side by side */}
+        {/* Chart + Persona Pie */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2">
             <AnalyticsChart data={chartData} timeframe={timeframe} onTimeframeChange={setTimeframe} />
           </div>
           <div>
-            <ThemeDesigner
-              currentColor={accentColor}
-              onColorChange={handleColorChange}
-              saving={savingColor}
-            />
-            <div className="mt-4">
-              <PersonaPieChart />
-            </div>
+            <PersonaPieChart />
           </div>
         </div>
 
