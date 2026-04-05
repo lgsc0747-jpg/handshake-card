@@ -315,8 +315,24 @@ export function useNfcData() {
     const returnVisitorRate = profileViews > 0 ? Math.round((returnVisitors / profileViews) * 100) : 0;
     const interactionDepthRate = visitors.size > 0 ? Math.round((visitorsWithInteractions.size / visitors.size) * 100) : 0;
 
+    // Tap Velocity: group profile_views into hourly buckets
+    const velocityMap = new Map<string, number>();
+    const profileViewLogs = allLogs.filter((l) => l.interaction_type === "profile_view");
+    profileViewLogs.forEach((log) => {
+      const dt = new Date(log.created_at);
+      const hourKey = `${dt.getMonth() + 1}/${dt.getDate()} ${dt.getHours()}:00`;
+      velocityMap.set(hourKey, (velocityMap.get(hourKey) ?? 0) + 1);
+    });
+    const tapVelocity = Array.from(velocityMap.entries())
+      .map(([label, taps]) => ({ label, taps }));
+
+    // Region breakdown from timezone metadata
+    const regionBreakdown = Array.from(regions.entries())
+      .map(([region, count]) => ({ region, count }))
+      .sort((a, b) => b.count - a.count);
+
     setStats({
-      totalTaps: allLogs.filter((l) => l.interaction_type === "profile_view").length,
+      totalTaps: profileViewLogs.length,
       uniqueVisitors: visitors.size,
       contactSaveRate,
       avgDwellTime,
@@ -338,6 +354,8 @@ export function useNfcData() {
       linkCTR,
       personaPerformance,
       connectionSources: { nfc: nfcSource, qr: qrSource, direct: directSource },
+      tapVelocity,
+      regionBreakdown,
     });
 
     setLoading(false);
