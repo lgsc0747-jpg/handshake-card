@@ -9,8 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Paintbrush, Cookie, FileText, Shield, Check, LogOut, Trash2,
-  KeyRound, Bell, Sun, Moon,
+  KeyRound, Bell, Sun, Moon, UserX,
 } from "lucide-react";
+import { DeleteAccountDialog } from "@/components/DeleteAccountDialog";
 import { useDashboardTheme, DASHBOARD_THEMES, type DashboardTheme } from "@/contexts/DashboardThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
