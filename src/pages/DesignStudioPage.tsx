@@ -15,11 +15,20 @@ import { InteractiveCard3D } from "@/components/InteractiveCard3D";
 import { ColorPickerField } from "@/components/DesignStudio/ColorPickerField";
 import { ImageUploadField } from "@/components/DesignStudio/ImageUploadField";
 import { BACKGROUND_PRESETS, getPresetCss } from "@/components/DesignStudio/BackgroundPresets";
+import { CARD_TEXTURE_PRESETS } from "@/components/DesignStudio/CardTexturePresets";
+import { FONT_PRESETS } from "@/components/DesignStudio/FontPresets";
 import type { PersonaDesign } from "@/components/DesignStudio/types";
 import {
   Loader2, Monitor, Smartphone, Palette, Save, Eye,
   CreditCard, Layout, Type,
+  AlignLeft, AlignCenter, AlignRight,
 } from "lucide-react";
+
+const TEXT_ALIGNMENTS = [
+  { id: "left", label: "Left", icon: AlignLeft },
+  { id: "center", label: "Center", icon: AlignCenter },
+  { id: "right", label: "Right", icon: AlignRight },
+];
 
 const DesignStudioPage = () => {
   const { user } = useAuth();
@@ -131,7 +140,7 @@ const DesignStudioPage = () => {
 
         {/* Split-screen layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* LEFT: Controls — organized in tabs */}
+          {/* LEFT: Controls */}
           <Tabs defaultValue="card" className="space-y-4">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="card" className="text-xs gap-1">
@@ -181,13 +190,25 @@ const DesignStudioPage = () => {
 
                   <div className="space-y-2">
                     <Label>Card Glass Opacity: {Math.round((editing?.glass_opacity ?? 0.15) * 100)}%</Label>
-                    <p className="text-[10px] text-muted-foreground">Controls the frosted-glass overlay on the card surface</p>
+                    <p className="text-[10px] text-muted-foreground">Controls the frosted-glass overlay darkness</p>
                     <Slider
                       value={[(editing?.glass_opacity ?? 0.15) * 100]}
                       onValueChange={([v]) => update("glass_opacity", v / 100)}
                       min={0}
                       max={80}
                       step={5}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Background Blur: {editing?.card_blur ?? 12}px</Label>
+                    <p className="text-[10px] text-muted-foreground">Controls the blur intensity on the card background</p>
+                    <Slider
+                      value={[editing?.card_blur ?? 12]}
+                      onValueChange={([v]) => update("card_blur", v)}
+                      min={0}
+                      max={40}
+                      step={1}
                     />
                   </div>
                 </CardContent>
@@ -207,6 +228,87 @@ const DesignStudioPage = () => {
                   <p className="text-[10px] text-muted-foreground mt-2">
                     Replaces the gradient with your own image on the card face.
                   </p>
+                </CardContent>
+              </Card>
+
+              {/* Card Texture Presets */}
+              <Card className="glass-card">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-display">Card Texture</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-2">
+                    {CARD_TEXTURE_PRESETS.map((preset) => (
+                      <button
+                        key={preset.id}
+                        onClick={() => update("card_texture", preset.id)}
+                        className={`relative p-3 rounded-lg border text-xs text-center transition-colors overflow-hidden ${
+                          editing?.card_texture === preset.id
+                            ? "border-primary bg-primary/10 ring-1 ring-primary"
+                            : "border-border hover:border-primary/40"
+                        }`}
+                      >
+                        {preset.css !== "none" && (
+                          <div
+                            className="absolute inset-0 opacity-80"
+                            style={{
+                              backgroundImage: preset.css,
+                              backgroundSize: "backgroundSize" in preset ? preset.backgroundSize : undefined,
+                              backgroundColor: "#222",
+                            }}
+                          />
+                        )}
+                        <span className="relative">{preset.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Typography on Card */}
+              <Card className="glass-card">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-display">Card Typography</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Font Family</Label>
+                    <Select value={editing?.font_family ?? "Space Grotesk"} onValueChange={(v) => update("font_family", v)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {FONT_PRESETS.map((f) => (
+                          <SelectItem key={f.id} value={f.id}>
+                            <span style={{ fontFamily: f.stack }}>{f.label}</span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Text Placement</Label>
+                    <div className="flex gap-2">
+                      {TEXT_ALIGNMENTS.map((a) => {
+                        const Icon = a.icon;
+                        return (
+                          <button
+                            key={a.id}
+                            onClick={() => update("text_alignment", a.id)}
+                            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border text-xs transition-colors ${
+                              (editing?.text_alignment ?? "left") === a.id
+                                ? "border-primary bg-primary/10 text-primary"
+                                : "border-border hover:border-primary/40"
+                            }`}
+                          >
+                            <Icon className="w-3.5 h-3.5" />
+                            {a.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -239,7 +341,6 @@ const DesignStudioPage = () => {
                               : "border-border hover:border-primary/40"
                           }`}
                         >
-                          {/* Mini preview swatch */}
                           {preset.css !== "none" && (
                             <div
                               className="absolute inset-0 opacity-60"
@@ -350,9 +451,7 @@ const DesignStudioPage = () => {
                   backgroundPosition: editing?.background_image_url ? "center" : undefined,
                 }}
               >
-                {/* Simulated landing page preview */}
                 <div className="relative flex flex-col items-center justify-center min-h-[400px] p-6">
-                  {/* Ambient glow */}
                   <div
                     className="pointer-events-none absolute inset-0"
                     style={{
@@ -384,9 +483,12 @@ const DesignStudioPage = () => {
                     githubUrl={editing?.github_url ?? undefined}
                     website={editing?.website ?? undefined}
                     email={editing?.email_public ?? undefined}
+                    fontFamily={editing?.font_family ?? "Space Grotesk"}
+                    textAlignment={editing?.text_alignment ?? "left"}
+                    cardBlur={editing?.card_blur ?? 12}
+                    cardTexture={editing?.card_texture ?? "none"}
                   />
 
-                  {/* Below-card info preview */}
                   <div className="w-full max-w-sm space-y-3 mt-6 opacity-60">
                     <div className="text-center">
                       <h2 className="text-sm font-display font-bold">{editing?.display_name || "Your Name"}</h2>
