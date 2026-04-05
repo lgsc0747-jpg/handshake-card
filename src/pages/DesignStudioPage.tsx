@@ -414,15 +414,21 @@ const DesignStudioPage = () => {
 
                   <Separator />
 
-                  <ImageUploadField
-                    label="Background Image"
-                    value={editing?.background_image_url ?? null}
-                    onChange={(url) => update("background_image_url", url)}
-                    folder="landing-bg"
-                  />
-                  <p className="text-[10px] text-muted-foreground">
-                    Overrides the color & preset with a full-bleed background image.
-                  </p>
+                  {isPro ? (
+                    <>
+                      <ImageUploadField
+                        label="Background Image"
+                        value={editing?.background_image_url ?? null}
+                        onChange={(url) => update("background_image_url", url)}
+                        folder="landing-bg"
+                      />
+                      <p className="text-[10px] text-muted-foreground">
+                        Overrides the color & preset with a full-bleed background image.
+                      </p>
+                    </>
+                  ) : (
+                    <UpgradePrompt feature="Custom Landing Page Background" description="Upload your own background images with Pro." />
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
