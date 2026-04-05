@@ -43,6 +43,10 @@ interface PersonaData {
   background_image_url: string | null;
   card_bg_image_url: string | null;
   glass_opacity: number | null;
+  font_family: string | null;
+  text_alignment: string | null;
+  card_blur: number | null;
+  card_texture: string | null;
   availability_status: string | null;
   work_mode: string | null;
   show_availability: boolean | null;
