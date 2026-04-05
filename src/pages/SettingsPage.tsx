@@ -274,43 +274,6 @@ const SettingsPage = () => {
           </CardContent>
         </Card>
 
-        {/* Display — Light/Dark/System Mode */}
-        <Card className="glass-card animate-fade-in">
-          <CardHeader className="pb-3">
-            <CardTitle className="font-display text-sm flex items-center gap-2">
-              {colorMode === "dark" ? <Moon className="w-4 h-4" /> : colorMode === "light" ? <Sun className="w-4 h-4" /> : <Monitor className="w-4 h-4" />} Display
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-xs text-muted-foreground">Choose how the interface appears</p>
-            <div className="grid grid-cols-3 gap-2">
-              {([
-                { value: "light" as const, label: "Light", icon: Sun },
-                { value: "dark" as const, label: "Dark", icon: Moon },
-                { value: "system" as const, label: "System", icon: Monitor },
-              ]).map(({ value, label, icon: Icon }) => (
-                <button
-                  key={value}
-                  onClick={() => setColorMode(value)}
-                  className={`flex flex-col items-center gap-1.5 p-3 rounded-lg border transition-all ${
-                    colorMode === value
-                      ? "border-primary bg-primary/10"
-                      : "border-border hover:border-primary/40"
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span className="text-xs font-medium">{label}</span>
-                </button>
-              ))}
-            </div>
-            <p className="text-[10px] text-muted-foreground">
-              {colorMode === "system"
-                ? `Following system preference (currently ${resolvedColorMode})`
-                : `${colorMode === "dark" ? "Dark" : "Light"} mode is active`}
-            </p>
-          </CardContent>
-        </Card>
-
         {/* Theme */}
         <Card className="glass-card animate-fade-in">
           <CardHeader className="pb-3">
@@ -321,6 +284,37 @@ const SettingsPage = () => {
           <CardContent>
             <p className="text-xs text-muted-foreground mb-3">Choose a color theme for the dashboard</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {/* Light & Dark base themes */}
+              <button
+                onClick={() => { setColorMode("light"); }}
+                className={`relative flex items-center gap-3 p-3 rounded-lg border transition-all ${
+                  colorMode === "light" ? "border-primary bg-primary/10" : "border-border hover:border-primary/40"
+                }`}
+              >
+                <Sun className="w-4 h-4 shrink-0" />
+                <div className="text-left min-w-0">
+                  <span className="text-sm font-medium block">Light</span>
+                  <p className="text-[10px] text-muted-foreground">Clean, bright interface</p>
+                </div>
+                {colorMode === "light" && <Check className="w-3.5 h-3.5 text-primary absolute top-2 right-2" />}
+              </button>
+              <button
+                onClick={() => { setColorMode("dark"); }}
+                className={`relative flex items-center gap-3 p-3 rounded-lg border transition-all ${
+                  colorMode === "dark" ? "border-primary bg-primary/10" : "border-border hover:border-primary/40"
+                }`}
+              >
+                <Moon className="w-4 h-4 shrink-0" />
+                <div className="text-left min-w-0">
+                  <span className="text-sm font-medium block">Dark</span>
+                  <p className="text-[10px] text-muted-foreground">Easy on the eyes</p>
+                </div>
+                {colorMode === "dark" && <Check className="w-3.5 h-3.5 text-primary absolute top-2 right-2" />}
+              </button>
+
+              <Separator className="col-span-full my-1" />
+
+              {/* Color themes */}
               {(Object.entries(DASHBOARD_THEMES) as [DashboardTheme, typeof DASHBOARD_THEMES[DashboardTheme]][]).map(
                 ([key, cfg]) => (
                   <button
