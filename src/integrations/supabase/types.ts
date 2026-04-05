@@ -188,6 +188,7 @@ export type Database = {
           background_preset: string | null
           bio: string | null
           card_bg_image_url: string | null
+          card_bg_size: string | null
           card_blur: number | null
           card_texture: string | null
           created_at: string
@@ -228,6 +229,7 @@ export type Database = {
           background_preset?: string | null
           bio?: string | null
           card_bg_image_url?: string | null
+          card_bg_size?: string | null
           card_blur?: number | null
           card_texture?: string | null
           created_at?: string
@@ -268,6 +270,7 @@ export type Database = {
           background_preset?: string | null
           bio?: string | null
           card_bg_image_url?: string | null
+          card_bg_size?: string | null
           card_blur?: number | null
           card_texture?: string | null
           created_at?: string
