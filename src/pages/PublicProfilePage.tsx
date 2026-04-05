@@ -21,7 +21,7 @@ interface PersonaData {
   label: string;
   is_active: boolean;
   is_private: boolean;
-  pin_code: string | null;
+  has_pin: boolean;
   require_contact_exchange: boolean;
   display_name: string | null;
   headline: string | null;
@@ -42,6 +42,7 @@ interface PersonaData {
   background_preset: string | null;
   background_image_url: string | null;
   card_bg_image_url: string | null;
+  card_bg_size: string | null;
   glass_opacity: number | null;
   font_family: string | null;
   text_alignment: string | null;
