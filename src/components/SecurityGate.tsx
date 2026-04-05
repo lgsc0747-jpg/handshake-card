@@ -44,18 +44,17 @@ export function SecurityGate({
     setVerifying(true);
     setPinError(false);
 
-    // Verify PIN via edge function or direct check
-    const { data } = await supabase
-      .from("personas")
-      .select("pin_code")
-      .eq("id", personaId)
-      .single();
+    // Verify PIN server-side via secure RPC (never exposes stored PIN)
+    const { data, error } = await supabase.rpc("verify_persona_pin", {
+      p_persona_id: personaId,
+      p_pin: pin,
+    });
 
-    if (data?.pin_code === pin) {
-      onUnlocked();
-    } else {
+    if (error || !data) {
       setPinError(true);
       toast({ title: "Incorrect PIN", description: "Please try again.", variant: "destructive" });
+    } else {
+      onUnlocked();
     }
     setVerifying(false);
   };

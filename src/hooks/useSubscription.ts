@@ -69,10 +69,8 @@ export function useSubscription() {
       if (data?.plan) {
         setPlan(data.plan as Plan);
       } else {
-        // Auto-insert free plan for existing users who don't have one yet
-        await supabase
-          .from("user_subscriptions")
-          .insert({ user_id: user.id, plan: "free" } as any);
+        // Subscription is auto-created by DB trigger on signup
+        // If missing, default to free without client-side insert
         setPlan("free");
       }
       setLoading(false);
