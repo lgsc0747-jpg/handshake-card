@@ -1,4 +1,4 @@
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Activity } from "lucide-react";
@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import type { Timeframe } from "@/hooks/useNfcData";
 
 interface AnalyticsChartProps {
-  data: { label: string; taps: number }[];
+  data: { label: string; taps: number; vcards: number }[];
   timeframe: Timeframe;
   onTimeframeChange: (t: Timeframe) => void;
 }
@@ -23,7 +23,7 @@ export function AnalyticsChart({ data, timeframe, onTimeframeChange }: Analytics
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="font-display text-sm flex items-center gap-2">
-            <Activity className="w-4 h-4" /> NFC Taps
+            <Activity className="w-4 h-4" /> The Pulse
           </CardTitle>
           <div className="flex gap-1">
             {TIMEFRAMES.map((t) => (
@@ -41,7 +41,7 @@ export function AnalyticsChart({ data, timeframe, onTimeframeChange }: Analytics
         </div>
       </CardHeader>
       <CardContent>
-        <div className="h-[220px]">
+        <div className="h-[240px]">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
               <defs>
@@ -49,35 +49,25 @@ export function AnalyticsChart({ data, timeframe, onTimeframeChange }: Analytics
                   <stop offset="5%" stopColor="hsl(174, 72%, 40%)" stopOpacity={0.4} />
                   <stop offset="95%" stopColor="hsl(174, 72%, 40%)" stopOpacity={0} />
                 </linearGradient>
+                <linearGradient id="vcardGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="hsl(221, 83%, 53%)" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="hsl(221, 83%, 53%)" stopOpacity={0} />
+                </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 13%, 89%)" strokeOpacity={0.4} />
-              <XAxis
-                dataKey="label"
-                tick={{ fontSize: 10, fill: "hsl(220, 10%, 46%)" }}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                tick={{ fontSize: 10, fill: "hsl(220, 10%, 46%)" }}
-                tickLine={false}
-                axisLine={false}
-                allowDecimals={false}
-              />
+              <XAxis dataKey="label" tick={{ fontSize: 10, fill: "hsl(220, 10%, 46%)" }} tickLine={false} axisLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: "hsl(220, 10%, 46%)" }} tickLine={false} axisLine={false} allowDecimals={false} />
               <Tooltip
                 contentStyle={{
-                  background: "hsl(0, 0%, 100%)",
-                  border: "1px solid hsl(220, 13%, 89%)",
+                  background: "hsl(var(--card))",
+                  border: "1px solid hsl(var(--border))",
                   borderRadius: "8px",
                   fontSize: 12,
                 }}
               />
-              <Area
-                type="monotone"
-                dataKey="taps"
-                stroke="hsl(174, 72%, 40%)"
-                strokeWidth={2}
-                fill="url(#tapGrad)"
-              />
+              <Legend wrapperStyle={{ fontSize: "11px" }} />
+              <Area type="monotone" dataKey="taps" name="Profile Views" stroke="hsl(174, 72%, 40%)" strokeWidth={2} fill="url(#tapGrad)" />
+              <Area type="monotone" dataKey="vcards" name="vCard Saves" stroke="hsl(221, 83%, 53%)" strokeWidth={2} fill="url(#vcardGrad)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>

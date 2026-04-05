@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
@@ -159,7 +159,26 @@ const PublicProfilePage = () => {
         }),
       }).catch(() => {});
 
+      // Track dwell time on page unload
+      const startTime = Date.now();
+      const handleUnload = () => {
+        const seconds = Math.round((Date.now() - startTime) / 1000);
+        if (seconds > 2) {
+          const blob = new Blob([JSON.stringify({
+            target_user_id: profileData.user_id,
+            interaction_type: "dwell_time",
+            metadata: { seconds, ua: navigator.userAgent, persona_slug: personaSlug || null },
+          })], { type: "application/json" });
+          navigator.sendBeacon(
+            `https://${projectId}.supabase.co/functions/v1/log-interaction`,
+            blob
+          );
+        }
+      };
+      window.addEventListener("beforeunload", handleUnload);
+
       setLoading(false);
+      return () => window.removeEventListener("beforeunload", handleUnload);
     };
 
     load();
@@ -228,6 +247,19 @@ const PublicProfilePage = () => {
       location: merged.location ?? undefined,
     });
   };
+
+  const trackLinkClick = useCallback((linkType: string) => {
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+    fetch(`https://${projectId}.supabase.co/functions/v1/log-interaction`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        target_user_id: merged.user_id,
+        interaction_type: "link_click",
+        metadata: { link_type: linkType, ua: navigator.userAgent, persona_slug: persona?.slug },
+      }),
+    }).catch(() => {});
+  }, [merged.user_id, persona?.slug]);
 
   const handleDownloadCV = () => {
     if (!merged.cv_url) return;
@@ -440,19 +472,19 @@ const PublicProfilePage = () => {
               <ContactRow icon={<MapPin className="w-4 h-4" />} label={merged.location} />
             )}
             {merged.email_public && (
-              <ContactRow icon={<Mail className="w-4 h-4" />} label={merged.email_public} href={`mailto:${merged.email_public}`} />
+              <ContactRow icon={<Mail className="w-4 h-4" />} label={merged.email_public} href={`mailto:${merged.email_public}`} onClick={() => trackLinkClick("email")} />
             )}
             {merged.phone && (
-              <ContactRow icon={<Phone className="w-4 h-4" />} label={merged.phone} href={`tel:${merged.phone}`} />
+              <ContactRow icon={<Phone className="w-4 h-4" />} label={merged.phone} href={`tel:${merged.phone}`} onClick={() => trackLinkClick("phone")} />
             )}
             {merged.website && (
-              <ContactRow icon={<Globe className="w-4 h-4" />} label={merged.website} href={merged.website} external />
+              <ContactRow icon={<Globe className="w-4 h-4" />} label={merged.website} href={merged.website} external onClick={() => trackLinkClick("website")} />
             )}
             {merged.linkedin_url && (
-              <ContactRow icon={<Linkedin className="w-4 h-4" />} label="LinkedIn" href={merged.linkedin_url} external />
+              <ContactRow icon={<Linkedin className="w-4 h-4" />} label="LinkedIn" href={merged.linkedin_url} external onClick={() => trackLinkClick("linkedin")} />
             )}
             {merged.github_url && (
-              <ContactRow icon={<Github className="w-4 h-4" />} label="GitHub" href={merged.github_url} external />
+              <ContactRow icon={<Github className="w-4 h-4" />} label="GitHub" href={merged.github_url} external onClick={() => trackLinkClick("github")} />
             )}
           </motion.div>
 
@@ -484,11 +516,17 @@ const PublicProfilePage = () => {
   );
 };
 
-function ContactRow({ icon, label, href, external }: { icon: React.ReactNode; label: string; href?: string; external?: boolean }) {
+function ContactRow({ icon, label, href, external, onClick }: { icon: React.ReactNode; label: string; href?: string; external?: boolean; onClick?: () => void }) {
   const cls = "flex items-center gap-3 p-3.5 hover:bg-accent/40 transition-colors";
   if (href) {
     return (
-      <a href={href} target={external ? "_blank" : undefined} rel={external ? "noopener noreferrer" : undefined} className={cls}>
+      <a
+        href={href}
+        target={external ? "_blank" : undefined}
+        rel={external ? "noopener noreferrer" : undefined}
+        className={cls}
+        onClick={onClick}
+      >
         <span className="text-muted-foreground shrink-0">{icon}</span>
         <span className="text-sm truncate">{label}</span>
       </a>

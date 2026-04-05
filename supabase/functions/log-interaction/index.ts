@@ -21,7 +21,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    const allowedTypes = ["profile_view", "cv_download", "vcard_download"];
+    const allowedTypes = [
+      "profile_view",
+      "cv_download",
+      "vcard_download",
+      "link_click",
+      "dwell_time",
+      "security_attempt",
+    ];
     if (!allowedTypes.includes(interaction_type)) {
       return new Response(
         JSON.stringify({ error: "Invalid interaction_type" }),
@@ -39,6 +46,53 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Parse device/OS/browser from UA
+    const device = /iPad/i.test(ua)
+      ? "Tablet"
+      : /iPhone|Android.*Mobile/i.test(ua)
+      ? "Mobile"
+      : /Android/i.test(ua)
+      ? "Tablet"
+      : "Desktop";
+
+    const os = /iPhone|iPad|Mac OS/i.test(ua)
+      ? /iPhone|iPad/i.test(ua) ? "iOS" : "macOS"
+      : /Android/i.test(ua)
+      ? "Android"
+      : /Windows/i.test(ua)
+      ? "Windows"
+      : /Linux/i.test(ua)
+      ? "Linux"
+      : "Unknown";
+
+    const browser = /Edg\//i.test(ua)
+      ? "Edge"
+      : /OPR|Opera/i.test(ua)
+      ? "Opera"
+      : /Firefox/i.test(ua)
+      ? "Firefox"
+      : /CriOS|Chrome/i.test(ua)
+      ? "Chrome"
+      : /Safari/i.test(ua)
+      ? "Safari"
+      : "Other";
+
+    const enrichedMeta = {
+      ...(metadata || {}),
+      device,
+      os,
+      browser,
+      timestamp: new Date().toISOString(),
+    };
+
+    // Determine occasion label
+    let occasion = "NFC Tap";
+    if (interaction_type === "cv_download") occasion = "CV Download";
+    else if (interaction_type === "vcard_download") occasion = "vCard Save";
+    else if (interaction_type === "link_click") occasion = `Link: ${metadata?.link_type || "unknown"}`;
+    else if (interaction_type === "dwell_time") occasion = "Dwell Time";
+    else if (interaction_type === "security_attempt") occasion = `Security: ${metadata?.result || "unknown"}`;
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -46,10 +100,10 @@ Deno.serve(async (req) => {
 
     const { error } = await supabase.from("interaction_logs").insert({
       user_id: target_user_id,
-      entity_id: `visitor_${Date.now()}`,
+      entity_id: metadata?.visitor_id || `visitor_${Date.now()}`,
       interaction_type,
-      occasion: interaction_type === "profile_view" ? "NFC Tap" : "CV Download",
-      metadata: metadata || {},
+      occasion,
+      metadata: enrichedMeta,
     });
 
     if (error) {

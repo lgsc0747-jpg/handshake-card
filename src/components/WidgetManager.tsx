@@ -29,29 +29,34 @@ interface WidgetManagerProps {
   stats: {
     totalTaps: number;
     uniqueVisitors: number;
+    contactSaveRate: number;
+    avgDwellTime: number;
     topDevice: string;
     topLocation: string;
     profileViews: number;
     cvDownloads: number;
     vcardDownloads: number;
+    leadGenCount: number;
   };
 }
 
-type WidgetKey = "totalTaps" | "uniqueVisitors" | "topDevice" | "topLocation" | "profileViews" | "cvDownloads";
+type WidgetKey = "totalTaps" | "uniqueVisitors" | "contactSaveRate" | "topDevice" | "profileViews" | "vcardDownloads" | "cvDownloads" | "leadGenCount";
 
 const WIDGET_CONFIG: { key: WidgetKey; label: string; icon: React.ReactNode }[] = [
   { key: "totalTaps", label: "Total Taps", icon: <Zap className="w-4 h-4" /> },
   { key: "uniqueVisitors", label: "Unique Visitors", icon: <Users className="w-4 h-4" /> },
+  { key: "contactSaveRate", label: "Contact Save Rate", icon: <Eye className="w-4 h-4" /> },
   { key: "topDevice", label: "Top Device", icon: <Smartphone className="w-4 h-4" /> },
-  { key: "topLocation", label: "Top Location", icon: <MapPin className="w-4 h-4" /> },
   { key: "profileViews", label: "Profile Views", icon: <Eye className="w-4 h-4" /> },
+  { key: "vcardDownloads", label: "vCard Saves", icon: <FileText className="w-4 h-4" /> },
   { key: "cvDownloads", label: "CV Downloads", icon: <FileText className="w-4 h-4" /> },
+  { key: "leadGenCount", label: "Leads Captured", icon: <Users className="w-4 h-4" /> },
 ];
 
 const DEFAULT_ORDER: WidgetKey[] = WIDGET_CONFIG.map((w) => w.key);
 const DEFAULT_VISIBILITY: Record<WidgetKey, boolean> = {
-  totalTaps: true, uniqueVisitors: true, topDevice: true,
-  topLocation: true, profileViews: true, cvDownloads: true,
+  totalTaps: true, uniqueVisitors: true, contactSaveRate: true,
+  topDevice: true, profileViews: true, vcardDownloads: true, cvDownloads: true, leadGenCount: true,
 };
 
 const STORAGE_KEY_ORDER = "nfc_widget_order";
@@ -142,10 +147,12 @@ export function WidgetManager({ stats }: WidgetManagerProps) {
     switch (key) {
       case "totalTaps": return stats.totalTaps.toLocaleString();
       case "uniqueVisitors": return stats.uniqueVisitors.toLocaleString();
+      case "contactSaveRate": return `${stats.contactSaveRate}%`;
       case "topDevice": return stats.topDevice;
-      case "topLocation": return stats.topLocation;
       case "profileViews": return stats.profileViews.toLocaleString();
+      case "vcardDownloads": return stats.vcardDownloads.toLocaleString();
       case "cvDownloads": return stats.cvDownloads.toLocaleString();
+      case "leadGenCount": return stats.leadGenCount.toLocaleString();
     }
   }, [stats]);
 
