@@ -11,6 +11,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { Wifi, RotateCcw, Share2, Linkedin, Github, Globe, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { getTextureCss } from "@/components/DesignStudio/CardTexturePresets";
 
 interface InteractiveCard3DProps {
   name: string;
@@ -27,6 +28,10 @@ interface InteractiveCard3DProps {
   githubUrl?: string;
   website?: string;
   email?: string;
+  fontFamily?: string;
+  textAlignment?: string;
+  cardBlur?: number;
+  cardTexture?: string;
 }
 
 interface CardFrontProps {
