@@ -3,7 +3,6 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { AnalyticsChart } from "@/components/AnalyticsChart";
 import { WidgetManager } from "@/components/WidgetManager";
 import { PersonaPieChart } from "@/components/PersonaPieChart";
-import { ThemeDesigner } from "@/components/ThemeDesigner";
 import { useNfcData } from "@/hooks/useNfcData";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,22 +14,10 @@ const Dashboard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { stats, chartData, timeframe, setTimeframe, loading } = useNfcData();
-  const [accentColor, setAccentColor] = useState("#0d9488");
-  const [savingColor, setSavingColor] = useState(false);
   const [recentLogs, setRecentLogs] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user) return;
-
-    // Fetch accent color
-    supabase
-      .from("profiles")
-      .select("card_accent_color")
-      .eq("user_id", user.id)
-      .single()
-      .then(({ data }) => {
-        if (data?.card_accent_color) setAccentColor(data.card_accent_color);
-      });
 
     // Fetch recent logs
     supabase
@@ -41,18 +28,6 @@ const Dashboard = () => {
       .limit(5)
       .then(({ data }) => setRecentLogs(data ?? []));
   }, [user]);
-
-  const handleColorChange = async (color: string) => {
-    if (!user) return;
-    setAccentColor(color);
-    setSavingColor(true);
-    await supabase
-      .from("profiles")
-      .update({ card_accent_color: color } as any)
-      .eq("user_id", user.id);
-    setSavingColor(false);
-    toast({ title: "Theme updated", description: "Your card accent color has been saved." });
-  };
 
   const timeSince = (dateStr: string) => {
     const diff = Date.now() - new Date(dateStr).getTime();
@@ -85,20 +60,13 @@ const Dashboard = () => {
         {/* Widgets */}
         <WidgetManager stats={stats} />
 
-        {/* Chart + Theme side by side */}
+        {/* Chart + Persona Pie */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2">
             <AnalyticsChart data={chartData} timeframe={timeframe} onTimeframeChange={setTimeframe} />
           </div>
           <div>
-            <ThemeDesigner
-              currentColor={accentColor}
-              onColorChange={handleColorChange}
-              saving={savingColor}
-            />
-            <div className="mt-4">
-              <PersonaPieChart />
-            </div>
+            <PersonaPieChart />
           </div>
         </div>
 

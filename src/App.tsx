@@ -16,6 +16,7 @@ import ProfilePage from "./pages/ProfilePage.tsx";
 import PersonasPage from "./pages/PersonasPage.tsx";
 import LeadsPage from "./pages/LeadsPage.tsx";
 import DesignStudioPage from "./pages/DesignStudioPage.tsx";
+import SettingsPage from "./pages/SettingsPage.tsx";
 import PublicProfilePage from "./pages/PublicProfilePage.tsx";
 import LoginPage from "./pages/LoginPage.tsx";
 import SignupPage from "./pages/SignupPage.tsx";
@@ -54,6 +55,7 @@ const App = () => (
             <Route path="/personas" element={<ProtectedRoute><PersonasPage /></ProtectedRoute>} />
             <Route path="/leads" element={<ProtectedRoute><LeadsPage /></ProtectedRoute>} />
             <Route path="/design-studio" element={<ProtectedRoute><DesignStudioPage /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
             <Route path="/p/:username" element={<PublicProfilePage />} />
             <Route path="/p/:username/:personaSlug" element={<PublicProfilePage />} />
             <Route path="/u/:code" element={<ShortUrlRedirect />} />
