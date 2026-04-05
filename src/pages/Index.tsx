@@ -87,7 +87,7 @@ const Dashboard = () => {
           </div>
           <div className="flex items-center gap-2">
             <ChartPaletteSelector />
-            <ExportButton stats={stats} chartData={chartData} />
+            {isPro && <ExportButton stats={stats} chartData={chartData} />}
           </div>
         </div>
 
