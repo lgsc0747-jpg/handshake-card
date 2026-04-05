@@ -298,6 +298,7 @@ export function useNfcData() {
 
     const contactSaveRate = profileViews > 0 ? Math.round((vcardDownloads / profileViews) * 100) : 0;
     const avgDwellTime = dwellCount > 0 ? Math.round(totalDwell / dwellCount) : 0;
+    const authSuccessRate = securityTotal > 0 ? Math.round((securitySuccess / securityTotal) * 100) : 0;
     const returnVisitorRate = profileViews > 0 ? Math.round((returnVisitors / profileViews) * 100) : 0;
     const interactionDepthRate = visitors.size > 0 ? Math.round((visitorsWithInteractions.size / visitors.size) * 100) : 0;
 
