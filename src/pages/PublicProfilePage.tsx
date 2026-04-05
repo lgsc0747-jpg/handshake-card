@@ -79,6 +79,7 @@ const PublicProfilePage = () => {
   const { username, personaSlug } = useParams<{ username: string; personaSlug?: string }>();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [persona, setPersona] = useState<PersonaData | null>(null);
+  const [ownerIsPro, setOwnerIsPro] = useState(false);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [gateUnlocked, setGateUnlocked] = useState(false);
@@ -122,6 +123,14 @@ const PublicProfilePage = () => {
       }
 
       setProfile(profileData as ProfileData);
+
+      // Check if profile owner is Pro
+      const { data: subData } = await supabase
+        .from("user_subscriptions")
+        .select("plan")
+        .eq("user_id", profileData.user_id)
+        .single();
+      setOwnerIsPro(subData?.plan === "pro");
 
       if (personaSlug) {
         const { data: personaData } = await supabase
@@ -537,9 +546,11 @@ const PublicProfilePage = () => {
             )}
           </motion.div>
 
-          <p className="text-center text-xs text-muted-foreground pt-4">
-            Powered by <span className="font-display font-semibold">NFC Hub</span>
-          </p>
+          {!ownerIsPro && (
+            <p className="text-center text-xs text-muted-foreground pt-4">
+              Powered by <span className="font-display font-semibold">NFC Hub</span>
+            </p>
+          )}
         </div>
       </section>
     </div>

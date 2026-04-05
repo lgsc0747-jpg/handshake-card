@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSubscription } from "@/hooks/useSubscription";
+import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Plus, Trash2, Check, Edit3, Shield, Lock, Users, Loader2,
@@ -56,6 +58,7 @@ interface Persona {
 const PersonasPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { limits, isPro } = useSubscription();
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingPersona, setEditingPersona] = useState<Persona | null>(null);
@@ -80,6 +83,10 @@ const PersonasPage = () => {
   const handleCreate = async () => {
     if (!user) return;
     const count = personas.length;
+    if (count >= limits.maxPersonas) {
+      toast({ title: "Persona limit reached", description: "Upgrade to Pro for unlimited personas.", variant: "destructive" });
+      return;
+    }
     const slug = `persona-${count + 1}`;
     const { data, error } = await supabase
       .from("personas")
@@ -391,10 +398,14 @@ const PersonasPage = () => {
                       <p className="text-sm font-medium">Private Mode</p>
                       <p className="text-xs text-muted-foreground">Visitors must authenticate to view</p>
                     </div>
-                    <Switch
-                      checked={editingPersona.is_private}
-                      onCheckedChange={(v) => updateField("is_private", v)}
-                    />
+                    {isPro ? (
+                      <Switch
+                        checked={editingPersona.is_private}
+                        onCheckedChange={(v) => updateField("is_private", v)}
+                      />
+                    ) : (
+                      <UpgradePrompt feature="Private Mode" compact />
+                    )}
                   </div>
                   {editingPersona.is_private && (
                     <div className="space-y-3 pl-4 border-l-2 border-border">

@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSubscription } from "@/hooks/useSubscription";
+import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { supabase } from "@/integrations/supabase/client";
 import { InteractiveCard3D } from "@/components/InteractiveCard3D";
 import { ColorPickerField } from "@/components/DesignStudio/ColorPickerField";
@@ -34,6 +36,7 @@ const TEXT_ALIGNMENTS = [
 const DesignStudioPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { isPro } = useSubscription();
   const [personas, setPersonas] = useState<PersonaDesign[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editing, setEditing] = useState<PersonaDesign | null>(null);
@@ -220,43 +223,49 @@ const DesignStudioPage = () => {
                   <CardTitle className="text-sm font-display">Card Background Image</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <ImageUploadField
-                    label="Card Face Background"
-                    value={editing?.card_bg_image_url ?? null}
-                    onChange={(url) => update("card_bg_image_url", url)}
-                    folder="card-bg"
-                  />
+                  {isPro ? (
+                    <>
+                      <ImageUploadField
+                        label="Card Face Background"
+                        value={editing?.card_bg_image_url ?? null}
+                        onChange={(url) => update("card_bg_image_url", url)}
+                        folder="card-bg"
+                      />
 
-                  {editing?.card_bg_image_url && (
-                    <div className="space-y-2">
-                      <Label>Image Sizing</Label>
-                      <div className="grid grid-cols-2 gap-2">
-                        {([
-                          { id: "cover", label: "Stretched", desc: "Fills entire card" },
-                          { id: "contain", label: "Fitted", desc: "Fits without cropping" },
-                          { id: "center", label: "Centered", desc: "Original size, centered" },
-                          { id: "original", label: "Original", desc: "Top-left, no scaling" },
-                        ] as const).map((opt) => (
-                          <button
-                            key={opt.id}
-                            onClick={() => update("card_bg_size", opt.id)}
-                            className={`p-2 rounded-lg border text-xs text-left transition-all ${
-                              (editing?.card_bg_size ?? "cover") === opt.id
-                                ? "border-primary bg-primary/10 ring-1 ring-primary/30"
-                                : "border-border hover:border-primary/40"
-                            }`}
-                          >
-                            <span className="font-medium block">{opt.label}</span>
-                            <span className="text-[10px] text-muted-foreground">{opt.desc}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+                      {editing?.card_bg_image_url && (
+                        <div className="space-y-2">
+                          <Label>Image Sizing</Label>
+                          <div className="grid grid-cols-2 gap-2">
+                            {([
+                              { id: "cover", label: "Stretched", desc: "Fills entire card" },
+                              { id: "contain", label: "Fitted", desc: "Fits without cropping" },
+                              { id: "center", label: "Centered", desc: "Original size, centered" },
+                              { id: "original", label: "Original", desc: "Top-left, no scaling" },
+                            ] as const).map((opt) => (
+                              <button
+                                key={opt.id}
+                                onClick={() => update("card_bg_size", opt.id)}
+                                className={`p-2 rounded-lg border text-xs text-left transition-all ${
+                                  (editing?.card_bg_size ?? "cover") === opt.id
+                                    ? "border-primary bg-primary/10 ring-1 ring-primary/30"
+                                    : "border-border hover:border-primary/40"
+                                }`}
+                              >
+                                <span className="font-medium block">{opt.label}</span>
+                                <span className="text-[10px] text-muted-foreground">{opt.desc}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <p className="text-[10px] text-muted-foreground">
+                        Replaces the gradient with your own image or GIF on the card face.
+                      </p>
+                    </>
+                  ) : (
+                    <UpgradePrompt feature="Custom Card Backgrounds" description="Upload your own images and GIFs for the card face with Pro." />
                   )}
-
-                  <p className="text-[10px] text-muted-foreground">
-                    Replaces the gradient with your own image or GIF on the card face.
-                  </p>
                 </CardContent>
               </Card>
 
@@ -309,8 +318,12 @@ const DesignStudioPage = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Font Family</Label>
-                    <Select value={editing?.font_family ?? "Space Grotesk"} onValueChange={(v) => update("font_family", v)}>
+                    <Label>Font Family {!isPro && <UpgradePrompt feature="Custom Fonts" compact />}</Label>
+                    <Select
+                      value={editing?.font_family ?? "Space Grotesk"}
+                      onValueChange={(v) => update("font_family", v)}
+                      disabled={!isPro}
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -401,15 +414,21 @@ const DesignStudioPage = () => {
 
                   <Separator />
 
-                  <ImageUploadField
-                    label="Background Image"
-                    value={editing?.background_image_url ?? null}
-                    onChange={(url) => update("background_image_url", url)}
-                    folder="landing-bg"
-                  />
-                  <p className="text-[10px] text-muted-foreground">
-                    Overrides the color & preset with a full-bleed background image.
-                  </p>
+                  {isPro ? (
+                    <>
+                      <ImageUploadField
+                        label="Background Image"
+                        value={editing?.background_image_url ?? null}
+                        onChange={(url) => update("background_image_url", url)}
+                        folder="landing-bg"
+                      />
+                      <p className="text-[10px] text-muted-foreground">
+                        Overrides the color & preset with a full-bleed background image.
+                      </p>
+                    </>
+                  ) : (
+                    <UpgradePrompt feature="Custom Landing Page Background" description="Upload your own background images with Pro." />
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -469,24 +488,30 @@ const DesignStudioPage = () => {
                   <p className="text-[10px] text-muted-foreground">Optional — appears as a download button on your landing page</p>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {editing?.cv_url ? (
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="text-xs truncate max-w-[200px]">
-                        {editing.cv_url.split("/").pop()}
-                      </Badge>
-                      <Button size="sm" variant="ghost" className="text-xs h-7 text-destructive" onClick={() => update("cv_url", null)}>
-                        Remove
-                      </Button>
-                    </div>
+                  {isPro ? (
+                    <>
+                      {editing?.cv_url ? (
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className="text-xs truncate max-w-[200px]">
+                            {editing.cv_url.split("/").pop()}
+                          </Badge>
+                          <Button size="sm" variant="ghost" className="text-xs h-7 text-destructive" onClick={() => update("cv_url", null)}>
+                            Remove
+                          </Button>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">No CV uploaded yet</p>
+                      )}
+                      <ImageUploadField
+                        label="Upload CV (PDF or image)"
+                        value={editing?.cv_url ?? null}
+                        onChange={(url) => update("cv_url", url)}
+                        folder="cv-uploads"
+                      />
+                    </>
                   ) : (
-                    <p className="text-xs text-muted-foreground">No CV uploaded yet</p>
+                    <UpgradePrompt feature="CV / Resume Hosting" description="Upload and track CV downloads with Pro." />
                   )}
-                  <ImageUploadField
-                    label="Upload CV (PDF or image)"
-                    value={editing?.cv_url ?? null}
-                    onChange={(url) => update("cv_url", url)}
-                    folder="cv-uploads"
-                  />
                 </CardContent>
               </Card>
             </TabsContent>
