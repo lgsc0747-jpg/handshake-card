@@ -472,19 +472,19 @@ const PublicProfilePage = () => {
               <ContactRow icon={<MapPin className="w-4 h-4" />} label={merged.location} />
             )}
             {merged.email_public && (
-              <ContactRow icon={<Mail className="w-4 h-4" />} label={merged.email_public} href={`mailto:${merged.email_public}`} />
+              <ContactRow icon={<Mail className="w-4 h-4" />} label={merged.email_public} href={`mailto:${merged.email_public}`} onClick={() => trackLinkClick("email")} />
             )}
             {merged.phone && (
-              <ContactRow icon={<Phone className="w-4 h-4" />} label={merged.phone} href={`tel:${merged.phone}`} />
+              <ContactRow icon={<Phone className="w-4 h-4" />} label={merged.phone} href={`tel:${merged.phone}`} onClick={() => trackLinkClick("phone")} />
             )}
             {merged.website && (
-              <ContactRow icon={<Globe className="w-4 h-4" />} label={merged.website} href={merged.website} external />
+              <ContactRow icon={<Globe className="w-4 h-4" />} label={merged.website} href={merged.website} external onClick={() => trackLinkClick("website")} />
             )}
             {merged.linkedin_url && (
-              <ContactRow icon={<Linkedin className="w-4 h-4" />} label="LinkedIn" href={merged.linkedin_url} external />
+              <ContactRow icon={<Linkedin className="w-4 h-4" />} label="LinkedIn" href={merged.linkedin_url} external onClick={() => trackLinkClick("linkedin")} />
             )}
             {merged.github_url && (
-              <ContactRow icon={<Github className="w-4 h-4" />} label="GitHub" href={merged.github_url} external />
+              <ContactRow icon={<Github className="w-4 h-4" />} label="GitHub" href={merged.github_url} external onClick={() => trackLinkClick("github")} />
             )}
           </motion.div>
 
