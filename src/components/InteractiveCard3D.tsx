@@ -361,6 +361,7 @@ function CardBack({
   isFlipped,
   linkedinUrl,
   onFlipBack,
+  onLinkClick,
   profileUrl,
   username,
   website,
