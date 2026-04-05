@@ -33,8 +33,8 @@ export function DeviceDonutChart({ data, title }: DeviceDonutChartProps) {
       <CardContent>
         <ResponsiveContainer width="100%" height={200}>
           <PieChart>
-            <Pie data={data} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={3} dataKey="value" stroke="none">
-              {data.map((entry, i) => (
+            <Pie data={coloredData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={3} dataKey="value" stroke="none">
+              {coloredData.map((entry, i) => (
                 <Cell key={i} fill={entry.color} />
               ))}
             </Pie>
