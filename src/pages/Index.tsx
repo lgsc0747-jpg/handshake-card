@@ -14,8 +14,7 @@ const Dashboard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { stats, chartData, timeframe, setTimeframe, loading } = useNfcData();
-  const [accentColor, setAccentColor] = useState("#0d9488");
-  const [savingColor, setSavingColor] = useState(false);
+  const [recentLogs, setRecentLogs] = useState<any[]>([]);
   const [recentLogs, setRecentLogs] = useState<any[]>([]);
 
   useEffect(() => {
