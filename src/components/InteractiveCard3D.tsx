@@ -405,22 +405,22 @@ function CardBack({
 
         <div className="mt-[0.3em] flex items-center gap-[0.6em]">
           {linkedinUrl && (
-            <SocialIcon href={linkedinUrl} label="LinkedIn">
+            <SocialIcon href={linkedinUrl} label="LinkedIn" onClick={() => onLinkClick?.("linkedin")}>
               <Linkedin className="h-[0.85em] w-[0.85em]" style={{ color: textColor }} />
             </SocialIcon>
           )}
           {githubUrl && (
-            <SocialIcon href={githubUrl} label="GitHub">
+            <SocialIcon href={githubUrl} label="GitHub" onClick={() => onLinkClick?.("github")}>
               <Github className="h-[0.85em] w-[0.85em]" style={{ color: textColor }} />
             </SocialIcon>
           )}
           {website && (
-            <SocialIcon href={website} label="Website">
+            <SocialIcon href={website} label="Website" onClick={() => onLinkClick?.("website")}>
               <Globe className="h-[0.85em] w-[0.85em]" style={{ color: textColor }} />
             </SocialIcon>
           )}
           {email && (
-            <SocialIcon href={`mailto:${email}`} label="Email" external={false}>
+            <SocialIcon href={`mailto:${email}`} label="Email" external={false} onClick={() => onLinkClick?.("email")}>
               <Mail className="h-[0.85em] w-[0.85em]" style={{ color: textColor }} />
             </SocialIcon>
           )}
