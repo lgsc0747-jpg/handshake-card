@@ -245,7 +245,23 @@ function CardFront({
   isFlipped,
   name,
   onFlip,
+  fontFamily,
+  textAlignment,
+  cardBlur,
+  cardTexture,
 }: CardFrontProps) {
+  const textureCss = getTextureCss(cardTexture);
+
+  const alignClass =
+    textAlignment === "center" ? "text-center items-center" :
+    textAlignment === "right" ? "text-right items-end" :
+    "text-left items-start";
+
+  const bottomAlign =
+    textAlignment === "center" ? "items-center justify-center" :
+    textAlignment === "right" ? "items-end justify-end" :
+    "items-end";
+
   return (
     <div
       className="absolute inset-0 cursor-pointer overflow-hidden rounded-2xl border border-white/20"
@@ -254,21 +270,32 @@ function CardFront({
         pointerEvents: isFlipped ? "none" : "auto",
         background: cardBgImageUrl ? `url(${cardBgImageUrl}) center/cover no-repeat` : `linear-gradient(135deg, ${accentColor}dd, ${secondaryColor}88)`,
         boxShadow: `0 25px 50px -12px ${accentColor}44, 0 0 40px ${accentColor}22`,
+        fontFamily,
       }}
       onClick={onFlip}
     >
-      {/* Glass overlay on the card surface */}
+      {/* Glass overlay */}
       <div
         className="absolute inset-0"
         style={{
           background: `rgba(0,0,0,${glassOpacity})`,
-          backdropFilter: "blur(12px)",
+          backdropFilter: `blur(${cardBlur}px)`,
         }}
       />
+      {/* Texture overlay */}
+      {textureCss && (
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: textureCss.backgroundImage,
+            backgroundSize: textureCss.backgroundSize,
+          }}
+        />
+      )}
       <motion.div className="pointer-events-none absolute inset-0" style={{ background: glareBackground }} />
 
-      <div className="relative z-10 flex h-full flex-col justify-between p-[7%]">
-        <div className="flex items-center justify-between" style={{ transform: "translateZ(16px)" }}>
+      <div className={`relative z-10 flex h-full flex-col justify-between p-[7%] ${alignClass}`}>
+        <div className="flex w-full items-center justify-between" style={{ transform: "translateZ(16px)" }}>
           <div className="flex items-center gap-[0.4em]">
             <div
               className="flex h-[2em] w-[2em] items-center justify-center rounded-lg"
@@ -289,7 +316,7 @@ function CardFront({
           </div>
         </div>
 
-        <div className="flex items-end gap-[0.75em]" style={{ transform: "translateZ(24px)" }}>
+        <div className={`flex w-full gap-[0.75em] ${bottomAlign}`} style={{ transform: "translateZ(24px)" }}>
           {avatarUrl ? (
             <img
               src={avatarUrl}
@@ -316,7 +343,6 @@ function CardFront({
     </div>
   );
 }
-
 function CardBack({
   accentColor,
   secondaryColor,
