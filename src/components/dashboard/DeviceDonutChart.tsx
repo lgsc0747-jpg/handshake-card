@@ -8,6 +8,8 @@ interface DeviceDonutChartProps {
 }
 
 export function DeviceDonutChart({ data, title }: DeviceDonutChartProps) {
+  const { colors: paletteColors } = useChartPalette();
+  const coloredData = data.map((d, i) => ({ ...d, color: paletteColors[i % paletteColors.length] }));
   const total = data.reduce((s, d) => s + d.value, 0);
 
   if (data.length === 0 || total === 0) {
