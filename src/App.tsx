@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { DashboardThemeProvider } from "@/contexts/DashboardThemeContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index.tsx";
 import CardsPage from "./pages/CardsPage.tsx";
@@ -35,6 +36,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <DashboardThemeProvider>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
@@ -54,6 +56,7 @@ const App = () => (
             <Route path="/u/:code" element={<ShortUrlRedirect />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </DashboardThemeProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
