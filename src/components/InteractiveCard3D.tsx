@@ -42,6 +42,7 @@ interface CardFrontProps {
   secondaryColor: string;
   textColor: string;
   cardBgImageUrl?: string;
+  cardBgSize?: string;
   glassOpacity: number;
   avatarUrl?: string;
   glareBackground: MotionValue<string>;
