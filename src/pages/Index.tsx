@@ -100,6 +100,7 @@ const Dashboard = () => {
               </div>
               <ConversionFunnel
                 profileViews={stats.profileViews}
+                cardFlips={stats.cardFlips}
                 linkClicks={totalLinkClicks}
                 vcardDownloads={stats.vcardDownloads}
               />
