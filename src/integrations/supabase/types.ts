@@ -462,11 +462,57 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_public_persona: {
+        Args: { p_slug?: string; p_user_id: string }
+        Returns: {
+          accent_color: string
+          availability_status: string
+          avatar_url: string
+          background_image_url: string
+          background_preset: string
+          bio: string
+          card_bg_image_url: string
+          card_bg_size: string
+          card_blur: number
+          card_texture: string
+          cv_url: string
+          display_name: string
+          email_public: string
+          font_family: string
+          github_url: string
+          glass_opacity: number
+          has_pin: boolean
+          headline: string
+          id: string
+          is_active: boolean
+          is_private: boolean
+          label: string
+          landing_bg_color: string
+          linkedin_url: string
+          location: string
+          phone: string
+          require_contact_exchange: boolean
+          secondary_color: string
+          show_availability: boolean
+          show_location: boolean
+          slug: string
+          tertiary_color: string
+          text_alignment: string
+          text_color: string
+          user_id: string
+          website: string
+          work_mode: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      verify_persona_pin: {
+        Args: { p_persona_id: string; p_pin: string }
         Returns: boolean
       }
     }
