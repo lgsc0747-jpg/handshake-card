@@ -1,4 +1,4 @@
-import { forwardRef, useRef, useState } from "react";
+import { forwardRef, useCallback, useRef, useState } from "react";
 import {
   motion,
   useMotionTemplate,
@@ -61,20 +61,36 @@ const FACE_STYLE = {
   transformStyle: "preserve-3d" as const,
 };
 
-export function InteractiveCard3D({
-  name,
-  headline,
-  avatarUrl,
-  username,
-  accentColor = "#0d9488",
-  linkedinUrl,
-  githubUrl,
-  website,
-  email,
-}: InteractiveCard3DProps) {
+export const InteractiveCard3D = forwardRef<HTMLDivElement, InteractiveCard3DProps>(function InteractiveCard3D(
+  {
+    name,
+    headline,
+    avatarUrl,
+    username,
+    accentColor = "#0d9488",
+    linkedinUrl,
+    githubUrl,
+    website,
+    email,
+  },
+  forwardedRef,
+) {
   const [isFlipped, setIsFlipped] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  const setCardRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      cardRef.current = node;
+
+      if (typeof forwardedRef === "function") {
+        forwardedRef(node);
+      } else if (forwardedRef) {
+        forwardedRef.current = node;
+      }
+    },
+    [forwardedRef],
+  );
 
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -142,7 +158,7 @@ export function InteractiveCard3D({
   return (
     <div className="flex w-full flex-col items-center gap-4">
       <div
-        ref={cardRef}
+        ref={setCardRef}
         className="w-full max-w-[420px] select-none text-[clamp(14px,3.5vw,18px)]"
         style={{ perspective: "1500px", aspectRatio: "1.58 / 1" }}
         onMouseMove={handlePointerMove}
@@ -210,7 +226,7 @@ export function InteractiveCard3D({
       </div>
     </div>
   );
-}
+});
 
 function CardFront({
   accentColor,
@@ -387,3 +403,4 @@ const SocialIcon = forwardRef<HTMLAnchorElement, SocialIconProps>(function Socia
 });
 
 SocialIcon.displayName = "SocialIcon";
+InteractiveCard3D.displayName = "InteractiveCard3D";
