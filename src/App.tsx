@@ -25,6 +25,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage.tsx";
 import TermsPage from "./pages/TermsPage.tsx";
 import PrivacyPage from "./pages/PrivacyPage.tsx";
 import PlansPage from "./pages/PlansPage.tsx";
+import AdminPage from "./pages/AdminPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { CookieConsentBanner } from "@/components/CookieConsentBanner";
 import "@fontsource/space-grotesk/400.css";
