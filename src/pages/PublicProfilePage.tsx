@@ -108,11 +108,12 @@ const PublicProfilePage = () => {
     if (!username) return;
 
     const load = async () => {
-      const { data: profileData, error: profileErr } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("username", username)
-        .single();
+      // Use secure RPC to fetch only safe public fields
+      const { data: profileRows, error: profileErr } = await (supabase.rpc as any)("get_public_profile", {
+        p_username: username,
+      });
+
+      const profileData = Array.isArray(profileRows) ? profileRows[0] : profileRows;
 
       if (profileErr || !profileData) {
         setNotFound(true);

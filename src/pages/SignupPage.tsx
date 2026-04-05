@@ -34,14 +34,12 @@ const SignupPage = () => {
 
     setLoading(true);
 
-    // Check username uniqueness
-    const { data: existing } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("username", username)
-      .maybeSingle();
+    // Check username uniqueness via secure RPC
+    const { data: isAvailable } = await (supabase.rpc as any)("check_username_available", {
+      p_username: username,
+    });
 
-    if (existing) {
+    if (!isAvailable) {
       toast({ title: "Username taken", description: "Please choose a different username.", variant: "destructive" });
       setLoading(false);
       return;
