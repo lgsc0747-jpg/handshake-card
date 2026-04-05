@@ -541,4 +541,3 @@ function ContactRow({ icon, label, href, external, onClick }: { icon: React.Reac
 }
 
 export default PublicProfilePage;
-export default PublicProfilePage;
