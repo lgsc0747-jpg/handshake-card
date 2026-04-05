@@ -3,6 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useChartPalette } from "@/components/dashboard/ChartPaletteSelector";
+import type { Timeframe } from "@/hooks/useNfcData";
+import { Button } from "@/components/ui/button";
+import { Activity } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { Timeframe } from "@/hooks/useNfcData";
 
 interface AnalyticsChartProps {
