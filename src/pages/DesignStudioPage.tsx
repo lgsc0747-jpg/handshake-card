@@ -430,6 +430,36 @@ const DesignStudioPage = () => {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* CV / Resume Upload */}
+              <Card className="glass-card">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-display flex items-center gap-2">
+                    <FileText className="w-4 h-4" /> CV / Resume
+                  </CardTitle>
+                  <p className="text-[10px] text-muted-foreground">Optional — appears as a download button on your landing page</p>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {editing?.cv_url ? (
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="text-xs truncate max-w-[200px]">
+                        {editing.cv_url.split("/").pop()}
+                      </Badge>
+                      <Button size="sm" variant="ghost" className="text-xs h-7 text-destructive" onClick={() => update("cv_url", null)}>
+                        Remove
+                      </Button>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">No CV uploaded yet</p>
+                  )}
+                  <ImageUploadField
+                    label="Upload CV (PDF or image)"
+                    value={editing?.cv_url ?? null}
+                    onChange={(url) => update("cv_url", url)}
+                    folder="cv-uploads"
+                  />
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
 
