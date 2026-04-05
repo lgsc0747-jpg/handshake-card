@@ -24,6 +24,7 @@ const SettingsPage = () => {
   const { theme, setTheme, colorMode, setColorMode } = useDashboardTheme();
   const { signOut } = useAuth();
   const { toast } = useToast();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Granular cookie prefs
   const [cookiePrefs, setCookiePrefs] = useState<CookiePrefs>(getCookiePrefs);
