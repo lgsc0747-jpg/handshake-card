@@ -188,10 +188,13 @@ export type Database = {
           background_preset: string | null
           bio: string | null
           card_bg_image_url: string | null
+          card_blur: number | null
+          card_texture: string | null
           created_at: string
           cv_url: string | null
           display_name: string | null
           email_public: string | null
+          font_family: string | null
           github_url: string | null
           glass_opacity: number | null
           headline: string | null
@@ -210,6 +213,7 @@ export type Database = {
           show_location: boolean | null
           slug: string
           tertiary_color: string | null
+          text_alignment: string | null
           text_color: string | null
           updated_at: string
           user_id: string
@@ -224,10 +228,13 @@ export type Database = {
           background_preset?: string | null
           bio?: string | null
           card_bg_image_url?: string | null
+          card_blur?: number | null
+          card_texture?: string | null
           created_at?: string
           cv_url?: string | null
           display_name?: string | null
           email_public?: string | null
+          font_family?: string | null
           github_url?: string | null
           glass_opacity?: number | null
           headline?: string | null
@@ -246,6 +253,7 @@ export type Database = {
           show_location?: boolean | null
           slug: string
           tertiary_color?: string | null
+          text_alignment?: string | null
           text_color?: string | null
           updated_at?: string
           user_id: string
@@ -260,10 +268,13 @@ export type Database = {
           background_preset?: string | null
           bio?: string | null
           card_bg_image_url?: string | null
+          card_blur?: number | null
+          card_texture?: string | null
           created_at?: string
           cv_url?: string | null
           display_name?: string | null
           email_public?: string | null
+          font_family?: string | null
           github_url?: string | null
           glass_opacity?: number | null
           headline?: string | null
@@ -282,6 +293,7 @@ export type Database = {
           show_location?: boolean | null
           slug?: string
           tertiary_color?: string | null
+          text_alignment?: string | null
           text_color?: string | null
           updated_at?: string
           user_id?: string

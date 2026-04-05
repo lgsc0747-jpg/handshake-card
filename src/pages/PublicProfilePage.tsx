@@ -7,6 +7,7 @@ import { SecurityGate } from "@/components/SecurityGate";
 import { CardDisabledPage } from "@/components/CardDisabledPage";
 import { downloadVCard } from "@/lib/vcard";
 import { getPresetCss } from "@/components/DesignStudio/BackgroundPresets";
+import { getFontStack, getGoogleFontUrl } from "@/components/DesignStudio/FontPresets";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -42,6 +43,10 @@ interface PersonaData {
   background_image_url: string | null;
   card_bg_image_url: string | null;
   glass_opacity: number | null;
+  font_family: string | null;
+  text_alignment: string | null;
+  card_blur: number | null;
+  card_texture: string | null;
   availability_status: string | null;
   work_mode: string | null;
   show_availability: boolean | null;
@@ -280,13 +285,16 @@ const PublicProfilePage = () => {
   }
 
   const accentColor = merged.accent_color;
-
   const landingBgColor = persona?.landing_bg_color || "#0a0a0f";
   const bgPresetCss = getPresetCss(persona?.background_preset);
   const bgImageUrl = persona?.background_image_url;
+  const fontStack = getFontStack(persona?.font_family);
+  const googleFontUrl = getGoogleFontUrl(persona?.font_family);
 
   return (
-    <div ref={containerRef} className="relative" style={{ backgroundColor: landingBgColor }}>
+    <>
+      {googleFontUrl && <link rel="stylesheet" href={googleFontUrl} />}
+      <div ref={containerRef} className="relative" style={{ backgroundColor: landingBgColor, fontFamily: fontStack }}>
       {/* ── Hero Section: Full-screen 3D Card ── */}
       <section
         className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden"
@@ -353,6 +361,10 @@ const PublicProfilePage = () => {
               githubUrl={merged.github_url ?? undefined}
               website={merged.website ?? undefined}
               email={merged.email_public ?? undefined}
+              fontFamily={persona?.font_family ?? "Space Grotesk"}
+              textAlignment={persona?.text_alignment ?? "left"}
+              cardBlur={persona?.card_blur ?? 12}
+              cardTexture={persona?.card_texture ?? "none"}
             />
           </motion.div>
         </motion.div>
@@ -468,6 +480,7 @@ const PublicProfilePage = () => {
         </div>
       </section>
     </div>
+    </>
   );
 };
 
