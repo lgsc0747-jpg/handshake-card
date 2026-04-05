@@ -23,6 +23,7 @@ interface InteractiveCard3DProps {
   tertiaryColor?: string;
   textColor?: string;
   cardBgImageUrl?: string;
+  cardBgSize?: string;
   glassOpacity?: number;
   linkedinUrl?: string;
   githubUrl?: string;
