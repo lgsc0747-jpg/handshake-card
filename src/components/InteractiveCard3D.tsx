@@ -219,9 +219,11 @@ export const InteractiveCard3D = forwardRef<HTMLDivElement, InteractiveCard3DPro
               isFlipped={isFlipped}
               linkedinUrl={linkedinUrl}
               onFlipBack={handleFlipToFront}
+              onLinkClick={onLinkClick}
               profileUrl={profileUrl}
               username={username}
               website={website}
+            />
             />
           </motion.div>
         </motion.div>
