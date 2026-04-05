@@ -97,6 +97,7 @@ export function useNfcData() {
     profileViews: 0, cvDownloads: 0, vcardDownloads: 0,
     topDevice: "No data", topLocation: "No data",
     authSuccessRate: 0, leadGenCount: 0, unauthorizedAttempts: 0,
+    cardFlips: 0, returnVisitorRate: 0, interactionDepthRate: 0,
     deviceBreakdown: [], browserBreakdown: [], osBreakdown: [],
     hourlyHeat: [], linkCTR: [], personaPerformance: [],
     connectionSources: { nfc: 0, qr: 0, direct: 0 },
