@@ -1,12 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { MousePointerClick } from "lucide-react";
+import { useChartPalette } from "@/components/dashboard/ChartPaletteSelector";
 
 interface LinkCTRChartProps {
   data: { name: string; clicks: number; percentage: number }[];
 }
-
-const COLORS = ["#0d9488", "#06b6d4", "#3b82f6", "#8b5cf6", "#d946ef", "#f97316"];
 
 export function LinkCTRChart({ data }: LinkCTRChartProps) {
   if (data.length === 0) {
