@@ -74,6 +74,7 @@ interface SocialIconProps {
   label: string;
   external?: boolean;
   children: React.ReactNode;
+  onClick?: () => void;
 }
 
 const TILT_RANGE = 12;
