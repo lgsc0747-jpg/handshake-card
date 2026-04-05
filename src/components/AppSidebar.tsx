@@ -1,4 +1,4 @@
-import { CreditCard, LayoutDashboard, List, User, Wifi, LogOut, Tag, Smartphone, Users, Mail, Palette, Settings } from "lucide-react";
+import { CreditCard, LayoutDashboard, List, User, Wifi, LogOut, Tag, Smartphone, Users, Mail, Palette, Settings, Crown } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import {
