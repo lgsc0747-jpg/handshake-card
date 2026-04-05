@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
 export type DashboardTheme =
+  | "light" | "dark"
   | "midnight" | "slate" | "emerald" | "cyberpunk"
   | "serika" | "botanical" | "olivia" | "carbon"
   | "monokai" | "aurora" | "dracula" | "terminal";
