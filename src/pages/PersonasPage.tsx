@@ -58,6 +58,7 @@ interface Persona {
 const PersonasPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { limits, isPro } = useSubscription();
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingPersona, setEditingPersona] = useState<Persona | null>(null);
