@@ -79,6 +79,7 @@ const PublicProfilePage = () => {
   const { username, personaSlug } = useParams<{ username: string; personaSlug?: string }>();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [persona, setPersona] = useState<PersonaData | null>(null);
+  const [ownerIsPro, setOwnerIsPro] = useState(false);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [gateUnlocked, setGateUnlocked] = useState(false);
