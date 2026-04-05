@@ -60,6 +60,9 @@ export interface NfcStats {
   linkCTR: LinkCTR[];
   personaPerformance: PersonaPerf[];
   connectionSources: { nfc: number; qr: number; direct: number };
+  // New: Tap Velocity & Geographic
+  tapVelocity: { label: string; taps: number }[];
+  regionBreakdown: { region: string; count: number }[];
 }
 
 const DEVICE_COLORS: Record<string, string> = {
