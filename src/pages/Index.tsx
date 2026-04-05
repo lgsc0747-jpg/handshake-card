@@ -27,6 +27,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 const Dashboard = () => {
   const { user } = useAuth();
   const { stats, chartData, timeframe, setTimeframe, loading } = useNfcData();
+  const { isPro, limits } = useSubscription();
   const [recentLogs, setRecentLogs] = useState<any[]>([]);
 
   useEffect(() => {
