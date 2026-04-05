@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { forwardRef, useRef, useState } from "react";
 import { motion, useMotionValue, useTransform, useSpring } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
 import { Wifi, RotateCcw, Share2, Linkedin, Github, Globe, Mail } from "lucide-react";
@@ -15,6 +15,13 @@ interface InteractiveCard3DProps {
   githubUrl?: string;
   website?: string;
   email?: string;
+}
+
+interface SocialIconProps {
+  href: string;
+  label: string;
+  external?: boolean;
+  children: React.ReactNode;
 }
 
 export function InteractiveCard3D({
@@ -69,19 +76,23 @@ export function InteractiveCard3D({
   };
 
   const handleFlip = () => setIsFlipped((f) => !f);
+  const handleFrontClick = () => {
+    if (!isFlipped) {
+      setIsFlipped(true);
+    }
+  };
 
   return (
     <div className="flex flex-col items-center gap-4 w-full">
       {/* Card container — fluid width, credit-card aspect ratio, deep perspective */}
       <div
         ref={cardRef}
-        className="w-full max-w-[420px] cursor-pointer text-[clamp(14px,3.5vw,18px)]"
+        className="w-full max-w-[420px] text-[clamp(14px,3.5vw,18px)]"
         style={{ perspective: "1500px", aspectRatio: "1.58 / 1" }}
         onMouseMove={handleMouseMove}
         onTouchMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         onTouchEnd={handleMouseLeave}
-        onClick={handleFlip}
       >
         <motion.div
           className="relative w-full h-full"
@@ -95,12 +106,14 @@ export function InteractiveCard3D({
         >
           {/* ──── FRONT FACE ──── */}
           <div
-            className="absolute inset-0 rounded-2xl overflow-hidden border border-white/20"
+            className="absolute inset-0 rounded-2xl overflow-hidden border border-white/20 cursor-pointer"
             style={{
               backfaceVisibility: "hidden",
+              pointerEvents: isFlipped ? "none" : "auto",
               background: `linear-gradient(135deg, ${accentColor}dd, ${accentColor}88)`,
               boxShadow: `0 25px 50px -12px ${accentColor}44, 0 0 40px ${accentColor}22`,
             }}
+            onClick={handleFrontClick}
           >
             {/* Glass overlay */}
             <div className="absolute inset-0 backdrop-blur-xl bg-white/5" />
@@ -178,10 +191,12 @@ export function InteractiveCard3D({
             className="absolute inset-0 rounded-2xl overflow-hidden border border-white/20"
             style={{
               backfaceVisibility: "hidden",
+              pointerEvents: isFlipped ? "auto" : "none",
               transform: "rotateY(180deg)",
               background: `linear-gradient(135deg, ${accentColor}cc, ${accentColor}66)`,
               boxShadow: `0 25px 50px -12px ${accentColor}44, 0 0 40px ${accentColor}22`,
             }}
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="absolute inset-0 backdrop-blur-xl bg-white/5" />
 
@@ -271,27 +286,26 @@ export function InteractiveCard3D({
 }
 
 /** Small helper so social links don't bubble click to flip handler */
-function SocialIcon({
+const SocialIcon = forwardRef<HTMLAnchorElement, SocialIconProps>(function SocialIcon({
   href,
   label,
   external = true,
   children,
-}: {
-  href: string;
-  label: string;
-  external?: boolean;
-  children: React.ReactNode;
-}) {
+}, ref) {
   return (
     <a
+      ref={ref}
       href={href}
       target={external ? "_blank" : undefined}
       rel={external ? "noopener noreferrer" : undefined}
       aria-label={label}
       className="w-[2em] h-[2em] rounded-full bg-white/15 flex items-center justify-center hover:bg-white/25 transition-colors"
+      onPointerDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
     >
       {children}
     </a>
   );
-}
+});
+
+SocialIcon.displayName = "SocialIcon";
