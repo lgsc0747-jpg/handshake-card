@@ -223,43 +223,49 @@ const DesignStudioPage = () => {
                   <CardTitle className="text-sm font-display">Card Background Image</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <ImageUploadField
-                    label="Card Face Background"
-                    value={editing?.card_bg_image_url ?? null}
-                    onChange={(url) => update("card_bg_image_url", url)}
-                    folder="card-bg"
-                  />
+                  {isPro ? (
+                    <>
+                      <ImageUploadField
+                        label="Card Face Background"
+                        value={editing?.card_bg_image_url ?? null}
+                        onChange={(url) => update("card_bg_image_url", url)}
+                        folder="card-bg"
+                      />
 
-                  {editing?.card_bg_image_url && (
-                    <div className="space-y-2">
-                      <Label>Image Sizing</Label>
-                      <div className="grid grid-cols-2 gap-2">
-                        {([
-                          { id: "cover", label: "Stretched", desc: "Fills entire card" },
-                          { id: "contain", label: "Fitted", desc: "Fits without cropping" },
-                          { id: "center", label: "Centered", desc: "Original size, centered" },
-                          { id: "original", label: "Original", desc: "Top-left, no scaling" },
-                        ] as const).map((opt) => (
-                          <button
-                            key={opt.id}
-                            onClick={() => update("card_bg_size", opt.id)}
-                            className={`p-2 rounded-lg border text-xs text-left transition-all ${
-                              (editing?.card_bg_size ?? "cover") === opt.id
-                                ? "border-primary bg-primary/10 ring-1 ring-primary/30"
-                                : "border-border hover:border-primary/40"
-                            }`}
-                          >
-                            <span className="font-medium block">{opt.label}</span>
-                            <span className="text-[10px] text-muted-foreground">{opt.desc}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+                      {editing?.card_bg_image_url && (
+                        <div className="space-y-2">
+                          <Label>Image Sizing</Label>
+                          <div className="grid grid-cols-2 gap-2">
+                            {([
+                              { id: "cover", label: "Stretched", desc: "Fills entire card" },
+                              { id: "contain", label: "Fitted", desc: "Fits without cropping" },
+                              { id: "center", label: "Centered", desc: "Original size, centered" },
+                              { id: "original", label: "Original", desc: "Top-left, no scaling" },
+                            ] as const).map((opt) => (
+                              <button
+                                key={opt.id}
+                                onClick={() => update("card_bg_size", opt.id)}
+                                className={`p-2 rounded-lg border text-xs text-left transition-all ${
+                                  (editing?.card_bg_size ?? "cover") === opt.id
+                                    ? "border-primary bg-primary/10 ring-1 ring-primary/30"
+                                    : "border-border hover:border-primary/40"
+                                }`}
+                              >
+                                <span className="font-medium block">{opt.label}</span>
+                                <span className="text-[10px] text-muted-foreground">{opt.desc}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <p className="text-[10px] text-muted-foreground">
+                        Replaces the gradient with your own image or GIF on the card face.
+                      </p>
+                    </>
+                  ) : (
+                    <UpgradePrompt feature="Custom Card Backgrounds" description="Upload your own images and GIFs for the card face with Pro." />
                   )}
-
-                  <p className="text-[10px] text-muted-foreground">
-                    Replaces the gradient with your own image or GIF on the card face.
-                  </p>
                 </CardContent>
               </Card>
 
