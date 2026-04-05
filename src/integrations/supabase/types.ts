@@ -462,6 +462,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_username_available: {
+        Args: { p_username: string }
+        Returns: boolean
+      }
       get_public_persona: {
         Args: { p_slug?: string; p_user_id: string }
         Returns: {
@@ -500,6 +504,26 @@ export type Database = {
           text_alignment: string
           text_color: string
           user_id: string
+          website: string
+          work_mode: string
+        }[]
+      }
+      get_public_profile: {
+        Args: { p_username: string }
+        Returns: {
+          availability_status: string
+          avatar_url: string
+          bio: string
+          card_accent_color: string
+          display_name: string
+          github_url: string
+          headline: string
+          linkedin_url: string
+          location: string
+          show_availability: boolean
+          show_location: boolean
+          user_id: string
+          username: string
           website: string
           work_mode: string
         }[]
