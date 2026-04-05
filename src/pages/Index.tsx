@@ -165,27 +165,48 @@ const Dashboard = () => {
 
           {/* ── Personas Tab ── */}
           <TabsContent value="personas" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <PersonaPieChart />
-              <PersonaBarChart data={stats.personaPerformance} />
-            </div>
+            {isPro ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <PersonaPieChart />
+                <PersonaBarChart data={stats.personaPerformance} />
+              </div>
+            ) : (
+              <UpgradeOverlay feature="Persona Analytics" description="Upgrade to Pro to see detailed persona performance breakdowns.">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <PersonaPieChart />
+                  <PersonaBarChart data={stats.personaPerformance} />
+                </div>
+              </UpgradeOverlay>
+            )}
           </TabsContent>
 
           {/* ── Technical Tab ── */}
           <TabsContent value="technical" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <DeviceDonutChart data={stats.deviceBreakdown} title="Device Type" />
-              <DeviceDonutChart data={stats.browserBreakdown} title="Browser" />
-              <DeviceDonutChart data={stats.osBreakdown} title="Operating System" />
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <TapVelocityChart data={stats.tapVelocity} />
-              <GeographicInsights data={stats.regionBreakdown} />
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <ActivityHeatmap data={stats.hourlyHeat} />
-              <ConnectionSourceChart sources={stats.connectionSources} />
-            </div>
+            {isPro ? (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <DeviceDonutChart data={stats.deviceBreakdown} title="Device Type" />
+                  <DeviceDonutChart data={stats.browserBreakdown} title="Browser" />
+                  <DeviceDonutChart data={stats.osBreakdown} title="Operating System" />
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <TapVelocityChart data={stats.tapVelocity} />
+                  <GeographicInsights data={stats.regionBreakdown} />
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <ActivityHeatmap data={stats.hourlyHeat} />
+                  <ConnectionSourceChart sources={stats.connectionSources} />
+                </div>
+              </>
+            ) : (
+              <UpgradeOverlay feature="Technical Analytics" description="Upgrade to Pro for device, location, tap velocity, and heatmap insights.">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <DeviceDonutChart data={stats.deviceBreakdown} title="Device Type" />
+                  <DeviceDonutChart data={stats.browserBreakdown} title="Browser" />
+                  <DeviceDonutChart data={stats.osBreakdown} title="Operating System" />
+                </div>
+              </UpgradeOverlay>
+            )}
           </TabsContent>
 
           {/* ── Security Tab ── */}
