@@ -293,9 +293,17 @@ const DesignStudioPage = () => {
                   backgroundColor: "hsl(var(--background))",
                 }}
               >
-                {/* Simulated landing page preview */}
-                <div className="p-6 flex flex-col items-center gap-6">
-                  <div className="flex items-center gap-2">
+                {/* Simulated landing page preview — mirrors the public page hero */}
+                <div className="relative flex flex-col items-center justify-center min-h-[400px] p-6">
+                  {/* Ambient glow */}
+                  <div
+                    className="pointer-events-none absolute inset-0"
+                    style={{
+                      background: `radial-gradient(ellipse 60% 50% at 50% 50%, ${editing?.accent_color ?? "#0d9488"}15, transparent 70%)`,
+                    }}
+                  />
+
+                  <div className="flex items-center gap-2 absolute top-4">
                     <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: editing?.accent_color ?? "#0d9488" }}>
                       <span className="text-[8px] text-white font-bold">N</span>
                     </div>
@@ -316,14 +324,15 @@ const DesignStudioPage = () => {
                     email={editing?.email_public ?? undefined}
                   />
 
-                  <div className="w-full max-w-sm space-y-3">
+                  {/* Below-card info preview */}
+                  <div className="w-full max-w-sm space-y-3 mt-6 opacity-60">
                     <div className="text-center">
-                      <h2 className="text-lg font-display font-bold">{editing?.display_name || "Your Name"}</h2>
-                      {editing?.headline && <p className="text-sm text-muted-foreground">{editing.headline}</p>}
+                      <h2 className="text-sm font-display font-bold">{editing?.display_name || "Your Name"}</h2>
+                      {editing?.headline && <p className="text-[10px] text-muted-foreground">{editing.headline}</p>}
                     </div>
                     {editing?.bio && (
                       <div
-                        className="rounded-lg p-3 text-xs leading-relaxed"
+                        className="rounded-lg p-2 text-[10px] leading-relaxed"
                         style={{
                           background: `rgba(255,255,255,${editing.glass_opacity ?? 0.15})`,
                           backdropFilter: "blur(12px)",
@@ -333,7 +342,7 @@ const DesignStudioPage = () => {
                         {editing.bio}
                       </div>
                     )}
-                    <Button className="w-full text-primary-foreground" style={{ background: editing?.accent_color ?? "#0d9488" }}>
+                    <Button size="sm" className="w-full text-primary-foreground text-xs" style={{ background: editing?.accent_color ?? "#0d9488" }}>
                       Save Contact
                     </Button>
                   </div>

@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { InteractiveCard3D } from "@/components/InteractiveCard3D";
 import { SecurityGate } from "@/components/SecurityGate";
@@ -9,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   MapPin, Mail, Phone, Globe, Linkedin, Github,
-  UserPlus, FileText, Loader2, Wifi,
+  UserPlus, FileText, Loader2, Wifi, ChevronDown,
 } from "lucide-react";
 
 interface PersonaData {
@@ -70,18 +71,26 @@ const PublicProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [gateUnlocked, setGateUnlocked] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const { scrollYProgress } = useScroll({ target: containerRef });
+  const cardScale = useTransform(scrollYProgress, [0, 0.3], [1, 0.85]);
+  const cardOpacity = useTransform(scrollYProgress, [0.2, 0.4], [1, 0.6]);
+  const chevronOpacity = useTransform(scrollYProgress, [0, 0.1], [1, 0]);
 
   // Strip dashboard theme classes so the public page renders with its own palette
   useEffect(() => {
     const root = document.documentElement;
-    const themeClasses = ["theme-midnight", "theme-slate", "theme-emerald", "theme-cyberpunk"];
-    const saved = themeClasses.filter((c) => root.classList.contains(c));
+    const themeClasses = Array.from(root.classList).filter((c) => c.startsWith("theme-"));
     themeClasses.forEach((c) => root.classList.remove(c));
     root.classList.remove("dark");
     return () => {
-      // Restore dashboard theme when leaving the public page
-      saved.forEach((c) => root.classList.add(c));
-      root.classList.add("dark");
+      const stored = localStorage.getItem("admin_theme");
+      if (stored) root.classList.add(`theme-${stored}`);
+      const colorMode = localStorage.getItem("admin_color_mode");
+      if (colorMode === "dark" || (!colorMode && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+        root.classList.add("dark");
+      }
     };
   }, []);
 
@@ -89,7 +98,6 @@ const PublicProfilePage = () => {
     if (!username) return;
 
     const load = async () => {
-      // 1. Load profile by username
       const { data: profileData, error: profileErr } = await supabase
         .from("profiles")
         .select("*")
@@ -104,7 +112,6 @@ const PublicProfilePage = () => {
 
       setProfile(profileData as ProfileData);
 
-      // 2. Try to load persona
       if (personaSlug) {
         const { data: personaData } = await supabase
           .from("personas")
@@ -113,11 +120,8 @@ const PublicProfilePage = () => {
           .eq("slug", personaSlug)
           .single();
 
-        if (personaData) {
-          setPersona(personaData as PersonaData);
-        }
+        if (personaData) setPersona(personaData as PersonaData);
       } else {
-        // Load active persona if no slug provided
         const { data: activePer } = await supabase
           .from("personas")
           .select("*")
@@ -126,12 +130,9 @@ const PublicProfilePage = () => {
           .limit(1)
           .single();
 
-        if (activePer) {
-          setPersona(activePer as PersonaData);
-        }
+        if (activePer) setPersona(activePer as PersonaData);
       }
 
-      // 3. Log visit
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
       fetch(`https://${projectId}.supabase.co/functions/v1/log-interaction`, {
         method: "POST",
@@ -153,7 +154,6 @@ const PublicProfilePage = () => {
     load();
   }, [username, personaSlug]);
 
-  // Merge persona data over profile (persona overrides profile fields)
   const merged = persona
     ? {
         display_name: persona.display_name || profile?.display_name,
@@ -255,12 +255,10 @@ const PublicProfilePage = () => {
     );
   }
 
-  // Kill-switch: persona is inactive
   if (persona && !persona.is_active) {
     return <CardDisabledPage ownerName={merged.display_name || username || undefined} />;
   }
 
-  // Security gate check
   if (persona?.is_private && !gateUnlocked) {
     return (
       <SecurityGate
@@ -275,99 +273,175 @@ const PublicProfilePage = () => {
     );
   }
 
+  const accentColor = merged.accent_color;
+
   return (
-    <div className="min-h-screen bg-background">
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
-        <div className="max-w-lg mx-auto pt-10 px-4">
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <div className="w-6 h-6 rounded-md gradient-primary flex items-center justify-center">
-              <Wifi className="w-3 h-3 text-primary-foreground" />
-            </div>
-            <span className="text-xs font-display font-semibold tracking-widest uppercase text-muted-foreground">
-              NFC Hub
-            </span>
-            {persona && (
-              <Badge variant="secondary" className="text-[10px] ml-1">{persona.label}</Badge>
-            )}
-          </div>
-          <InteractiveCard3D
-            name={merged.display_name ?? username ?? ""}
-            headline={merged.headline ?? undefined}
-            avatarUrl={merged.avatar_url ?? undefined}
-            username={username ?? ""}
-            accentColor={merged.accent_color}
-            linkedinUrl={merged.linkedin_url ?? undefined}
-            githubUrl={merged.github_url ?? undefined}
-            website={merged.website ?? undefined}
-            email={merged.email_public ?? undefined}
-          />
-        </div>
-      </div>
+    <div ref={containerRef} className="relative bg-background">
+      {/* ── Hero Section: Full-screen 3D Card ── */}
+      <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden">
+        {/* Ambient glow */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background: `radial-gradient(ellipse 60% 50% at 50% 50%, ${accentColor}15, transparent 70%)`,
+          }}
+        />
 
-      <div className="max-w-lg mx-auto px-4 pb-12 pt-6 space-y-6">
-        <div className="text-center space-y-2">
-          {merged.avatar_url && (
-            <img
-              src={merged.avatar_url}
-              alt={merged.display_name ?? "Avatar"}
-              className="w-20 h-20 rounded-full mx-auto border-2 border-border object-cover"
+        {/* Header badge */}
+        <motion.div
+          className="absolute top-6 flex items-center gap-2"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+        >
+          <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: accentColor }}>
+            <Wifi className="w-3 h-3 text-white" />
+          </div>
+          <span className="text-xs font-display font-semibold tracking-widest uppercase text-muted-foreground">
+            NFC Hub
+          </span>
+          {persona && (
+            <Badge variant="secondary" className="text-[10px] ml-1">{persona.label}</Badge>
+          )}
+        </motion.div>
+
+        {/* 3D Card — flies up from below, then floats */}
+        <motion.div
+          className="w-full max-w-lg px-4"
+          initial={{ opacity: 0, y: 200 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: "spring", stiffness: 80, damping: 22, mass: 1.2, delay: 0.1 }}
+          style={{ scale: cardScale, opacity: cardOpacity }}
+        >
+          {/* Floating animation wrapper */}
+          <motion.div
+            animate={{ y: [0, -10, 0] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <InteractiveCard3D
+              name={merged.display_name ?? username ?? ""}
+              headline={merged.headline ?? undefined}
+              avatarUrl={merged.avatar_url ?? undefined}
+              username={username ?? ""}
+              accentColor={accentColor}
+              linkedinUrl={merged.linkedin_url ?? undefined}
+              githubUrl={merged.github_url ?? undefined}
+              website={merged.website ?? undefined}
+              email={merged.email_public ?? undefined}
             />
-          )}
-          <h1 className="text-2xl font-display font-bold">{merged.display_name}</h1>
-          {merged.headline && <p className="text-muted-foreground">{merged.headline}</p>}
-          <div className="flex items-center justify-center gap-2 flex-wrap">
-            {merged.show_availability && (
-              <Badge variant="default" className="gradient-primary text-primary-foreground border-0">
-                {merged.availability_status ?? "Available"}
-              </Badge>
+          </motion.div>
+        </motion.div>
+
+        {/* Scroll indicator */}
+        <motion.div
+          className="absolute bottom-8 flex flex-col items-center gap-1 text-muted-foreground"
+          style={{ opacity: chevronOpacity }}
+        >
+          <span className="text-[10px] font-medium uppercase tracking-widest">Scroll</span>
+          <motion.div
+            animate={{ y: [0, 6, 0] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <ChevronDown className="w-5 h-5" />
+          </motion.div>
+        </motion.div>
+      </section>
+
+      {/* ── Details Section: scrolls in from below ── */}
+      <section className="relative z-10 bg-background">
+        <div className="max-w-lg mx-auto px-4 pb-16 pt-12 space-y-6">
+          {/* Identity */}
+          <motion.div
+            className="text-center space-y-2"
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.5 }}
+          >
+            {merged.avatar_url && (
+              <img
+                src={merged.avatar_url}
+                alt={merged.display_name ?? "Avatar"}
+                className="w-20 h-20 rounded-full mx-auto border-2 border-border object-cover"
+                loading="lazy"
+              />
             )}
-            {merged.work_mode && <Badge variant="secondary">{merged.work_mode}</Badge>}
-          </div>
-        </div>
+            <h1 className="text-2xl font-display font-bold">{merged.display_name}</h1>
+            {merged.headline && <p className="text-muted-foreground">{merged.headline}</p>}
+            <div className="flex items-center justify-center gap-2 flex-wrap">
+              {merged.show_availability && (
+                <Badge variant="default" className="gradient-primary text-primary-foreground border-0">
+                  {merged.availability_status ?? "Available"}
+                </Badge>
+              )}
+              {merged.work_mode && <Badge variant="secondary">{merged.work_mode}</Badge>}
+            </div>
+          </motion.div>
 
-        {merged.bio && (
-          <div className="glass-card rounded-lg p-4">
-            <p className="text-sm leading-relaxed text-foreground/90">{merged.bio}</p>
-          </div>
-        )}
+          {/* Bio */}
+          {merged.bio && (
+            <motion.div
+              className="glass-card rounded-lg p-4"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-40px" }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+            >
+              <p className="text-sm leading-relaxed text-foreground/90">{merged.bio}</p>
+            </motion.div>
+          )}
 
-        <div className="glass-card rounded-lg divide-y divide-border/60">
-          {merged.show_location && merged.location && (
-            <ContactRow icon={<MapPin className="w-4 h-4" />} label={merged.location} />
-          )}
-          {merged.email_public && (
-            <ContactRow icon={<Mail className="w-4 h-4" />} label={merged.email_public} href={`mailto:${merged.email_public}`} />
-          )}
-          {merged.phone && (
-            <ContactRow icon={<Phone className="w-4 h-4" />} label={merged.phone} href={`tel:${merged.phone}`} />
-          )}
-          {merged.website && (
-            <ContactRow icon={<Globe className="w-4 h-4" />} label={merged.website} href={merged.website} external />
-          )}
-          {merged.linkedin_url && (
-            <ContactRow icon={<Linkedin className="w-4 h-4" />} label="LinkedIn" href={merged.linkedin_url} external />
-          )}
-          {merged.github_url && (
-            <ContactRow icon={<Github className="w-4 h-4" />} label="GitHub" href={merged.github_url} external />
-          )}
-        </div>
+          {/* Contact links */}
+          <motion.div
+            className="glass-card rounded-lg divide-y divide-border/60 overflow-hidden"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-40px" }}
+            transition={{ duration: 0.4, delay: 0.15 }}
+          >
+            {merged.show_location && merged.location && (
+              <ContactRow icon={<MapPin className="w-4 h-4" />} label={merged.location} />
+            )}
+            {merged.email_public && (
+              <ContactRow icon={<Mail className="w-4 h-4" />} label={merged.email_public} href={`mailto:${merged.email_public}`} />
+            )}
+            {merged.phone && (
+              <ContactRow icon={<Phone className="w-4 h-4" />} label={merged.phone} href={`tel:${merged.phone}`} />
+            )}
+            {merged.website && (
+              <ContactRow icon={<Globe className="w-4 h-4" />} label={merged.website} href={merged.website} external />
+            )}
+            {merged.linkedin_url && (
+              <ContactRow icon={<Linkedin className="w-4 h-4" />} label="LinkedIn" href={merged.linkedin_url} external />
+            )}
+            {merged.github_url && (
+              <ContactRow icon={<Github className="w-4 h-4" />} label="GitHub" href={merged.github_url} external />
+            )}
+          </motion.div>
 
-        <div className="space-y-3">
-          <Button onClick={handleDownloadVCard} className="w-full gradient-primary text-primary-foreground h-12">
-            <UserPlus className="w-4 h-4 mr-2" /> Save Contact
-          </Button>
-          {merged.cv_url && (
-            <Button onClick={handleDownloadCV} variant="outline" className="w-full h-12">
-              <FileText className="w-4 h-4 mr-2" /> Download CV / Resume
+          {/* Actions */}
+          <motion.div
+            className="space-y-3"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-40px" }}
+            transition={{ duration: 0.4, delay: 0.2 }}
+          >
+            <Button onClick={handleDownloadVCard} className="w-full gradient-primary text-primary-foreground h-12">
+              <UserPlus className="w-4 h-4 mr-2" /> Save Contact
             </Button>
-          )}
-        </div>
+            {merged.cv_url && (
+              <Button onClick={handleDownloadCV} variant="outline" className="w-full h-12">
+                <FileText className="w-4 h-4 mr-2" /> Download CV / Resume
+              </Button>
+            )}
+          </motion.div>
 
-        <p className="text-center text-xs text-muted-foreground">
-          Powered by <span className="font-display font-semibold">NFC Hub</span>
-        </p>
-      </div>
+          <p className="text-center text-xs text-muted-foreground pt-4">
+            Powered by <span className="font-display font-semibold">NFC Hub</span>
+          </p>
+        </div>
+      </section>
     </div>
   );
 };
