@@ -231,34 +231,42 @@ const DesignStudioPage = () => {
                 </CardContent>
               </Card>
 
-              {/* Card Texture Presets */}
+              {/* Card Texture Presets — Enhanced */}
               <Card className="glass-card">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-display">Card Texture</CardTitle>
+                  <CardTitle className="text-sm font-display flex items-center gap-2">
+                    <Palette className="w-4 h-4" /> Card Texture
+                  </CardTitle>
+                  <p className="text-[10px] text-muted-foreground">Apply a subtle surface pattern to your card</p>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-3">
                     {CARD_TEXTURE_PRESETS.map((preset) => (
                       <button
                         key={preset.id}
                         onClick={() => update("card_texture", preset.id)}
-                        className={`relative p-3 rounded-lg border text-xs text-center transition-colors overflow-hidden ${
+                        className={`relative rounded-xl border-2 text-xs text-center transition-all overflow-hidden ${
                           editing?.card_texture === preset.id
-                            ? "border-primary bg-primary/10 ring-1 ring-primary"
-                            : "border-border hover:border-primary/40"
+                            ? "border-primary ring-2 ring-primary/30 shadow-lg shadow-primary/10"
+                            : "border-border hover:border-primary/50 hover:shadow-md"
                         }`}
                       >
-                        {preset.css !== "none" && (
-                          <div
-                            className="absolute inset-0 opacity-80"
-                            style={{
-                              backgroundImage: preset.css,
-                              backgroundSize: "backgroundSize" in preset ? preset.backgroundSize : undefined,
-                              backgroundColor: "#222",
-                            }}
-                          />
+                        <div
+                          className="h-20 w-full"
+                          style={{
+                            backgroundImage: preset.css !== "none" ? preset.css : undefined,
+                            backgroundSize: "backgroundSize" in preset ? preset.backgroundSize : undefined,
+                            backgroundColor: "#1a1a2e",
+                          }}
+                        />
+                        <div className="p-2 bg-card/80 backdrop-blur-sm">
+                          <span className="font-medium">{preset.label}</span>
+                        </div>
+                        {editing?.card_texture === preset.id && (
+                          <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                            <span className="text-[10px] text-primary-foreground">✓</span>
+                          </div>
                         )}
-                        <span className="relative">{preset.label}</span>
                       </button>
                     ))}
                   </div>
