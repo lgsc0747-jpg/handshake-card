@@ -55,8 +55,8 @@ const WIDGET_CONFIG: { key: WidgetKey; label: string; icon: React.ReactNode }[] 
 
 const DEFAULT_ORDER: WidgetKey[] = WIDGET_CONFIG.map((w) => w.key);
 const DEFAULT_VISIBILITY: Record<WidgetKey, boolean> = {
-  totalTaps: true, uniqueVisitors: true, topDevice: true,
-  topLocation: true, profileViews: true, cvDownloads: true,
+  totalTaps: true, uniqueVisitors: true, contactSaveRate: true,
+  topDevice: true, profileViews: true, vcardDownloads: true, cvDownloads: true, leadGenCount: true,
 };
 
 const STORAGE_KEY_ORDER = "nfc_widget_order";
