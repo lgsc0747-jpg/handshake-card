@@ -292,7 +292,10 @@ const PublicProfilePage = () => {
   const googleFontUrl = getGoogleFontUrl(persona?.font_family);
 
   return (
-    <div ref={containerRef} className="relative" style={{ backgroundColor: landingBgColor }}>
+  return (
+    <>
+      {googleFontUrl && <link rel="stylesheet" href={googleFontUrl} />}
+    <div ref={containerRef} className="relative" style={{ backgroundColor: landingBgColor, fontFamily: fontStack }}>
       {/* ── Hero Section: Full-screen 3D Card ── */}
       <section
         className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden"
