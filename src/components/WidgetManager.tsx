@@ -37,14 +37,12 @@ interface WidgetManagerProps {
   };
 }
 
-type WidgetKey = "totalTaps" | "uniqueVisitors" | "contactSaveRate" | "topDevice" | "profileViews" | "vcardDownloads" | "cvDownloads" | "leadGenCount" | "cardFlips" | "returnVisitorRate" | "interactionDepthRate";
+type WidgetKey = "profileViews" | "uniqueVisitors" | "topDevice" | "vcardDownloads" | "cvDownloads" | "leadGenCount" | "cardFlips" | "returnVisitorRate" | "interactionDepthRate";
 
 const WIDGET_CONFIG: { key: WidgetKey; label: string; icon: React.ReactNode; description: string }[] = [
-  { key: "totalTaps", label: "Total Taps", icon: <Zap className="w-4 h-4" />, description: "Total profile views from NFC taps" },
-  { key: "uniqueVisitors", label: "Unique Visitors", icon: <Users className="w-4 h-4" />, description: "Distinct visitors by session" },
-  { key: "contactSaveRate", label: "Contact Save Rate", icon: <Eye className="w-4 h-4" />, description: "% of visitors who saved your contact" },
-  { key: "topDevice", label: "Top Device", icon: <Smartphone className="w-4 h-4" />, description: "Most common device type" },
   { key: "profileViews", label: "Profile Views", icon: <Eye className="w-4 h-4" />, description: "Total landing page views" },
+  { key: "uniqueVisitors", label: "Unique Visitors", icon: <Users className="w-4 h-4" />, description: "Distinct visitors by session" },
+  { key: "topDevice", label: "Top Device", icon: <Smartphone className="w-4 h-4" />, description: "Most common device type" },
   { key: "vcardDownloads", label: "vCard Saves", icon: <FileText className="w-4 h-4" />, description: "Total contact card downloads" },
   { key: "cvDownloads", label: "CV Downloads", icon: <FileText className="w-4 h-4" />, description: "Total resume downloads" },
   { key: "leadGenCount", label: "Leads Captured", icon: <Users className="w-4 h-4" />, description: "Contacts from private mode" },
