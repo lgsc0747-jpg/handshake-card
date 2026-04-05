@@ -83,6 +83,10 @@ const PersonasPage = () => {
   const handleCreate = async () => {
     if (!user) return;
     const count = personas.length;
+    if (count >= limits.maxPersonas) {
+      toast({ title: "Persona limit reached", description: "Upgrade to Pro for unlimited personas.", variant: "destructive" });
+      return;
+    }
     const slug = `persona-${count + 1}`;
     const { data, error } = await supabase
       .from("personas")
