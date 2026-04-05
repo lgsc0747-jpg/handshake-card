@@ -36,6 +36,7 @@ const TEXT_ALIGNMENTS = [
 const DesignStudioPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { isPro } = useSubscription();
   const [personas, setPersonas] = useState<PersonaDesign[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editing, setEditing] = useState<PersonaDesign | null>(null);
