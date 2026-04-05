@@ -31,6 +31,9 @@ interface WidgetManagerProps {
     cvDownloads: number;
     vcardDownloads: number;
     leadGenCount: number;
+    cardFlips: number;
+    returnVisitorRate: number;
+    interactionDepthRate: number;
   };
 }
 
