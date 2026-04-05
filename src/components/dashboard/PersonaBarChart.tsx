@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { Users } from "lucide-react";
+import { useChartPalette } from "@/components/dashboard/ChartPaletteSelector";
 
 interface PersonaBarChartProps {
   data: { name: string; taps: number; saveRate: number }[];
