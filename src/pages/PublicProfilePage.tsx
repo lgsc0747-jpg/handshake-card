@@ -71,6 +71,20 @@ const PublicProfilePage = () => {
   const [notFound, setNotFound] = useState(false);
   const [gateUnlocked, setGateUnlocked] = useState(false);
 
+  // Strip dashboard theme classes so the public page renders with its own palette
+  useEffect(() => {
+    const root = document.documentElement;
+    const themeClasses = ["theme-midnight", "theme-slate", "theme-emerald", "theme-cyberpunk"];
+    const saved = themeClasses.filter((c) => root.classList.contains(c));
+    themeClasses.forEach((c) => root.classList.remove(c));
+    root.classList.remove("dark");
+    return () => {
+      // Restore dashboard theme when leaving the public page
+      saved.forEach((c) => root.classList.add(c));
+      root.classList.add("dark");
+    };
+  }, []);
+
   useEffect(() => {
     if (!username) return;
 
