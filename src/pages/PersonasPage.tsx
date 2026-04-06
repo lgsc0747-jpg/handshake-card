@@ -471,12 +471,15 @@ const PersonasPage = () => {
                         <div className="space-y-1">
                           <Label>PIN Code (4 digits)</Label>
                           <Input
-                            value={editingPersona.pin_code && editingPersona.pin_code.startsWith("$2") ? "" : (editingPersona.pin_code ?? "")}
-                            onChange={(e) => updateField("pin_code", e.target.value.replace(/\D/g, "").slice(0, 4))}
-                            placeholder={editingPersona.pin_code ? "PIN set — enter new to change" : "1234"}
+                            value={newPinInput}
+                            onChange={(e) => setNewPinInput(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                            placeholder={editingPersona.pin_code ? "PIN set — enter new to change" : "Enter 4-digit PIN"}
                             maxLength={4}
                             className="w-48 font-mono"
                           />
+                          {editingPersona.pin_code && !newPinInput && (
+                            <p className="text-xs text-muted-foreground">A PIN is currently set. Enter a new one to change it.</p>
+                          )}
                         </div>
                       )}
                     </div>
