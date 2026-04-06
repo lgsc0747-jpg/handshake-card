@@ -136,24 +136,66 @@ const PersonasPage = () => {
   const handleSave = async () => {
     if (!editingPersona) return;
     setSaving(true);
-    const { id, ...rest } = editingPersona;
-    const updateData: Record<string, unknown> = { ...rest };
-    delete (updateData as Record<string, unknown>).id;
 
-    // Don't overwrite hashed pin with empty string if user didn't change it
-    if (typeof updateData.pin_code === 'string' && (updateData.pin_code === '' || (updateData.pin_code as string).startsWith('$2'))) {
-      delete updateData.pin_code;
+    // Explicitly build update payload with only the fields we manage
+    const updateData: Record<string, unknown> = {
+      label: editingPersona.label,
+      slug: editingPersona.slug,
+      display_name: editingPersona.display_name || null,
+      headline: editingPersona.headline || null,
+      bio: editingPersona.bio || null,
+      email_public: editingPersona.email_public || null,
+      phone: editingPersona.phone || null,
+      location: editingPersona.location || null,
+      website: editingPersona.website || null,
+      linkedin_url: editingPersona.linkedin_url || null,
+      github_url: editingPersona.github_url || null,
+      cv_url: editingPersona.cv_url || null,
+      accent_color: editingPersona.accent_color || null,
+      background_preset: editingPersona.background_preset || null,
+      background_image_url: editingPersona.background_image_url || null,
+      glass_opacity: editingPersona.glass_opacity ?? 0.15,
+      availability_status: editingPersona.availability_status || null,
+      work_mode: editingPersona.work_mode || null,
+      show_availability: editingPersona.show_availability ?? true,
+      show_location: editingPersona.show_location ?? true,
+      is_private: editingPersona.is_private,
+      require_contact_exchange: editingPersona.require_contact_exchange,
+    };
+
+    // Only send pin_code if user entered a new raw PIN (not empty, not a hash)
+    if (
+      editingPersona.pin_code &&
+      editingPersona.pin_code.length > 0 &&
+      !editingPersona.pin_code.startsWith("$2")
+    ) {
+      updateData.pin_code = editingPersona.pin_code;
+    }
+
+    // If private mode is off, clear security fields
+    if (!editingPersona.is_private) {
+      updateData.pin_code = null;
+      updateData.require_contact_exchange = false;
     }
 
     const { error } = await supabase
       .from("personas")
       .update(updateData)
-      .eq("id", id);
+      .eq("id", editingPersona.id);
 
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      setPersonas(personas.map((p) => (p.id === id ? editingPersona : p)));
+      // Refresh from DB to get the hashed pin and latest state
+      const { data: refreshed } = await supabase
+        .from("personas")
+        .select("*")
+        .eq("id", editingPersona.id)
+        .single();
+      if (refreshed) {
+        setPersonas(personas.map((p) => (p.id === editingPersona.id ? (refreshed as Persona) : p)));
+        setEditingPersona(refreshed as Persona);
+      }
       toast({ title: "Persona saved" });
     }
     setSaving(false);
