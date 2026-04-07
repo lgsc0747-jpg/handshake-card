@@ -132,13 +132,16 @@ export function useNfcData() {
       formatLabel = (d) => `${d.getMonth() + 1}/${d.getDate()}`;
     }
 
-    // Fetch all logs and personas in parallel
-    const [logsRes, personasRes, leadsRes] = await Promise.all([
+    // Fetch timeframe-filtered logs, ALL-TIME logs for KPI widgets, personas, and leads in parallel
+    const [logsRes, allTimeLogsRes, personasRes, leadsRes, allTimeLeadsRes] = await Promise.all([
       supabase.from("interaction_logs").select("*").eq("user_id", user.id)
         .gte("created_at", since.toISOString()).order("created_at", { ascending: true }),
+      supabase.from("interaction_logs").select("*").eq("user_id", user.id)
+        .order("created_at", { ascending: true }),
       supabase.from("personas").select("id, label, slug").eq("user_id", user.id),
       supabase.from("lead_captures").select("id").eq("owner_user_id", user.id)
         .gte("created_at", since.toISOString()),
+      supabase.from("lead_captures").select("id").eq("owner_user_id", user.id),
     ]);
 
     const allLogs = logsRes.data ?? [];
