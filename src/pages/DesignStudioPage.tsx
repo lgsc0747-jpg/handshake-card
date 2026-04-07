@@ -173,7 +173,7 @@ const DesignStudioPage = () => {
         </div>
 
         {/* Main Layout: Sidebar + Panel + Preview */}
-        <div className="flex gap-0 rounded-2xl border border-border/60 bg-card/30 backdrop-blur-sm overflow-hidden" style={{ minHeight: "calc(100vh - 180px)" }}>
+        <div className="flex flex-col md:flex-row gap-0 rounded-2xl border border-border/60 bg-card/30 backdrop-blur-sm overflow-hidden" style={{ minHeight: "calc(100vh - 180px)" }}>
           {/* Sub-Sidebar Nav */}
           <nav className="w-48 shrink-0 border-r border-border/40 bg-card/50 hidden md:block overflow-y-auto">
             <div className="p-3 space-y-1">
