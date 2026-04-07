@@ -437,7 +437,17 @@ const DesignStudioPage = () => {
               </Card>
             </TabsContent>
 
-            {/* ── Identity Tab ── */}
+            {/* ── Sections Tab (Page Builder) ── */}
+            <TabsContent value="sections" className="space-y-4">
+              {isPro ? (
+                selectedId && <SectionBuilder personaId={selectedId} />
+              ) : (
+                <UpgradeOverlay feature="Page Builder" description="Upgrade to Pro to reorder and customize landing page sections.">
+                  {selectedId && <SectionBuilder personaId={selectedId} />}
+                </UpgradeOverlay>
+              )}
+            </TabsContent>
+
             <TabsContent value="identity" className="space-y-4">
               <Card className="glass-card">
                 <CardHeader className="pb-2">
