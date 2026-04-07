@@ -59,12 +59,12 @@ export function ImageUploadField({ label, value, onChange, folder, showFitContro
   }, [storageKey]);
 
   useEffect(() => {
-    if (imageFit?.objectPosition) {
-      const parts = imageFit.objectPosition.split(" ");
+    if (effectiveFit?.objectPosition) {
+      const parts = effectiveFit.objectPosition.split(" ");
       setPosX(parseInt(parts[0]) || 50);
       setPosY(parseInt(parts[1]) || 50);
     }
-  }, [imageFit?.objectPosition]);
+  }, [effectiveFit?.objectPosition]);
 
   const addToRecent = (url: string) => {
     const updated = [url, ...recentUploads.filter((u) => u !== url)].slice(0, 6);
