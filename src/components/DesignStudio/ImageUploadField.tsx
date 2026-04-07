@@ -32,7 +32,7 @@ const FIT_OPTIONS = [
   { value: "none", label: "Original" },
 ] as const;
 
-export function ImageUploadField({ label, value, onChange, folder, showFitControls, imageFit, onFitChange }: ImageUploadFieldProps) {
+export function ImageUploadField({ label, value, onChange, folder, showFitControls = true, imageFit, onFitChange }: ImageUploadFieldProps) {
   const { user } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
