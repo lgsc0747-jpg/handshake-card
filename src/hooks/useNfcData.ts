@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
-export type Timeframe = "daily" | "weekly" | "monthly" | "quarterly";
+export type Timeframe = "thirtymin" | "daily" | "weekly" | "monthly" | "quarterly";
 
 interface ChartPoint {
   label: string;
@@ -43,15 +43,12 @@ export interface NfcStats {
   cvDownloads: number;
   vcardDownloads: number;
   topDevice: string;
-  // Security
   authSuccessRate: number;
   leadGenCount: number;
   unauthorizedAttempts: number;
-  // New metrics
   cardFlips: number;
   returnVisitorRate: number;
   interactionDepthRate: number;
-  // Breakdowns
   deviceBreakdown: DeviceBreakdown[];
   browserBreakdown: DeviceBreakdown[];
   osBreakdown: DeviceBreakdown[];
@@ -59,34 +56,18 @@ export interface NfcStats {
   linkCTR: LinkCTR[];
   personaPerformance: PersonaPerf[];
   connectionSources: { nfc: number; qr: number; direct: number };
-  // New: Tap Velocity
   tapVelocity: { label: string; taps: number }[];
 }
 
 const DEVICE_COLORS: Record<string, string> = {
-  Mobile: "#0d9488",
-  Desktop: "#3b82f6",
-  Tablet: "#8b5cf6",
+  Mobile: "#0d9488", Desktop: "#3b82f6", Tablet: "#8b5cf6",
 };
-
 const BROWSER_COLORS: Record<string, string> = {
-  Chrome: "#4285F4",
-  Safari: "#000000",
-  Firefox: "#FF7139",
-  Edge: "#0078D7",
-  Opera: "#FF1B2D",
-  Other: "#6b7280",
+  Chrome: "#4285F4", Safari: "#000000", Firefox: "#FF7139", Edge: "#0078D7", Opera: "#FF1B2D", Other: "#6b7280",
 };
-
 const OS_COLORS: Record<string, string> = {
-  iOS: "#A2AAAD",
-  Android: "#3DDC84",
-  Windows: "#0078D4",
-  macOS: "#555555",
-  Linux: "#FCC624",
-  Unknown: "#6b7280",
+  iOS: "#A2AAAD", Android: "#3DDC84", Windows: "#0078D4", macOS: "#555555", Linux: "#FCC624", Unknown: "#6b7280",
 };
-
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export function useNfcData() {
@@ -115,7 +96,11 @@ export function useNfcData() {
     let points: number;
     let formatLabel: (d: Date) => string;
 
-    if (timeframe === "daily") {
+    if (timeframe === "thirtymin") {
+      since = new Date(now.getTime() - 30 * 60 * 1000);
+      points = 6; // 5-min buckets
+      formatLabel = (d) => `${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
+    } else if (timeframe === "daily") {
       since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       points = 24;
       formatLabel = (d) => `${d.getHours()}:00`;
@@ -125,7 +110,7 @@ export function useNfcData() {
       formatLabel = (d) => d.toLocaleDateString("en", { weekday: "short" });
     } else if (timeframe === "quarterly") {
       since = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-      points = 12; // ~weekly buckets over 90 days
+      points = 12;
       formatLabel = (d) => `${d.getMonth() + 1}/${d.getDate()}`;
     } else {
       since = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -133,64 +118,25 @@ export function useNfcData() {
       formatLabel = (d) => `${d.getMonth() + 1}/${d.getDate()}`;
     }
 
-    // Fetch timeframe-filtered logs, ALL-TIME logs for KPI widgets, personas, and leads in parallel
-    const [logsRes, allTimeLogsRes, personasRes, leadsRes, allTimeLeadsRes] = await Promise.all([
+    const [logsRes, personasRes, leadsRes] = await Promise.all([
       supabase.from("interaction_logs").select("*").eq("user_id", user.id)
         .gte("created_at", since.toISOString()).order("created_at", { ascending: true }),
-      supabase.from("interaction_logs").select("*").eq("user_id", user.id)
-        .order("created_at", { ascending: true }),
       supabase.from("personas").select("id, label, slug").eq("user_id", user.id),
       supabase.from("lead_captures").select("id").eq("owner_user_id", user.id)
         .gte("created_at", since.toISOString()),
-      supabase.from("lead_captures").select("id").eq("owner_user_id", user.id),
     ]);
 
-    const allLogs = logsRes.data ?? [];
-    const allTimeLogs = allTimeLogsRes.data ?? [];
+    const logs = logsRes.data ?? [];
     const personas = personasRes.data ?? [];
     const leads = leadsRes.data ?? [];
-    const allTimeLeads = allTimeLeadsRes.data ?? [];
 
-    // ── Compute ALL-TIME KPI metrics (for widget cards) ──
-    const atVisitors = new Set<string>();
-    let atProfileViews = 0, atCvDownloads = 0, atVcardDownloads = 0, atCardFlips = 0;
-    let atTotalDwell = 0, atDwellCount = 0;
-    let atSecSuccess = 0, atSecTotal = 0, atUnauth = 0;
-    let atReturnVisitors = 0;
-    const atVisitorsWithInteractions = new Set<string>();
-
-    allTimeLogs.forEach((log) => {
-      const meta = (log.metadata as Record<string, any>) ?? {};
-      atVisitors.add(log.entity_id);
-      if (log.interaction_type === "profile_view") {
-        atProfileViews++;
-        if (meta.is_return) atReturnVisitors++;
-      }
-      if (log.interaction_type === "cv_download") { atCvDownloads++; atVisitorsWithInteractions.add(log.entity_id); }
-      if (log.interaction_type === "vcard_download") { atVcardDownloads++; atVisitorsWithInteractions.add(log.entity_id); }
-      if (log.interaction_type === "card_flip") { atCardFlips++; atVisitorsWithInteractions.add(log.entity_id); }
-      if (log.interaction_type === "link_click") { atVisitorsWithInteractions.add(log.entity_id); }
-      if (log.interaction_type === "dwell_time" && meta.seconds) { atTotalDwell += Number(meta.seconds); atDwellCount++; }
-      if (log.interaction_type === "security_attempt") {
-        atSecTotal++;
-        if (meta.result === "success") atSecSuccess++;
-        if (meta.result === "failed" || meta.result === "blocked") atUnauth++;
-      }
-    });
-
-    const atContactSaveRate = atProfileViews > 0 ? Math.round((atVcardDownloads / atProfileViews) * 100) : 0;
-    const atAvgDwell = atDwellCount > 0 ? Math.round(atTotalDwell / atDwellCount) : 0;
-    const atAuthSuccessRate = atSecTotal > 0 ? Math.round((atSecSuccess / atSecTotal) * 100) : 0;
-    const atReturnRate = atProfileViews > 0 ? Math.round((atReturnVisitors / atProfileViews) * 100) : 0;
-    const atInteractionDepth = atVisitors.size > 0 ? Math.round((atVisitorsWithInteractions.size / atVisitors.size) * 100) : 0;
-
-    // Chart buckets with multi-series
+    // Chart buckets
     const bucketMs = (now.getTime() - since.getTime()) / points;
     const buckets: ChartPoint[] = [];
     for (let i = 0; i < points; i++) {
       const bStart = new Date(since.getTime() + i * bucketMs);
       const bEnd = new Date(since.getTime() + (i + 1) * bucketMs);
-      const inBucket = allLogs.filter((l) => {
+      const inBucket = logs.filter((l) => {
         const t = new Date(l.created_at).getTime();
         return t >= bStart.getTime() && t < bEnd.getTime();
       });
@@ -202,7 +148,7 @@ export function useNfcData() {
     }
     setChartData(buckets);
 
-    // Aggregate stats
+    // Aggregate ALL stats from filtered logs
     const visitors = new Set<string>();
     const devices = new Map<string, number>();
     const browsers = new Map<string, number>();
@@ -216,12 +162,10 @@ export function useNfcData() {
     let securitySuccess = 0, securityTotal = 0, unauthorizedAttempts = 0;
     let nfcSource = 0, qrSource = 0, directSource = 0;
     let returnVisitors = 0;
-    const visitorsWithFlips = new Set<string>();
     const visitorsWithInteractions = new Set<string>();
 
-    allLogs.forEach((log) => {
+    logs.forEach((log) => {
       const meta = (log.metadata as Record<string, any>) ?? {};
-
       visitors.add(log.entity_id);
 
       const device = meta.device || "Desktop";
@@ -231,7 +175,6 @@ export function useNfcData() {
       browsers.set(browser, (browsers.get(browser) ?? 0) + 1);
       oses.set(os, (oses.get(os) ?? 0) + 1);
 
-      // Peak hours
       const dt = new Date(log.created_at);
       const key = `${DAYS[dt.getDay()]}-${dt.getHours()}`;
       hourlyMap.set(key, (hourlyMap.get(key) ?? 0) + 1);
@@ -246,16 +189,13 @@ export function useNfcData() {
       }
       if (log.interaction_type === "cv_download") { cvDownloads++; visitorsWithInteractions.add(log.entity_id); }
       if (log.interaction_type === "vcard_download") { vcardDownloads++; visitorsWithInteractions.add(log.entity_id); }
-      if (log.interaction_type === "card_flip") { cardFlips++; visitorsWithFlips.add(log.entity_id); visitorsWithInteractions.add(log.entity_id); }
+      if (log.interaction_type === "card_flip") { cardFlips++; visitorsWithInteractions.add(log.entity_id); }
       if (log.interaction_type === "link_click") {
         const lt = meta.link_type || "unknown";
         linkClicks.set(lt, (linkClicks.get(lt) ?? 0) + 1);
         visitorsWithInteractions.add(log.entity_id);
       }
-      if (log.interaction_type === "dwell_time" && meta.seconds) {
-        totalDwell += Number(meta.seconds);
-        dwellCount++;
-      }
+      if (log.interaction_type === "dwell_time" && meta.seconds) { totalDwell += Number(meta.seconds); dwellCount++; }
       if (log.interaction_type === "security_attempt") {
         securityTotal++;
         if (meta.result === "success") securitySuccess++;
@@ -276,33 +216,17 @@ export function useNfcData() {
 
     let topDevice = "No data";
     let topDeviceCount = 0;
-    devices.forEach((count, name) => {
-      if (count > topDeviceCount) { topDevice = name; topDeviceCount = count; }
-    });
+    devices.forEach((count, name) => { if (count > topDeviceCount) { topDevice = name; topDeviceCount = count; } });
 
-    const deviceBreakdown: DeviceBreakdown[] = Array.from(devices.entries()).map(([name, value]) => ({
-      name, value, color: DEVICE_COLORS[name] || "#6b7280",
-    }));
-    const browserBreakdown: DeviceBreakdown[] = Array.from(browsers.entries()).map(([name, value]) => ({
-      name, value, color: BROWSER_COLORS[name] || "#6b7280",
-    }));
-    const osBreakdown: DeviceBreakdown[] = Array.from(oses.entries()).map(([name, value]) => ({
-      name, value, color: OS_COLORS[name] || "#6b7280",
-    }));
+    const deviceBreakdown = Array.from(devices.entries()).map(([name, value]) => ({ name, value, color: DEVICE_COLORS[name] || "#6b7280" }));
+    const browserBreakdown = Array.from(browsers.entries()).map(([name, value]) => ({ name, value, color: BROWSER_COLORS[name] || "#6b7280" }));
+    const osBreakdown = Array.from(oses.entries()).map(([name, value]) => ({ name, value, color: OS_COLORS[name] || "#6b7280" }));
 
     const hourlyHeat: HourlyHeat[] = [];
-    DAYS.forEach((day) => {
-      for (let h = 0; h < 24; h++) {
-        hourlyHeat.push({ day, hour: h, count: hourlyMap.get(`${day}-${h}`) ?? 0 });
-      }
-    });
+    DAYS.forEach((day) => { for (let h = 0; h < 24; h++) hourlyHeat.push({ day, hour: h, count: hourlyMap.get(`${day}-${h}`) ?? 0 }); });
 
     const linkCTR: LinkCTR[] = Array.from(linkClicks.entries())
-      .map(([name, clicks]) => ({
-        name: name.charAt(0).toUpperCase() + name.slice(1),
-        clicks,
-        percentage: profileViews > 0 ? Math.round((clicks / profileViews) * 100) : 0,
-      }))
+      .map(([name, clicks]) => ({ name: name.charAt(0).toUpperCase() + name.slice(1), clicks, percentage: profileViews > 0 ? Math.round((clicks / profileViews) * 100) : 0 }))
       .sort((a, b) => b.clicks - a.clicks);
 
     const personaPerformance: PersonaPerf[] = personas.map((p) => {
@@ -311,30 +235,35 @@ export function useNfcData() {
       return { name: p.label, taps, saveRate: taps > 0 ? Math.round((saves / taps) * 100) : 0 };
     }).filter((p) => p.taps > 0);
 
-    // Tap Velocity
     const velocityMap = new Map<string, number>();
-    allLogs.filter((l) => l.interaction_type === "profile_view").forEach((log) => {
+    logs.filter((l) => l.interaction_type === "profile_view").forEach((log) => {
       const dt = new Date(log.created_at);
       const hourKey = `${dt.getMonth() + 1}/${dt.getDate()} ${dt.getHours()}:00`;
       velocityMap.set(hourKey, (velocityMap.get(hourKey) ?? 0) + 1);
     });
     const tapVelocity = Array.from(velocityMap.entries()).map(([label, taps]) => ({ label, taps }));
 
+    const contactSaveRate = profileViews > 0 ? Math.round((vcardDownloads / profileViews) * 100) : 0;
+    const avgDwellTime = dwellCount > 0 ? Math.round(totalDwell / dwellCount) : 0;
+    const authSuccessRate = securityTotal > 0 ? Math.round((securitySuccess / securityTotal) * 100) : 0;
+    const returnVisitorRate = profileViews > 0 ? Math.round((returnVisitors / profileViews) * 100) : 0;
+    const interactionDepthRate = visitors.size > 0 ? Math.round((visitorsWithInteractions.size / visitors.size) * 100) : 0;
+
     setStats({
-      totalTaps: atProfileViews,
-      uniqueVisitors: atVisitors.size,
-      contactSaveRate: atContactSaveRate,
-      avgDwellTime: atAvgDwell,
-      profileViews: atProfileViews,
-      cvDownloads: atCvDownloads,
-      vcardDownloads: atVcardDownloads,
+      totalTaps: profileViews,
+      uniqueVisitors: visitors.size,
+      contactSaveRate,
+      avgDwellTime,
+      profileViews,
+      cvDownloads,
+      vcardDownloads,
       topDevice,
-      authSuccessRate: atAuthSuccessRate,
-      leadGenCount: allTimeLeads.length,
-      unauthorizedAttempts: atUnauth,
-      cardFlips: atCardFlips,
-      returnVisitorRate: atReturnRate,
-      interactionDepthRate: atInteractionDepth,
+      authSuccessRate,
+      leadGenCount: leads.length,
+      unauthorizedAttempts,
+      cardFlips,
+      returnVisitorRate,
+      interactionDepthRate,
       deviceBreakdown,
       browserBreakdown,
       osBreakdown,
@@ -348,16 +277,11 @@ export function useNfcData() {
     setLoading(false);
   }, [user, timeframe]);
 
-  // Realtime subscription — refresh data on any change to interaction_logs
   useEffect(() => {
     if (!user) return;
     const channel = supabase
       .channel('dashboard-realtime')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'interaction_logs', filter: `user_id=eq.${user.id}` },
-        () => { fetchData(); }
-      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'interaction_logs', filter: `user_id=eq.${user.id}` }, () => { fetchData(); })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [user, fetchData]);
