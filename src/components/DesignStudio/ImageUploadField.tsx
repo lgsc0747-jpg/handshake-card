@@ -32,7 +32,7 @@ const FIT_OPTIONS = [
   { value: "none", label: "Original" },
 ] as const;
 
-export function ImageUploadField({ label, value, onChange, folder, showFitControls, imageFit, onFitChange }: ImageUploadFieldProps) {
+export function ImageUploadField({ label, value, onChange, folder, showFitControls = true, imageFit, onFitChange }: ImageUploadFieldProps) {
   const { user } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -41,6 +41,13 @@ export function ImageUploadField({ label, value, onChange, folder, showFitContro
   const [showAdjust, setShowAdjust] = useState(false);
   const [posX, setPosX] = useState(50);
   const [posY, setPosY] = useState(50);
+  const [internalFit, setInternalFit] = useState<ImageFit>({ objectFit: "cover", objectPosition: "50% 50%", scale: 100 });
+
+  const effectiveFit = imageFit ?? internalFit;
+  const handleFitChange = (fit: ImageFit) => {
+    if (onFitChange) onFitChange(fit);
+    else setInternalFit(fit);
+  };
 
   const storageKey = `${RECENT_KEY_PREFIX}${folder}`;
 
@@ -52,12 +59,12 @@ export function ImageUploadField({ label, value, onChange, folder, showFitContro
   }, [storageKey]);
 
   useEffect(() => {
-    if (imageFit?.objectPosition) {
-      const parts = imageFit.objectPosition.split(" ");
+    if (effectiveFit?.objectPosition) {
+      const parts = effectiveFit.objectPosition.split(" ");
       setPosX(parseInt(parts[0]) || 50);
       setPosY(parseInt(parts[1]) || 50);
     }
-  }, [imageFit?.objectPosition]);
+  }, [effectiveFit?.objectPosition]);
 
   const addToRecent = (url: string) => {
     const updated = [url, ...recentUploads.filter((u) => u !== url)].slice(0, 6);
@@ -94,8 +101,7 @@ export function ImageUploadField({ label, value, onChange, folder, showFitContro
   };
 
   const updateFit = (updates: Partial<ImageFit>) => {
-    if (!onFitChange || !imageFit) return;
-    onFitChange({ ...imageFit, ...updates });
+    handleFitChange({ ...effectiveFit, ...updates });
   };
 
   const handlePosChange = (axis: "x" | "y", val: number) => {
@@ -106,8 +112,8 @@ export function ImageUploadField({ label, value, onChange, folder, showFitContro
     updateFit({ objectPosition: `${newX}% ${newY}%` });
   };
 
-  const currentFit = imageFit?.objectFit ?? "cover";
-  const currentScale = imageFit?.scale ?? 100;
+  const currentFit = effectiveFit?.objectFit ?? "cover";
+  const currentScale = effectiveFit?.scale ?? 100;
 
   const otherRecent = recentUploads.filter((u) => u !== value);
 
