@@ -74,7 +74,7 @@ export function SectionBuilder({ personaId, onChange }: SectionBuilderProps) {
       setSections(defaults);
       // Save defaults
       await supabase.from("persona_sections").insert(
-        defaults.map(({ id, ...rest }) => rest)
+        defaults.map(({ id, ...rest }) => ({ ...rest, config: rest.config as any }))
       );
       await loadSections();
     }
