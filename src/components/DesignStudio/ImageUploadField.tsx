@@ -41,6 +41,13 @@ export function ImageUploadField({ label, value, onChange, folder, showFitContro
   const [showAdjust, setShowAdjust] = useState(false);
   const [posX, setPosX] = useState(50);
   const [posY, setPosY] = useState(50);
+  const [internalFit, setInternalFit] = useState<ImageFit>({ objectFit: "cover", objectPosition: "50% 50%", scale: 100 });
+
+  const effectiveFit = imageFit ?? internalFit;
+  const handleFitChange = (fit: ImageFit) => {
+    if (onFitChange) onFitChange(fit);
+    else setInternalFit(fit);
+  };
 
   const storageKey = `${RECENT_KEY_PREFIX}${folder}`;
 
