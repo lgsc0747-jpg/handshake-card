@@ -737,6 +737,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_user_pro: { Args: { p_user_id: string }; Returns: boolean }
       verify_persona_pin: {
         Args: { p_persona_id: string; p_pin: string }
         Returns: boolean
