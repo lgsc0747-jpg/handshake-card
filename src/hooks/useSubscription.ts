@@ -6,6 +6,7 @@ export type Plan = "free" | "pro";
 
 export interface PlanLimits {
   maxPersonas: number;
+  maxProducts: number;
   analyticsAccess: "basic" | "full";
   analyticsDaysHistory: number;
   privateMode: boolean;
@@ -16,11 +17,14 @@ export interface PlanLimits {
   removeBranding: boolean;
   exportReports: boolean;
   customShortLinks: boolean;
+  commerce: boolean;
+  pageBuilder: boolean;
 }
 
 const PLAN_LIMITS: Record<Plan, PlanLimits> = {
   free: {
     maxPersonas: 2,
+    maxProducts: 0,
     analyticsAccess: "basic",
     analyticsDaysHistory: 7,
     privateMode: false,
@@ -31,9 +35,12 @@ const PLAN_LIMITS: Record<Plan, PlanLimits> = {
     removeBranding: false,
     exportReports: false,
     customShortLinks: false,
+    commerce: false,
+    pageBuilder: false,
   },
   pro: {
     maxPersonas: Infinity,
+    maxProducts: 10,
     analyticsAccess: "full",
     analyticsDaysHistory: 365,
     privateMode: true,
@@ -44,6 +51,8 @@ const PLAN_LIMITS: Record<Plan, PlanLimits> = {
     removeBranding: true,
     exportReports: true,
     customShortLinks: true,
+    commerce: true,
+    pageBuilder: true,
   },
 };
 
