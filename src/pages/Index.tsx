@@ -216,6 +216,7 @@ const Dashboard = () => {
                 authSuccessRate={stats.authSuccessRate}
                 leadGenCount={stats.leadGenCount}
                 unauthorizedAttempts={stats.unauthorizedAttempts}
+                avgDwellTime={stats.avgDwellTime}
               />
               <div className="glass-card rounded-lg p-5 animate-fade-in space-y-3">
                 <h3 className="font-display font-semibold text-sm">Digital Handshake Summary</h3>
@@ -239,10 +240,6 @@ const Dashboard = () => {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Interaction Depth</span>
                     <span className="font-bold">{stats.interactionDepthRate}%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Avg. Dwell Time</span>
-                    <span className="font-bold">{stats.avgDwellTime > 0 ? `${stats.avgDwellTime}s` : "—"}</span>
                   </div>
                 </div>
               </div>

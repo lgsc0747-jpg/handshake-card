@@ -46,7 +46,7 @@ export function SecurityMetrics({ authSuccessRate, leadGenCount, unauthorizedAtt
           tooltip="Percentage of correct PIN entries on your private personas. Only counts when Private Mode is enabled."
         />
         <MetricRow
-          icon={<ShieldAlert className="w-4 h-4 text-destructive" />}
+          icon={<ShieldAlert className="w-4 h-4 text-destructive/80" />}
           label="Failed PIN Attempts"
           value={unauthorizedAttempts.toString()}
           tooltip="Number of incorrect or blocked PIN entry attempts on your private personas."
@@ -58,7 +58,7 @@ export function SecurityMetrics({ authSuccessRate, leadGenCount, unauthorizedAtt
           tooltip="Contacts collected via the Digital Handshake contact-exchange gate."
         />
         <MetricRow
-          icon={<Clock className="w-4 h-4 text-amber-500" />}
+          icon={<Clock className="w-4 h-4 text-primary/70" />}
           label="Avg. Dwell Time"
           value={avgDwellTime > 0 ? `${avgDwellTime}s` : "—"}
           tooltip="Average seconds visitors spend on your public profile before leaving."
