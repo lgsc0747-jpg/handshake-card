@@ -207,8 +207,6 @@ export function useNfcData() {
     const devices = new Map<string, number>();
     const browsers = new Map<string, number>();
     const oses = new Map<string, number>();
-    const regions = new Map<string, number>();
-    const locations = new Map<string, number>();
     const hourlyMap = new Map<string, number>();
     const linkClicks = new Map<string, number>();
     const personaTaps = new Map<string, number>();
@@ -224,10 +222,8 @@ export function useNfcData() {
     allLogs.forEach((log) => {
       const meta = (log.metadata as Record<string, any>) ?? {};
 
-      // Unique visitors by entity_id
       visitors.add(log.entity_id);
 
-      // Device/Browser/OS
       const device = meta.device || "Desktop";
       const browser = meta.browser || "Other";
       const os = meta.os || "Unknown";
@@ -235,24 +231,11 @@ export function useNfcData() {
       browsers.set(browser, (browsers.get(browser) ?? 0) + 1);
       oses.set(os, (oses.get(os) ?? 0) + 1);
 
-      // Region: prefer city field from enriched metadata, fallback to timezone
-      const city = meta.city as string | undefined;
-      const tz = meta.timezone as string | undefined;
-      const regionLabel = city || (tz ? tz.replace(/_/g, " ").split("/").slice(-1)[0] : null);
-      if (regionLabel) {
-        regions.set(regionLabel, (regions.get(regionLabel) ?? 0) + 1);
-      }
-
-      // Location
-      const loc = log.location ?? "Unknown";
-      locations.set(loc, (locations.get(loc) ?? 0) + 1);
-
       // Peak hours
       const dt = new Date(log.created_at);
       const key = `${DAYS[dt.getDay()]}-${dt.getHours()}`;
       hourlyMap.set(key, (hourlyMap.get(key) ?? 0) + 1);
 
-      // Interaction types
       if (log.interaction_type === "profile_view") {
         profileViews++;
         const source = meta.source || "direct";
@@ -279,37 +262,24 @@ export function useNfcData() {
         if (meta.result === "failed" || meta.result === "blocked") unauthorizedAttempts++;
       }
 
-      // Persona tracking
       const pSlug = meta.persona_slug;
       if (pSlug) {
         const matched = personas.find(
           (p) => p.slug === pSlug || p.label.toLowerCase().replace(/\s+/g, "-") === pSlug || p.id === pSlug
         );
         if (matched) {
-          if (log.interaction_type === "profile_view") {
-            personaTaps.set(matched.id, (personaTaps.get(matched.id) ?? 0) + 1);
-          }
-          if (log.interaction_type === "vcard_download") {
-            personaVcards.set(matched.id, (personaVcards.get(matched.id) ?? 0) + 1);
-          }
+          if (log.interaction_type === "profile_view") personaTaps.set(matched.id, (personaTaps.get(matched.id) ?? 0) + 1);
+          if (log.interaction_type === "vcard_download") personaVcards.set(matched.id, (personaVcards.get(matched.id) ?? 0) + 1);
         }
       }
     });
 
-    // Compute top device
     let topDevice = "No data";
     let topDeviceCount = 0;
     devices.forEach((count, name) => {
       if (count > topDeviceCount) { topDevice = name; topDeviceCount = count; }
     });
 
-    let topLocation = "No data";
-    let topLocCount = 0;
-    locations.forEach((count, name) => {
-      if (count > topLocCount) { topLocation = name; topLocCount = count; }
-    });
-
-    // Build breakdowns
     const deviceBreakdown: DeviceBreakdown[] = Array.from(devices.entries()).map(([name, value]) => ({
       name, value, color: DEVICE_COLORS[name] || "#6b7280",
     }));
@@ -320,7 +290,6 @@ export function useNfcData() {
       name, value, color: OS_COLORS[name] || "#6b7280",
     }));
 
-    // Hourly heat
     const hourlyHeat: HourlyHeat[] = [];
     DAYS.forEach((day) => {
       for (let h = 0; h < 24; h++) {
@@ -328,8 +297,6 @@ export function useNfcData() {
       }
     });
 
-    // Link CTR
-    const totalLinkClicks = Array.from(linkClicks.values()).reduce((a, b) => a + b, 0);
     const linkCTR: LinkCTR[] = Array.from(linkClicks.entries())
       .map(([name, clicks]) => ({
         name: name.charAt(0).toUpperCase() + name.slice(1),
@@ -338,38 +305,20 @@ export function useNfcData() {
       }))
       .sort((a, b) => b.clicks - a.clicks);
 
-    // Persona performance
     const personaPerformance: PersonaPerf[] = personas.map((p) => {
       const taps = personaTaps.get(p.id) ?? 0;
       const saves = personaVcards.get(p.id) ?? 0;
-      return {
-        name: p.label,
-        taps,
-        saveRate: taps > 0 ? Math.round((saves / taps) * 100) : 0,
-      };
+      return { name: p.label, taps, saveRate: taps > 0 ? Math.round((saves / taps) * 100) : 0 };
     }).filter((p) => p.taps > 0);
 
-    const contactSaveRate = profileViews > 0 ? Math.round((vcardDownloads / profileViews) * 100) : 0;
-    const avgDwellTime = dwellCount > 0 ? Math.round(totalDwell / dwellCount) : 0;
-    const authSuccessRate = securityTotal > 0 ? Math.round((securitySuccess / securityTotal) * 100) : 0;
-    const returnVisitorRate = profileViews > 0 ? Math.round((returnVisitors / profileViews) * 100) : 0;
-    const interactionDepthRate = visitors.size > 0 ? Math.round((visitorsWithInteractions.size / visitors.size) * 100) : 0;
-
-    // Tap Velocity: group profile_views into hourly buckets
+    // Tap Velocity
     const velocityMap = new Map<string, number>();
-    const profileViewLogs = allLogs.filter((l) => l.interaction_type === "profile_view");
-    profileViewLogs.forEach((log) => {
+    allLogs.filter((l) => l.interaction_type === "profile_view").forEach((log) => {
       const dt = new Date(log.created_at);
       const hourKey = `${dt.getMonth() + 1}/${dt.getDate()} ${dt.getHours()}:00`;
       velocityMap.set(hourKey, (velocityMap.get(hourKey) ?? 0) + 1);
     });
-    const tapVelocity = Array.from(velocityMap.entries())
-      .map(([label, taps]) => ({ label, taps }));
-
-    // Region breakdown from timezone metadata
-    const regionBreakdown = Array.from(regions.entries())
-      .map(([region, count]) => ({ region, count }))
-      .sort((a, b) => b.count - a.count);
+    const tapVelocity = Array.from(velocityMap.entries()).map(([label, taps]) => ({ label, taps }));
 
     setStats({
       totalTaps: atProfileViews,
@@ -380,7 +329,6 @@ export function useNfcData() {
       cvDownloads: atCvDownloads,
       vcardDownloads: atVcardDownloads,
       topDevice,
-      topLocation,
       authSuccessRate: atAuthSuccessRate,
       leadGenCount: allTimeLeads.length,
       unauthorizedAttempts: atUnauth,
@@ -395,11 +343,24 @@ export function useNfcData() {
       personaPerformance,
       connectionSources: { nfc: nfcSource, qr: qrSource, direct: directSource },
       tapVelocity,
-      regionBreakdown,
     });
 
     setLoading(false);
   }, [user, timeframe]);
+
+  // Realtime subscription — refresh data on any change to interaction_logs
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel('dashboard-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'interaction_logs', filter: `user_id=eq.${user.id}` },
+        () => { fetchData(); }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user, fetchData]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
