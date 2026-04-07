@@ -85,14 +85,7 @@ Deno.serve(async (req) => {
       ? "Safari"
       : "Other";
 
-    // Derive geographic city from timezone (e.g. "America/New_York" → "New York")
-    const tz = metadata?.timezone as string | undefined;
-    const locale = metadata?.locale as string | undefined;
-    let city = "";
-    if (tz) {
-      const parts = tz.split("/");
-      city = (parts[parts.length - 1] || "").replace(/_/g, " ");
-    }
+    // Location tracking removed
 
     // Derive connection type from metadata (passed from client navigator.connection)
     const connectionType = metadata?.connection_type || "unknown";

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
-export type Timeframe = "daily" | "weekly" | "monthly";
+export type Timeframe = "daily" | "weekly" | "monthly" | "quarterly";
 
 interface ChartPoint {
   label: string;
