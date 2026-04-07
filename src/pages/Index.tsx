@@ -13,6 +13,7 @@ import { ConversionFunnel } from "@/components/dashboard/ConversionFunnel";
 import { ExportButton } from "@/components/dashboard/ExportButton";
 import { LeadGenTracker } from "@/components/dashboard/LeadGenTracker";
 import { TapVelocityChart } from "@/components/dashboard/TapVelocityChart";
+import { TimeframeSelector } from "@/components/dashboard/TimeframeSelector";
 
 import { ChartPaletteProvider, ChartPaletteSelector } from "@/components/dashboard/ChartPaletteSelector";
 import { useNfcData } from "@/hooks/useNfcData";
@@ -24,10 +25,18 @@ import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+const TIMEFRAME_LABELS: Record<string, string> = {
+  thirtymin: "Last 30 Minutes",
+  daily: "Last 24 Hours",
+  weekly: "Last 7 Days",
+  monthly: "Last 30 Days",
+  quarterly: "Last 90 Days",
+};
+
 const Dashboard = () => {
   const { user } = useAuth();
   const { stats, chartData, timeframe, setTimeframe, loading } = useNfcData();
-  const { isPro, limits } = useSubscription();
+  const { isPro } = useSubscription();
   const [recentLogs, setRecentLogs] = useState<any[]>([]);
 
   useEffect(() => {
@@ -78,14 +87,15 @@ const Dashboard = () => {
     <ChartPaletteProvider>
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-2xl font-display font-bold">Dashboard</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Actionable intelligence from your NFC interactions
+              {TIMEFRAME_LABELS[timeframe]} — All metrics filtered to this period
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <TimeframeSelector value={timeframe} onChange={setTimeframe} />
             <ChartPaletteSelector />
             {isPro && <ExportButton stats={stats} chartData={chartData} />}
           </div>
@@ -94,7 +104,7 @@ const Dashboard = () => {
         {/* KPI Widgets */}
         <WidgetManager stats={stats} />
 
-        {/* Tabs for organized sections */}
+        {/* Tabs */}
         <Tabs defaultValue="engagement" className="space-y-4">
           <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
             <TabsTrigger value="engagement" className="text-xs">Engagement</TabsTrigger>
@@ -103,11 +113,10 @@ const Dashboard = () => {
             <TabsTrigger value="security" className="text-xs">Security</TabsTrigger>
           </TabsList>
 
-          {/* ── Engagement Tab ── */}
           <TabsContent value="engagement" className="space-y-4">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <div className="lg:col-span-2">
-                <AnalyticsChart data={chartData} timeframe={timeframe} onTimeframeChange={setTimeframe} />
+                <AnalyticsChart data={chartData} />
               </div>
               <ConversionFunnel
                 profileViews={stats.profileViews}
@@ -116,10 +125,8 @@ const Dashboard = () => {
                 vcardDownloads={stats.vcardDownloads}
               />
             </div>
-
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <LinkCTRChart data={stats.linkCTR} />
-              {/* Real-time Feed */}
               <div className="glass-card rounded-lg p-5 animate-fade-in">
                 <h2 className="font-display font-semibold mb-4 text-sm">Live Feed — Recent Activity</h2>
                 {recentLogs.length === 0 ? (
@@ -132,25 +139,11 @@ const Dashboard = () => {
                         <div key={log.id} className="flex items-start gap-3 group">
                           <span className="text-base mt-0.5">{getLogIcon(log.interaction_type)}</span>
                           <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium truncate">
-                              {log.occasion || log.interaction_type}
-                            </p>
+                            <p className="text-sm font-medium truncate">{log.occasion || log.interaction_type}</p>
                             <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                              {meta.device && (
-                                <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                  {meta.device}
-                                </Badge>
-                              )}
-                              {meta.browser && (
-                                <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                  {meta.browser}
-                                </Badge>
-                              )}
-                              {meta.persona_slug && (
-                                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                                  {meta.persona_slug}
-                                </Badge>
-                              )}
+                              {meta.device && <Badge variant="outline" className="text-[10px] px-1.5 py-0">{meta.device}</Badge>}
+                              {meta.browser && <Badge variant="outline" className="text-[10px] px-1.5 py-0">{meta.browser}</Badge>}
+                              {meta.persona_slug && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{meta.persona_slug}</Badge>}
                               <span className="text-[10px] text-muted-foreground">{timeSince(log.created_at)}</span>
                             </div>
                           </div>
@@ -163,7 +156,6 @@ const Dashboard = () => {
             </div>
           </TabsContent>
 
-          {/* ── Personas Tab ── */}
           <TabsContent value="personas" className="space-y-4">
             {isPro ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -180,7 +172,6 @@ const Dashboard = () => {
             )}
           </TabsContent>
 
-          {/* ── Technical Tab ── */}
           <TabsContent value="technical" className="space-y-4">
             {isPro ? (
               <>
@@ -198,7 +189,7 @@ const Dashboard = () => {
                 </div>
               </>
             ) : (
-              <UpgradeOverlay feature="Technical Analytics" description="Upgrade to Pro for device, location, tap velocity, and heatmap insights.">
+              <UpgradeOverlay feature="Technical Analytics" description="Upgrade to Pro for device, tap velocity, and heatmap insights.">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <DeviceDonutChart data={stats.deviceBreakdown} title="Device Type" />
                   <DeviceDonutChart data={stats.browserBreakdown} title="Browser" />
@@ -208,7 +199,6 @@ const Dashboard = () => {
             )}
           </TabsContent>
 
-          {/* ── Security Tab ── */}
           <TabsContent value="security" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <SecurityMetrics
@@ -220,26 +210,11 @@ const Dashboard = () => {
               <div className="glass-card rounded-lg p-5 animate-fade-in space-y-3">
                 <h3 className="font-display font-semibold text-sm">Digital Handshake Summary</h3>
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Contact Save Rate</span>
-                    <span className="font-bold">{stats.contactSaveRate}%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">vCards Saved</span>
-                    <span className="font-bold">{stats.vcardDownloads}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">CVs Downloaded</span>
-                    <span className="font-bold">{stats.cvDownloads}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Return Visitors</span>
-                    <span className="font-bold">{stats.returnVisitorRate}%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Interaction Depth</span>
-                    <span className="font-bold">{stats.interactionDepthRate}%</span>
-                  </div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Contact Save Rate</span><span className="font-bold">{stats.contactSaveRate}%</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">vCards Saved</span><span className="font-bold">{stats.vcardDownloads}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">CVs Downloaded</span><span className="font-bold">{stats.cvDownloads}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Return Visitors</span><span className="font-bold">{stats.returnVisitorRate}%</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Interaction Depth</span><span className="font-bold">{stats.interactionDepthRate}%</span></div>
                 </div>
               </div>
             </div>
