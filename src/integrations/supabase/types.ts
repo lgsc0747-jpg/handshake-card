@@ -320,6 +320,8 @@ export type Database = {
           background_image_url: string | null
           background_preset: string | null
           bio: string | null
+          border_radius: number | null
+          card_animation: string | null
           card_bg_image_url: string | null
           card_bg_size: string | null
           card_blur: number | null
@@ -344,6 +346,7 @@ export type Database = {
           pin_code: string | null
           require_contact_exchange: boolean
           secondary_color: string | null
+          shadow_preset: string | null
           show_availability: boolean | null
           show_location: boolean | null
           slug: string
@@ -362,6 +365,8 @@ export type Database = {
           background_image_url?: string | null
           background_preset?: string | null
           bio?: string | null
+          border_radius?: number | null
+          card_animation?: string | null
           card_bg_image_url?: string | null
           card_bg_size?: string | null
           card_blur?: number | null
@@ -386,6 +391,7 @@ export type Database = {
           pin_code?: string | null
           require_contact_exchange?: boolean
           secondary_color?: string | null
+          shadow_preset?: string | null
           show_availability?: boolean | null
           show_location?: boolean | null
           slug: string
@@ -404,6 +410,8 @@ export type Database = {
           background_image_url?: string | null
           background_preset?: string | null
           bio?: string | null
+          border_radius?: number | null
+          card_animation?: string | null
           card_bg_image_url?: string | null
           card_bg_size?: string | null
           card_blur?: number | null
@@ -428,6 +436,7 @@ export type Database = {
           pin_code?: string | null
           require_contact_exchange?: boolean
           secondary_color?: string | null
+          shadow_preset?: string | null
           show_availability?: boolean | null
           show_location?: boolean | null
           slug?: string
