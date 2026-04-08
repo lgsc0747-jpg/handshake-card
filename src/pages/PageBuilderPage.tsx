@@ -75,11 +75,15 @@ function SortableBlockItem({ block, Icon, meta, isActive, onSelect, onDuplicate 
   );
 }
 
-function SortablePageTab({ page, isActive, onSelect }: {
+function SortablePageTab({ page, isActive, onSelect, onRename }: {
   page: SitePage;
   isActive: boolean;
   onSelect: () => void;
+  onRename: (newTitle: string) => void;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [title, setTitle] = useState(page.title);
+  const inputRef = useRef<HTMLInputElement>(null);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: page.id });
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -87,23 +91,50 @@ function SortablePageTab({ page, isActive, onSelect }: {
     opacity: isDragging ? 0.5 : 1,
     zIndex: isDragging ? 50 : undefined,
   };
+
+  useEffect(() => { setTitle(page.title); }, [page.title]);
+  useEffect(() => { if (editing) inputRef.current?.focus(); }, [editing]);
+
+  const commitRename = () => {
+    setEditing(false);
+    if (title.trim() && title.trim() !== page.title) onRename(title.trim());
+    else setTitle(page.title);
+  };
+
   return (
-    <button
+    <div
       ref={setNodeRef}
       style={style}
-      onClick={onSelect}
       className={cn(
-        "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all border touch-none",
+        "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all border",
         isActive
           ? "bg-primary/10 text-primary border-primary/30"
           : "text-muted-foreground border-border/40 hover:border-primary/20"
       )}
-      {...attributes}
-      {...listeners}
     >
-      {page.is_homepage && <Home className="w-3 h-3" />}
-      {page.title}
-    </button>
+      <div {...attributes} {...listeners} className="touch-none cursor-grab">
+        <GripVertical className="w-3 h-3" />
+      </div>
+      {editing ? (
+        <input
+          ref={inputRef}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onBlur={commitRename}
+          onKeyDown={(e) => { if (e.key === "Enter") commitRename(); if (e.key === "Escape") { setTitle(page.title); setEditing(false); } }}
+          className="bg-transparent border-b border-primary/40 outline-none w-20 text-xs"
+        />
+      ) : (
+        <button
+          onClick={onSelect}
+          onDoubleClick={(e) => { e.stopPropagation(); setEditing(true); }}
+          className="flex items-center gap-1"
+        >
+          {page.is_homepage && <Home className="w-3 h-3" />}
+          {page.title}
+        </button>
+      )}
+    </div>
   );
 }
 
