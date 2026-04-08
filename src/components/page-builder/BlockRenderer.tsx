@@ -361,15 +361,28 @@ export function BlockRenderer({ block, isEditing, onClick, persona }: BlockRende
         </div>
       );
 
-    case "products":
+    case "products": {
+      const pId = persona?.id;
+      const sellerId = persona?.user_id;
       return (
         <div ref={animRef} className="relative" style={wrapperStyle}>
           {editOverlay}
-          <div className="text-center p-8 rounded-xl bg-muted/20 border border-border/40">
-            <span className="text-sm text-muted-foreground">📦 Product grid loads from your store</span>
-          </div>
+          {pId && sellerId ? (
+            <PublicProductGrid
+              personaId={pId}
+              sellerUserId={sellerId}
+              accentColor={persona?.accent_color ?? "hsl(var(--primary))"}
+              textColor={styles.textColor}
+              gcashQrUrl={persona?.gcash_qr_url}
+            />
+          ) : (
+            <div className="text-center p-8 rounded-xl bg-muted/20 border border-border/40">
+              <span className="text-sm text-muted-foreground">📦 Product grid — add persona data to load products</span>
+            </div>
+          )}
         </div>
       );
+    }
 
     case "nfc_card":
       return (
