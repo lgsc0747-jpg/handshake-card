@@ -237,8 +237,6 @@ function PageBuilderPage() {
     pushHistory(newBlocks);
     setEditingBlockId(null);
   };
-    setEditingBlockId(null);
-  };
 
   const duplicateBlock = async (block: PageBlock) => {
     if (!user) return;
