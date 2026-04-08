@@ -12,35 +12,19 @@ import { InteractiveCard3D } from "@/components/InteractiveCard3D";
 import { getPresetCss } from "@/components/DesignStudio/BackgroundPresets";
 import type { PersonaDesign } from "@/components/DesignStudio/types";
 import { CardDesignPanel } from "@/components/studio/CardDesignPanel";
-import { LandingPagePanel } from "@/components/studio/LandingPagePanel";
-import { IdentityPanel } from "@/components/studio/IdentityPanel";
-import { SectionBuilder } from "@/components/commerce/SectionBuilder";
 import { cn } from "@/lib/utils";
 import {
   Loader2, Monitor, Smartphone, Save, Eye,
   CreditCard, Layout, LayoutGrid, User, Wifi,
 } from "lucide-react";
 
-type PanelId = "card" | "landing" | "sections" | "identity";
+type PanelId = "card";
 
 const NAV_SECTIONS = [
   {
     group: "NFC Card",
     items: [
       { id: "card" as PanelId, label: "Card Design", icon: CreditCard },
-    ],
-  },
-  {
-    group: "Page",
-    items: [
-      { id: "landing" as PanelId, label: "Landing Page", icon: Layout },
-      { id: "sections" as PanelId, label: "Page Sections", icon: LayoutGrid },
-    ],
-  },
-  {
-    group: "Content",
-    items: [
-      { id: "identity" as PanelId, label: "Profile & Links", icon: User },
     ],
   },
 ];
@@ -129,24 +113,7 @@ const DesignStudioPage = () => {
   }
 
   const renderPanel = () => {
-    switch (activePanel) {
-      case "card":
-        return <CardDesignPanel editing={editing} update={update} isPro={isPro} />;
-      case "landing":
-        return <LandingPagePanel editing={editing} update={update} isPro={isPro} />;
-      case "sections":
-        return isPro ? (
-          selectedId && <SectionBuilder personaId={selectedId} />
-        ) : (
-          <UpgradeOverlay feature="Page Builder" description="Upgrade to Pro to customize page sections.">
-            {selectedId && <SectionBuilder personaId={selectedId} />}
-          </UpgradeOverlay>
-        );
-      case "identity":
-        return <IdentityPanel editing={editing} update={update} isPro={isPro} />;
-      default:
-        return null;
-    }
+    return <CardDesignPanel editing={editing} update={update} isPro={isPro} />;
   };
 
   return (
