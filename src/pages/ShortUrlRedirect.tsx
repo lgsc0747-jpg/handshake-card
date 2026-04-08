@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const ShortUrlRedirect = () => {
   const { code } = useParams<{ code: string }>();
@@ -15,22 +16,16 @@ const ShortUrlRedirect = () => {
 
     const resolve = async () => {
       try {
-        const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-        const res = await fetch(
-          `https://${projectId}.supabase.co/functions/v1/resolve-short-link`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ code }),
-          }
+        const { data, error: fnError } = await supabase.functions.invoke(
+          "resolve-short-link",
+          { body: { code } }
         );
 
-        if (!res.ok) {
+        if (fnError || !data?.username) {
           setError(true);
           return;
         }
 
-        const data = await res.json();
         const path = data.persona_slug
           ? `/p/${data.username}/${data.persona_slug}`
           : `/p/${data.username}`;
