@@ -97,6 +97,28 @@ const CommerceDashboardPage = () => {
   const lowStockProducts = products.filter(p => p.stock <= 5 && p.stock > 0);
   const outOfStockProducts = products.filter(p => p.stock <= 0);
 
+  // NFC Conversion tracking
+  const filteredInteractions = useMemo(() => {
+    if (timeframe === "all") return interactions;
+    const days = timeframe === "7d" ? 7 : timeframe === "30d" ? 30 : 90;
+    const cutoff = new Date(Date.now() - days * 86400000);
+    return interactions.filter(i => new Date(i.created_at) >= cutoff);
+  }, [interactions, timeframe]);
+
+  const nfcTaps = filteredInteractions.filter(i => i.interaction_type === "tap").length;
+  const profileViews = filteredInteractions.filter(i => i.interaction_type === "profile_view").length;
+  const linkClicks = filteredInteractions.filter(i => i.interaction_type === "link_click").length;
+  const nfcToOrderRate = nfcTaps > 0 ? ((totalOrders / nfcTaps) * 100).toFixed(1) : "0";
+  const viewToOrderRate = profileViews > 0 ? ((totalOrders / profileViews) * 100).toFixed(1) : "0";
+
+  const conversionFunnel = [
+    { stage: "NFC Taps", count: nfcTaps },
+    { stage: "Profile Views", count: profileViews },
+    { stage: "Link Clicks", count: linkClicks },
+    { stage: "Orders", count: totalOrders },
+    { stage: "Completed", count: completedOrders },
+  ];
+
   // Revenue over time
   const revenueTimeline = useMemo(() => {
     const map: Record<string, number> = {};
@@ -280,9 +302,10 @@ const CommerceDashboardPage = () => {
 
         {/* Charts */}
         <Tabs defaultValue="revenue" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
             <TabsTrigger value="revenue" className="text-xs">Revenue</TabsTrigger>
             <TabsTrigger value="orders" className="text-xs">Orders</TabsTrigger>
+            <TabsTrigger value="conversions" className="text-xs">NFC → Sales</TabsTrigger>
             <TabsTrigger value="breakdown" className="text-xs">Breakdown</TabsTrigger>
             <TabsTrigger value="inventory" className="text-xs">Inventory</TabsTrigger>
           </TabsList>
