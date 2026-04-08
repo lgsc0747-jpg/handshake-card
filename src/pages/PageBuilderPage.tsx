@@ -597,14 +597,18 @@ function PageBuilderPage() {
                   )}
                 >
                   <div className="p-0">
-                    {blocks.filter(b => b.is_visible || editingBlockId === b.id).map(block => (
-                      <BlockRenderer
-                        key={block.id}
-                        block={block}
-                        isEditing={true}
-                        onClick={() => setEditingBlockId(block.id)}
-                      />
-                    ))}
+                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleSortEnd}>
+                      <SortableContext items={blocks.filter(b => b.is_visible || editingBlockId === b.id).map(b => b.id)} strategy={verticalListSortingStrategy}>
+                        {blocks.filter(b => b.is_visible || editingBlockId === b.id).map(block => (
+                          <SortablePreviewBlock
+                            key={block.id}
+                            block={block}
+                            editingBlockId={editingBlockId}
+                            onSelect={() => setEditingBlockId(block.id)}
+                          />
+                        ))}
+                      </SortableContext>
+                    </DndContext>
                     {blocks.length === 0 && (
                       <div className="flex flex-col items-center justify-center min-h-[300px] text-muted-foreground">
                         <Plus className="w-8 h-8 mb-2" />
