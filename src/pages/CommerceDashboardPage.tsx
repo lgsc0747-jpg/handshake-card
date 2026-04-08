@@ -16,7 +16,7 @@ import { SortableContext, rectSortingStrategy, useSortable, arrayMove } from "@d
 import { CSS } from "@dnd-kit/utilities";
 import {
   Loader2, Download, ShoppingBag, DollarSign, TrendingUp,
-  Package, Clock, CheckCircle2, XCircle, BarChart3, Wifi, ArrowRight, GripVertical,
+  Package, Clock, CheckCircle2, XCircle, BarChart3, Wifi, ArrowRight, GripVertical, RotateCcw,
 } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip,
@@ -274,6 +274,9 @@ const CommerceDashboardPage = () => {
                 </button>
               ))}
             </div>
+            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => { setKpiOrder(DEFAULT_KPI_ORDER); localStorage.removeItem("commerce_kpi_order"); }} title="Reset layout">
+              <RotateCcw className="w-3 h-3" />
+            </Button>
             {isPro && (
               <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5" onClick={handleExportCSV}>
                 <Download className="w-3 h-3" /> Export CSV

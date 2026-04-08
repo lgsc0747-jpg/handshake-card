@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { CreditCard, LayoutDashboard, List, User, Wifi, LogOut, Tag, Smartphone, Users, Mail, Palette, Settings, Crown, ShieldCheck, ShoppingBag, Store, BarChart3, FileText, GripVertical } from "lucide-react";
+import { CreditCard, LayoutDashboard, List, User, Wifi, LogOut, Tag, Smartphone, Users, Mail, Palette, Settings, Crown, ShieldCheck, ShoppingBag, Store, BarChart3, FileText, GripVertical, RotateCcw } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -175,9 +175,18 @@ export function AppSidebar() {
 
       <SidebarFooter className="p-4 space-y-3">
         {!collapsed && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <div className="w-2 h-2 rounded-full bg-success pulse-online" />
-            <span className="truncate">{user?.email ?? "Online"}</span>
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-success pulse-online" />
+              <span className="truncate">{user?.email ?? "Online"}</span>
+            </div>
+            <button
+              onClick={() => { localStorage.removeItem("sidebar_nfc_order"); localStorage.removeItem("sidebar_commerce_order"); localStorage.removeItem("sidebar_general_order"); window.location.reload(); }}
+              title="Reset nav order"
+              className="hover:text-primary transition-colors"
+            >
+              <RotateCcw className="w-3 h-3" />
+            </button>
           </div>
         )}
         <Button

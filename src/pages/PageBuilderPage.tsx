@@ -34,13 +34,14 @@ const ICON_MAP: Record<string, any> = {
   HelpCircle, Grid3x3, ShoppingBag, CreditCard, Mail, Share2, Code,
 };
 
-function SortableBlockItem({ block, Icon, meta, isActive, onSelect, onDuplicate }: {
+function SortableBlockItem({ block, Icon, meta, isActive, onSelect, onDuplicate, onDelete }: {
   block: PageBlock;
   Icon: any;
   meta: (typeof BLOCK_TYPES)[number] | undefined;
   isActive: boolean;
   onSelect: () => void;
   onDuplicate: () => void;
+  onDelete: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: block.id });
   const style: React.CSSProperties = {
@@ -66,8 +67,11 @@ function SortableBlockItem({ block, Icon, meta, isActive, onSelect, onDuplicate 
       <Icon className="w-3.5 h-3.5 shrink-0" />
       <span className="truncate flex-1">{meta?.label ?? block.block_type}</span>
       <div className="flex gap-0.5">
-        <button onClick={(e) => { e.stopPropagation(); onDuplicate(); }} className="p-0.5 hover:text-primary">
+        <button onClick={(e) => { e.stopPropagation(); onDuplicate(); }} className="p-0.5 hover:text-primary" title="Duplicate">
           <Copy className="w-3 h-3" />
+        </button>
+        <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="p-0.5 hover:text-destructive" title="Delete">
+          <Trash2 className="w-3 h-3" />
         </button>
         {!block.is_visible && <EyeOff className="w-3 h-3" />}
       </div>
@@ -75,11 +79,13 @@ function SortableBlockItem({ block, Icon, meta, isActive, onSelect, onDuplicate 
   );
 }
 
-function SortablePageTab({ page, isActive, onSelect, onRename }: {
+function SortablePageTab({ page, isActive, onSelect, onRename, onDelete, canDelete }: {
   page: SitePage;
   isActive: boolean;
   onSelect: () => void;
   onRename: (newTitle: string) => void;
+  onDelete: () => void;
+  canDelete: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(page.title);
@@ -106,7 +112,7 @@ function SortablePageTab({ page, isActive, onSelect, onRename }: {
       ref={setNodeRef}
       style={style}
       className={cn(
-        "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all border",
+        "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all border group/tab",
         isActive
           ? "bg-primary/10 text-primary border-primary/30"
           : "text-muted-foreground border-border/40 hover:border-primary/20"
@@ -132,6 +138,11 @@ function SortablePageTab({ page, isActive, onSelect, onRename }: {
         >
           {page.is_homepage && <Home className="w-3 h-3" />}
           {page.title}
+        </button>
+      )}
+      {canDelete && (
+        <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="opacity-0 group-hover/tab:opacity-100 transition-opacity hover:text-destructive" title="Delete page">
+          <Trash2 className="w-3 h-3" />
         </button>
       )}
     </div>
@@ -539,6 +550,8 @@ function PageBuilderPage() {
                     isActive={selectedPageId === page.id}
                     onSelect={() => setSelectedPageId(page.id)}
                     onRename={(newTitle) => updatePageTitle(page.id, newTitle)}
+                    onDelete={() => deletePage(page.id)}
+                    canDelete={pages.length > 1}
                   />
                 ))}
               </div>
@@ -591,6 +604,7 @@ function PageBuilderPage() {
                             isActive={editingBlockId === block.id}
                             onSelect={() => setEditingBlockId(block.id)}
                             onDuplicate={() => duplicateBlock(block)}
+                            onDelete={() => deleteBlock(block.id)}
                           />
                         );
                       })}

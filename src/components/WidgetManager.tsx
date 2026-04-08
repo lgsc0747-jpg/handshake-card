@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/sheet";
 import {
   Zap, Users, Smartphone, Eye, FileText, Settings2, GripVertical, LayoutGrid,
-  Clock, Shield, BarChart3, MousePointerClick,
+  Clock, Shield, BarChart3, MousePointerClick, RotateCcw,
 } from "lucide-react";
 
 interface WidgetManagerProps {
@@ -201,6 +201,15 @@ export function WidgetManager({ stats }: WidgetManagerProps) {
               </div>
             </SheetContent>
           </Sheet>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 text-xs"
+            onClick={() => { setOrder(DEFAULT_ORDER); setVisible(DEFAULT_VISIBILITY); localStorage.removeItem(STORAGE_KEY_ORDER); localStorage.removeItem(STORAGE_KEY_VIS); }}
+            title="Reset to default layout"
+          >
+            <RotateCcw className="w-3 h-3" />
+          </Button>
           <Button
             size="sm"
             variant={editMode ? "default" : "outline"}
