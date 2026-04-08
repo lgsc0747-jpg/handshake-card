@@ -200,6 +200,24 @@ function PageBuilderPage() {
   const [addBlockOpen, setAddBlockOpen] = useState(false);
   const [templateOpen, setTemplateOpen] = useState(false);
 
+  // Confirmation dialogs
+  const [confirmDeleteBlock, setConfirmDeleteBlock] = useState<string | null>(null);
+  const [confirmDeletePage, setConfirmDeletePage] = useState<string | null>(null);
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+
+  // Bulk selection
+  const [bulkMode, setBulkMode] = useState(false);
+  const [selectedBlockIds, setSelectedBlockIds] = useState<Set<string>>(new Set());
+
+  const toggleBulkSelect = (id: string) => {
+    setSelectedBlockIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+
   // Undo/Redo history
   const historyRef = useRef<PageBlock[][]>([]);
   const historyIdxRef = useRef(-1);
