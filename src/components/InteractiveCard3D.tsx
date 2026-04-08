@@ -304,7 +304,7 @@ function CardFront({
       style={{
         ...FACE_STYLE,
         pointerEvents: isFlipped ? "none" : "auto",
-        ...getBackgroundStyle(cardBgImageUrl, cardBgSize, accentColor, secondaryColor),
+        ...getBackgroundStyle(cardBgImageUrl, cardBgSize, accentColor, secondaryColor, cardBgPosition),
         boxShadow: `0 25px 50px -12px ${accentColor}44, 0 0 40px ${accentColor}22`,
         fontFamily,
       }}
@@ -353,14 +353,25 @@ function CardFront({
         </div>
 
         <div className={`flex w-full gap-[0.75em] ${bottomAlign}`} style={{ transform: "translateZ(24px)" }}>
-          {avatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt={name}
-              className="h-[3em] w-[3em] rounded-full border-2 border-white/30 object-cover"
-              loading="lazy"
-            />
-          ) : (
+          {avatarUrl ? (() => {
+            const ap = avatarPosition ?? { x: 50, y: 50, scale: 100 };
+            return (
+              <div className="h-[3em] w-[3em] rounded-full border-2 border-white/30 overflow-hidden shrink-0">
+                <img
+                  src={avatarUrl}
+                  alt={name}
+                  className="w-full h-full"
+                  loading="lazy"
+                  style={{
+                    objectFit: "cover",
+                    objectPosition: `${ap.x}% ${ap.y}%`,
+                    transform: `scale(${ap.scale / 100})`,
+                    transformOrigin: `${ap.x}% ${ap.y}%`,
+                  }}
+                />
+              </div>
+            );
+          })() : (
             <div
               className="flex h-[3em] w-[3em] items-center justify-center rounded-full border-2 border-white/30 text-[1.2em] font-bold"
               style={{ background: "rgba(255,255,255,0.15)", color: textColor }}
