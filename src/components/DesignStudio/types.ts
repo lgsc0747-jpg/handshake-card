@@ -31,4 +31,6 @@ export interface PersonaDesign {
   shadow_preset: string | null;
   card_animation: string | null;
   avatar_position: { x: number; y: number; scale: number } | null;
+  card_bg_position: { x: number; y: number; scale: number } | null;
+  bg_image_position: { x: number; y: number; scale: number } | null;
 }
