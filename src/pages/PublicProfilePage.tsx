@@ -6,6 +6,8 @@ import { InteractiveCard3D } from "@/components/InteractiveCard3D";
 import { SecurityGate } from "@/components/SecurityGate";
 import { CardDisabledPage } from "@/components/CardDisabledPage";
 import { PublicProductGrid } from "@/components/commerce/PublicProductGrid";
+import { BlockRenderer } from "@/components/page-builder/BlockRenderer";
+import type { PageBlock } from "@/components/page-builder/types";
 import { downloadVCard } from "@/lib/vcard";
 import { getPresetCss } from "@/components/DesignStudio/BackgroundPresets";
 import { getFontStack, getGoogleFontUrl } from "@/components/DesignStudio/FontPresets";
@@ -89,6 +91,8 @@ const PublicProfilePage = () => {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [persona, setPersona] = useState<PersonaData | null>(null);
   const [sections, setSections] = useState<SectionData[]>([]);
+  const [pageBlocks, setPageBlocks] = useState<PageBlock[]>([]);
+  const [hasPageBuilder, setHasPageBuilder] = useState(false);
   const [ownerIsPro, setOwnerIsPro] = useState(false);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -164,7 +168,6 @@ const PublicProfilePage = () => {
         if (sectionData && sectionData.length > 0) {
           setSections(sectionData as SectionData[]);
         } else {
-          // Default order
           setSections([
             { section_type: "hero", sort_order: 0, is_visible: true },
             { section_type: "nfc_card", sort_order: 1, is_visible: true },
@@ -172,6 +175,28 @@ const PublicProfilePage = () => {
             { section_type: "contact", sort_order: 3, is_visible: true },
             { section_type: "social_grid", sort_order: 4, is_visible: true },
           ]);
+        }
+
+        // Load page builder blocks
+        const { data: sitePages } = await supabase
+          .from("site_pages")
+          .select("id")
+          .eq("persona_id", personaData.id)
+          .eq("is_homepage", true)
+          .eq("is_visible", true)
+          .limit(1);
+
+        if (sitePages && sitePages.length > 0) {
+          const { data: blockData } = await supabase
+            .from("page_blocks")
+            .select("*")
+            .eq("page_id", sitePages[0].id)
+            .eq("is_visible", true)
+            .order("sort_order");
+          if (blockData && blockData.length > 0) {
+            setPageBlocks(blockData as PageBlock[]);
+            setHasPageBuilder(true);
+          }
         }
       }
 
@@ -638,24 +663,31 @@ const PublicProfilePage = () => {
     <>
       {googleFontUrl && <link rel="stylesheet" href={googleFontUrl} />}
       <div ref={containerRef} className="relative" style={{ backgroundColor: landingBgColor, fontFamily: fontStack }}>
-        {visibleSections.map((section, idx) => {
-          const renderer = sectionRenderers[section.section_type];
-          if (!renderer) return null;
+        {/* If Page Builder blocks exist, render those instead of legacy sections */}
+        {hasPageBuilder ? (
+          <div style={{ color: textColor }}>
+            {pageBlocks.map(block => (
+              <BlockRenderer key={block.id} block={block} persona={persona} />
+            ))}
+          </div>
+        ) : (
+          visibleSections.map((section, idx) => {
+            const renderer = sectionRenderers[section.section_type];
+            if (!renderer) return null;
 
-          // NFC Card gets full-screen treatment
-          if (section.section_type === "nfc_card") {
-            return <div key={section.section_type}>{renderer()}</div>;
-          }
+            if (section.section_type === "nfc_card") {
+              return <div key={section.section_type}>{renderer()}</div>;
+            }
 
-          // Other sections go in the details area
-          return (
-            <section key={section.section_type} className="relative z-10" style={{ backgroundColor: landingBgColor }}>
-              <div className="max-w-lg mx-auto px-4 py-8">
-                {renderer()}
-              </div>
-            </section>
-          );
-        })}
+            return (
+              <section key={section.section_type} className="relative z-10" style={{ backgroundColor: landingBgColor }}>
+                <div className="max-w-lg mx-auto px-4 py-8">
+                  {renderer()}
+                </div>
+              </section>
+            );
+          })
+        )}
 
         {/* Branding */}
         {!ownerIsPro && (

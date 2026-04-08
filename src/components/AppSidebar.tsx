@@ -1,4 +1,4 @@
-import { CreditCard, LayoutDashboard, List, User, Wifi, LogOut, Tag, Smartphone, Users, Mail, Palette, Settings, Crown, ShieldCheck, ShoppingBag, Store, BarChart3 } from "lucide-react";
+import { CreditCard, LayoutDashboard, List, User, Wifi, LogOut, Tag, Smartphone, Users, Mail, Palette, Settings, Crown, ShieldCheck, ShoppingBag, Store, BarChart3, FileText } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -21,6 +21,7 @@ const nfcItems = [
   { title: "NFC Cards", url: "/cards", icon: CreditCard },
   { title: "NFC Manager", url: "/nfc-manager", icon: Smartphone },
   { title: "Card Studio", url: "/design-studio", icon: Palette },
+  { title: "Page Builder", url: "/page-builder", icon: FileText },
   { title: "Interaction Logs", url: "/logs", icon: List },
   { title: "Categories", url: "/categories", icon: Tag },
 ];

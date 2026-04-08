@@ -274,6 +274,53 @@ export type Database = {
           },
         ]
       }
+      page_blocks: {
+        Row: {
+          block_type: string
+          content: Json
+          created_at: string
+          id: string
+          is_visible: boolean
+          page_id: string
+          sort_order: number
+          styles: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          block_type: string
+          content?: Json
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          page_id: string
+          sort_order?: number
+          styles?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          block_type?: string
+          content?: Json
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          page_id?: string
+          sort_order?: number
+          styles?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_blocks_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "site_pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       persona_sections: {
         Row: {
           config: Json
@@ -612,6 +659,56 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "short_links_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      site_pages: {
+        Row: {
+          created_at: string
+          id: string
+          is_homepage: boolean
+          is_visible: boolean
+          page_icon: string | null
+          persona_id: string
+          slug: string
+          sort_order: number
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_homepage?: boolean
+          is_visible?: boolean
+          page_icon?: string | null
+          persona_id: string
+          slug?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_homepage?: boolean
+          is_visible?: boolean
+          page_icon?: string | null
+          persona_id?: string
+          slug?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_pages_persona_id_fkey"
             columns: ["persona_id"]
             isOneToOne: false
             referencedRelation: "personas"
