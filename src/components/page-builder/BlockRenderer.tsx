@@ -1,7 +1,65 @@
 import type { PageBlock } from "./types";
 import { Button } from "@/components/ui/button";
 import { Mail, Phone, Globe, Linkedin, Github, Twitter, Instagram, Facebook, Youtube, ExternalLink, MapPin, Quote as QuoteIcon, Star, ChevronDown, ChevronUp } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import { InteractiveCard3D } from "@/components/InteractiveCard3D";
+
+const ANIMATION_PRESETS: Record<string, { initial: any; animate: any; transition: any }> = {
+  none: { initial: {}, animate: {}, transition: {} },
+  "fade-up": {
+    initial: { opacity: 0, y: 30 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] },
+  },
+  "fade-down": {
+    initial: { opacity: 0, y: -30 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] },
+  },
+  "slide-left": {
+    initial: { opacity: 0, x: -40 },
+    animate: { opacity: 1, x: 0 },
+    transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] },
+  },
+  "slide-right": {
+    initial: { opacity: 0, x: 40 },
+    animate: { opacity: 1, x: 0 },
+    transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] },
+  },
+  "scale-spring": {
+    initial: { opacity: 0, scale: 0.85 },
+    animate: { opacity: 1, scale: 1 },
+    transition: { type: "spring", stiffness: 260, damping: 20 },
+  },
+  "scale-bounce": {
+    initial: { opacity: 0, scale: 0.6 },
+    animate: { opacity: 1, scale: 1 },
+    transition: { type: "spring", stiffness: 400, damping: 15 },
+  },
+  "blur-in": {
+    initial: { opacity: 0, filter: "blur(12px)" },
+    animate: { opacity: 1, filter: "blur(0px)" },
+    transition: { duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] },
+  },
+  "flip-up": {
+    initial: { opacity: 0, rotateX: -15, y: 20 },
+    animate: { opacity: 1, rotateX: 0, y: 0 },
+    transition: { type: "spring", stiffness: 200, damping: 18 },
+  },
+};
+
+export const ANIMATION_OPTIONS = Object.keys(ANIMATION_PRESETS);
+
+function useInView(ref: React.RefObject<HTMLElement | null>) {
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    if (!ref.current) return;
+    const observer = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setInView(true); observer.disconnect(); } }, { threshold: 0.15 });
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [ref]);
+  return inView;
+}
 
 interface BlockRendererProps {
   block: PageBlock;
@@ -12,6 +70,12 @@ interface BlockRendererProps {
 
 export function BlockRenderer({ block, isEditing, onClick, persona }: BlockRendererProps) {
   const { block_type, content, styles } = block;
+  const animRef = useRef<HTMLDivElement>(null);
+  const inView = useInView(animRef);
+  const animKey = (styles.animation as string) ?? "none";
+  const anim = ANIMATION_PRESETS[animKey] ?? ANIMATION_PRESETS.none;
+  const shouldAnimate = !isEditing && animKey !== "none";
+
   const wrapperStyle: React.CSSProperties = {
     paddingTop: styles.paddingY ?? 24,
     paddingBottom: styles.paddingY ?? 24,
@@ -22,6 +86,8 @@ export function BlockRenderer({ block, isEditing, onClick, persona }: BlockRende
     textAlign: (styles.alignment ?? "left") as any,
     maxWidth: styles.maxWidth ?? "100%",
     margin: "0 auto",
+    ...(shouldAnimate && !inView ? styleFromMotion(anim.initial) : {}),
+    ...(shouldAnimate && inView ? { ...styleFromMotion(anim.animate), transition: cssTransition(anim.transition) } : {}),
   };
 
   const editOverlay = isEditing ? (
@@ -38,8 +104,7 @@ export function BlockRenderer({ block, isEditing, onClick, persona }: BlockRende
   switch (block_type) {
     case "heading":
       return (
-        <div className="relative" style={wrapperStyle}>
-          {editOverlay}
+        <div ref={animRef} className="relative" style={wrapperStyle}>
           <h2
             className="font-display font-bold leading-tight"
             style={{
@@ -59,7 +124,7 @@ export function BlockRenderer({ block, isEditing, onClick, persona }: BlockRende
 
     case "text":
       return (
-        <div className="relative" style={wrapperStyle}>
+        <div ref={animRef} className="relative" style={wrapperStyle}>
           {editOverlay}
           <div
             className="leading-relaxed whitespace-pre-wrap"
@@ -76,7 +141,7 @@ export function BlockRenderer({ block, isEditing, onClick, persona }: BlockRende
 
     case "image":
       return (
-        <div className="relative" style={wrapperStyle}>
+        <div ref={animRef} className="relative" style={wrapperStyle}>
           {editOverlay}
           {content.url ? (
             <img
@@ -104,7 +169,7 @@ export function BlockRenderer({ block, isEditing, onClick, persona }: BlockRende
 
     case "gallery":
       return (
-        <div className="relative" style={wrapperStyle}>
+        <div ref={animRef} className="relative" style={wrapperStyle}>
           {editOverlay}
           <div
             className="grid gap-3"
@@ -127,7 +192,7 @@ export function BlockRenderer({ block, isEditing, onClick, persona }: BlockRende
 
     case "video":
       return (
-        <div className="relative" style={wrapperStyle}>
+        <div ref={animRef} className="relative" style={wrapperStyle}>
           {editOverlay}
           {content.url ? (
             <div className="relative w-full aspect-video rounded-xl overflow-hidden">
@@ -148,7 +213,7 @@ export function BlockRenderer({ block, isEditing, onClick, persona }: BlockRende
 
     case "spacer":
       return (
-        <div className="relative" style={{ height: content.height ?? 48 }}>
+        <div ref={animRef} className="relative" style={{ height: content.height ?? 48 }}>
           {editOverlay}
           {isEditing && (
             <div className="absolute inset-0 flex items-center justify-center">
@@ -160,7 +225,7 @@ export function BlockRenderer({ block, isEditing, onClick, persona }: BlockRende
 
     case "divider":
       return (
-        <div className="relative" style={wrapperStyle}>
+        <div ref={animRef} className="relative" style={wrapperStyle}>
           {editOverlay}
           <hr
             className="border-0"
@@ -175,7 +240,7 @@ export function BlockRenderer({ block, isEditing, onClick, persona }: BlockRende
 
     case "button":
       return (
-        <div className="relative flex" style={{ ...wrapperStyle, justifyContent: styles.alignment === "center" ? "center" : styles.alignment === "right" ? "flex-end" : "flex-start" }}>
+        <div ref={animRef} className="relative flex" style={{ ...wrapperStyle, justifyContent: styles.alignment === "center" ? "center" : styles.alignment === "right" ? "flex-end" : "flex-start" }}>
           {editOverlay}
           <a href={content.url ?? "#"} target="_blank" rel="noopener noreferrer" className="inline-block">
             <Button
@@ -196,7 +261,7 @@ export function BlockRenderer({ block, isEditing, onClick, persona }: BlockRende
 
     case "quote":
       return (
-        <div className="relative" style={wrapperStyle}>
+        <div ref={animRef} className="relative" style={wrapperStyle}>
           {editOverlay}
           <blockquote className="relative pl-6 border-l-4" style={{ borderColor: styles.accentColor ?? "hsl(var(--primary))" }}>
             <QuoteIcon className="absolute -left-2 -top-2 w-8 h-8 opacity-10" />
@@ -212,7 +277,7 @@ export function BlockRenderer({ block, isEditing, onClick, persona }: BlockRende
 
     case "team":
       return (
-        <div className="relative" style={wrapperStyle}>
+        <div ref={animRef} className="relative" style={wrapperStyle}>
           {editOverlay}
           <div className="flex items-center gap-4 p-4 rounded-2xl bg-card/50 border border-border/60 backdrop-blur-sm">
             {content.photoUrl ? (
@@ -231,7 +296,7 @@ export function BlockRenderer({ block, isEditing, onClick, persona }: BlockRende
 
     case "stats":
       return (
-        <div className="relative" style={wrapperStyle}>
+        <div ref={animRef} className="relative" style={wrapperStyle}>
           {editOverlay}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {(content.items ?? [{ value: "100+", label: "Customers" }, { value: "50K", label: "Sales" }, { value: "4.9", label: "Rating" }]).map((item: { value: string; label: string }, i: number) => (
@@ -246,7 +311,7 @@ export function BlockRenderer({ block, isEditing, onClick, persona }: BlockRende
 
     case "testimonial":
       return (
-        <div className="relative" style={wrapperStyle}>
+        <div ref={animRef} className="relative" style={wrapperStyle}>
           {editOverlay}
           <div className="p-5 rounded-2xl bg-card/50 border border-border/60 backdrop-blur-sm">
             <div className="flex gap-0.5 mb-3">
@@ -268,7 +333,7 @@ export function BlockRenderer({ block, isEditing, onClick, persona }: BlockRende
 
     case "faq": {
       return (
-        <div className="relative" style={wrapperStyle}>
+        <div ref={animRef} className="relative" style={wrapperStyle}>
           {editOverlay}
           <div className="space-y-2">
             {(content.items ?? [{ q: "Question?", a: "Answer goes here." }]).map((item: { q: string; a: string }, i: number) => (
@@ -281,7 +346,7 @@ export function BlockRenderer({ block, isEditing, onClick, persona }: BlockRende
 
     case "icon_grid":
       return (
-        <div className="relative" style={wrapperStyle}>
+        <div ref={animRef} className="relative" style={wrapperStyle}>
           {editOverlay}
           <div className="grid grid-cols-3 gap-4">
             {(content.items ?? [{ icon: "🚀", label: "Fast" }, { icon: "🔒", label: "Secure" }, { icon: "🎨", label: "Beautiful" }]).map((item: { icon: string; label: string; description?: string }, i: number) => (
@@ -297,7 +362,7 @@ export function BlockRenderer({ block, isEditing, onClick, persona }: BlockRende
 
     case "products":
       return (
-        <div className="relative" style={wrapperStyle}>
+        <div ref={animRef} className="relative" style={wrapperStyle}>
           {editOverlay}
           <div className="text-center p-8 rounded-xl bg-muted/20 border border-border/40">
             <span className="text-sm text-muted-foreground">📦 Product grid loads from your store</span>
@@ -307,17 +372,45 @@ export function BlockRenderer({ block, isEditing, onClick, persona }: BlockRende
 
     case "nfc_card":
       return (
-        <div className="relative" style={wrapperStyle}>
+        <div ref={animRef} className="relative" style={wrapperStyle}>
           {editOverlay}
-          <div className="text-center p-8 rounded-xl bg-muted/20 border border-border/40">
-            <span className="text-sm text-muted-foreground">💳 3D NFC Card renders from your card settings</span>
-          </div>
+          {persona ? (
+            <div className="flex justify-center" style={{ perspective: "1200px" }}>
+              <div className="scale-[0.85] origin-center">
+                <InteractiveCard3D
+                  name={persona.display_name ?? "Your Name"}
+                  headline={persona.headline ?? undefined}
+                  avatarUrl={persona.avatar_url ?? undefined}
+                  username={persona.slug ?? ""}
+                  accentColor={persona.accent_color ?? "#0d9488"}
+                  secondaryColor={persona.secondary_color ?? undefined}
+                  tertiaryColor={persona.tertiary_color ?? undefined}
+                  textColor={persona.text_color ?? "#ffffff"}
+                  cardBgImageUrl={persona.card_bg_image_url ?? undefined}
+                  cardBgSize={persona.card_bg_size ?? "cover"}
+                  glassOpacity={persona.glass_opacity ?? 0.15}
+                  linkedinUrl={persona.linkedin_url ?? undefined}
+                  githubUrl={persona.github_url ?? undefined}
+                  website={persona.website ?? undefined}
+                  email={persona.email_public ?? undefined}
+                  fontFamily={persona.font_family ?? "Space Grotesk"}
+                  textAlignment={persona.text_alignment ?? "left"}
+                  cardBlur={persona.card_blur ?? 12}
+                  cardTexture={persona.card_texture ?? "none"}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="text-center p-8 rounded-xl bg-muted/20 border border-border/40">
+              <span className="text-sm text-muted-foreground">💳 3D NFC Card — add persona data to render</span>
+            </div>
+          )}
         </div>
       );
 
     case "contact":
       return (
-        <div className="relative" style={wrapperStyle}>
+        <div ref={animRef} className="relative" style={wrapperStyle}>
           {editOverlay}
           <div className="p-5 rounded-2xl bg-card/50 border border-border/60 space-y-3 backdrop-blur-sm">
             <h3 className="font-semibold text-sm">{content.title || "Get in Touch"}</h3>
@@ -332,7 +425,7 @@ export function BlockRenderer({ block, isEditing, onClick, persona }: BlockRende
     case "social": {
       const links = content.links ?? [];
       return (
-        <div className="relative" style={wrapperStyle}>
+        <div ref={animRef} className="relative" style={wrapperStyle}>
           {editOverlay}
           <div className="flex flex-wrap gap-3 justify-center">
             {links.length > 0 ? links.map((l: { platform: string; url: string }, i: number) => (
@@ -349,7 +442,7 @@ export function BlockRenderer({ block, isEditing, onClick, persona }: BlockRende
 
     case "embed":
       return (
-        <div className="relative" style={wrapperStyle}>
+        <div ref={animRef} className="relative" style={wrapperStyle}>
           {editOverlay}
           {content.html ? (
             <div dangerouslySetInnerHTML={{ __html: content.html }} />
@@ -386,4 +479,28 @@ function getSocialIcon(platform: string) {
     twitter: "𝕏", facebook: "f", instagram: "📸", youtube: "▶", linkedin: "in", github: "⌨", tiktok: "♪",
   };
   return map[platform.toLowerCase()] ?? "🔗";
+}
+
+function styleFromMotion(m: Record<string, any>): React.CSSProperties {
+  const s: any = {};
+  const transforms: string[] = [];
+  for (const [k, v] of Object.entries(m)) {
+    if (k === "opacity") s.opacity = v;
+    else if (k === "filter") s.filter = v;
+    else if (k === "x") transforms.push(`translateX(${v}px)`);
+    else if (k === "y") transforms.push(`translateY(${v}px)`);
+    else if (k === "scale") transforms.push(`scale(${v})`);
+    else if (k === "rotateX") transforms.push(`rotateX(${v}deg)`);
+  }
+  if (transforms.length) s.transform = transforms.join(" ");
+  return s;
+}
+
+function cssTransition(t: Record<string, any>): string {
+  if (t.type === "spring") {
+    const dur = 0.6;
+    return `all ${dur}s cubic-bezier(0.34, 1.56, 0.64, 1)`;
+  }
+  const dur = t.duration ?? 0.5;
+  return `all ${dur}s cubic-bezier(0.25, 0.46, 0.45, 0.94)`;
 }

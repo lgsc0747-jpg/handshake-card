@@ -10,6 +10,7 @@ import { ImageUploadField } from "@/components/DesignStudio/ImageUploadField";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trash2, Plus, X } from "lucide-react";
 import type { PageBlock } from "./types";
+import { ANIMATION_OPTIONS } from "./BlockRenderer";
 
 interface BlockEditorProps {
   block: PageBlock;
@@ -99,6 +100,17 @@ export function BlockEditor({ block, onChange, onDelete, onClose }: BlockEditorP
             onValueChange={([v]) => updateStyles("borderRadius", v)}
             min={0} max={32} step={2}
           />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-xs">Entrance Animation</Label>
+          <Select value={block.styles.animation ?? "none"} onValueChange={(v) => updateStyles("animation", v)}>
+            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {ANIMATION_OPTIONS.map((a) => (
+                <SelectItem key={a} value={a} className="text-xs capitalize">{a.replace(/-/g, " ")}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
     </div>
