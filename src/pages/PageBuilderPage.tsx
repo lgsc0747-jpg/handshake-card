@@ -75,6 +75,69 @@ function SortableBlockItem({ block, Icon, meta, isActive, onSelect, onDuplicate 
   );
 }
 
+function SortablePageTab({ page, isActive, onSelect }: {
+  page: SitePage;
+  isActive: boolean;
+  onSelect: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: page.id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 50 : undefined,
+  };
+  return (
+    <button
+      ref={setNodeRef}
+      style={style}
+      onClick={onSelect}
+      className={cn(
+        "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all border touch-none",
+        isActive
+          ? "bg-primary/10 text-primary border-primary/30"
+          : "text-muted-foreground border-border/40 hover:border-primary/20"
+      )}
+      {...attributes}
+      {...listeners}
+    >
+      {page.is_homepage && <Home className="w-3 h-3" />}
+      {page.title}
+    </button>
+  );
+}
+
+function SortablePreviewBlock({ block, editingBlockId, onSelect }: {
+  block: PageBlock;
+  editingBlockId: string | null;
+  onSelect: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: block.id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 50 : undefined,
+    position: "relative",
+  };
+  return (
+    <div ref={setNodeRef} style={style} className="group relative">
+      <div
+        {...attributes}
+        {...listeners}
+        className="absolute left-1 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-card/80 backdrop-blur-sm rounded-lg p-1 cursor-grab touch-none"
+      >
+        <GripVertical className="w-4 h-4 text-muted-foreground" />
+      </div>
+      <BlockRenderer
+        block={block}
+        isEditing={true}
+        onClick={onSelect}
+      />
+    </div>
+  );
+}
+
 function PageBuilderPage() {
   const { user } = useAuth();
   const { toast } = useToast();
