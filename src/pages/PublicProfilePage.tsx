@@ -663,24 +663,31 @@ const PublicProfilePage = () => {
     <>
       {googleFontUrl && <link rel="stylesheet" href={googleFontUrl} />}
       <div ref={containerRef} className="relative" style={{ backgroundColor: landingBgColor, fontFamily: fontStack }}>
-        {visibleSections.map((section, idx) => {
-          const renderer = sectionRenderers[section.section_type];
-          if (!renderer) return null;
+        {/* If Page Builder blocks exist, render those instead of legacy sections */}
+        {hasPageBuilder ? (
+          <div style={{ color: textColor }}>
+            {pageBlocks.map(block => (
+              <BlockRenderer key={block.id} block={block} persona={persona} />
+            ))}
+          </div>
+        ) : (
+          visibleSections.map((section, idx) => {
+            const renderer = sectionRenderers[section.section_type];
+            if (!renderer) return null;
 
-          // NFC Card gets full-screen treatment
-          if (section.section_type === "nfc_card") {
-            return <div key={section.section_type}>{renderer()}</div>;
-          }
+            if (section.section_type === "nfc_card") {
+              return <div key={section.section_type}>{renderer()}</div>;
+            }
 
-          // Other sections go in the details area
-          return (
-            <section key={section.section_type} className="relative z-10" style={{ backgroundColor: landingBgColor }}>
-              <div className="max-w-lg mx-auto px-4 py-8">
-                {renderer()}
-              </div>
-            </section>
-          );
-        })}
+            return (
+              <section key={section.section_type} className="relative z-10" style={{ backgroundColor: landingBgColor }}>
+                <div className="max-w-lg mx-auto px-4 py-8">
+                  {renderer()}
+                </div>
+              </section>
+            );
+          })
+        )}
 
         {/* Branding */}
         {!ownerIsPro && (
