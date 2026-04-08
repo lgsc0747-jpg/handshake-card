@@ -213,7 +213,7 @@ export function BlockRenderer({ block, isEditing, onClick, persona }: BlockRende
 
     case "spacer":
       return (
-        <div className="relative" style={{ height: content.height ?? 48 }}>
+        <div ref={animRef} className="relative" style={{ height: content.height ?? 48 }}>
           {editOverlay}
           {isEditing && (
             <div className="absolute inset-0 flex items-center justify-center">
@@ -240,7 +240,7 @@ export function BlockRenderer({ block, isEditing, onClick, persona }: BlockRende
 
     case "button":
       return (
-        <div className="relative flex" style={{ ...wrapperStyle, justifyContent: styles.alignment === "center" ? "center" : styles.alignment === "right" ? "flex-end" : "flex-start" }}>
+        <div ref={animRef} className="relative flex" style={{ ...wrapperStyle, justifyContent: styles.alignment === "center" ? "center" : styles.alignment === "right" ? "flex-end" : "flex-start" }}>
           {editOverlay}
           <a href={content.url ?? "#"} target="_blank" rel="noopener noreferrer" className="inline-block">
             <Button
