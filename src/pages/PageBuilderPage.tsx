@@ -22,7 +22,7 @@ import {
   Type, AlignLeft, Image, LayoutGrid, Play, Minus, SeparatorHorizontal,
   MousePointerClick, Quote, Users, BarChart3, MessageSquareQuote,
   HelpCircle, Grid3x3, ShoppingBag, CreditCard, Mail, Share2, Code,
-  Home, PanelLeftClose, PanelLeft, FilePlus,
+  Home, PanelLeftClose, PanelLeft, FilePlus, Undo2, Redo2, BookTemplate,
 } from "lucide-react";
 
 const ICON_MAP: Record<string, any> = {
