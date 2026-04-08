@@ -1,7 +1,14 @@
-import { CreditCard, LayoutDashboard, List, User, Wifi, LogOut, Tag, Smartphone, Users, Mail, Palette, Settings, Crown, ShieldCheck, ShoppingBag, Store, BarChart3, FileText } from "lucide-react";
+import { useState, useEffect } from "react";
+import { CreditCard, LayoutDashboard, List, User, Wifi, LogOut, Tag, Smartphone, Users, Mail, Palette, Settings, Crown, ShieldCheck, ShoppingBag, Store, BarChart3, FileText, GripVertical } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import {
+  DndContext, closestCenter, PointerSensor, TouchSensor,
+  useSensor, useSensors, type DragEndEvent,
+} from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   Sidebar,
   SidebarContent,
@@ -15,8 +22,15 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-const nfcItems = [
+interface NavItem {
+  title: string;
+  url: string;
+  icon: any;
+}
+
+const DEFAULT_NFC: NavItem[] = [
   { title: "NFC Dashboard", url: "/", icon: LayoutDashboard },
   { title: "NFC Cards", url: "/cards", icon: CreditCard },
   { title: "NFC Manager", url: "/nfc-manager", icon: Smartphone },
@@ -26,24 +40,119 @@ const nfcItems = [
   { title: "Categories", url: "/categories", icon: Tag },
 ];
 
-const commerceItems = [
+const DEFAULT_COMMERCE: NavItem[] = [
   { title: "Commerce Dashboard", url: "/commerce-dashboard", icon: BarChart3 },
   { title: "Storefront", url: "/storefront", icon: Store },
   { title: "Commerce", url: "/commerce", icon: ShoppingBag },
 ];
 
-const generalItems = [
+const DEFAULT_GENERAL: NavItem[] = [
   { title: "Personas", url: "/personas", icon: Users },
   { title: "Leads", url: "/leads", icon: Mail },
   { title: "Settings", url: "/settings", icon: Settings },
   { title: "Plans", url: "/plans", icon: Crown },
 ];
 
+const ICON_MAP: Record<string, any> = {
+  LayoutDashboard, CreditCard, Smartphone, Palette, FileText, List, Tag,
+  BarChart3, Store, ShoppingBag, Users, Mail, Settings, Crown, ShieldCheck,
+};
+
+function reorderFromStorage(key: string, defaults: NavItem[]): NavItem[] {
+  try {
+    const stored = localStorage.getItem(key);
+    if (!stored) return defaults;
+    const order: string[] = JSON.parse(stored);
+    const map = new Map(defaults.map(d => [d.title, d]));
+    const result = order.map(t => map.get(t)).filter(Boolean) as NavItem[];
+    defaults.forEach(d => { if (!result.find(r => r.title === d.title)) result.push(d); });
+    return result;
+  } catch { return defaults; }
+}
+
+function SortableNavItem({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.title });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 50 : undefined,
+  };
+  return (
+    <SidebarMenuItem ref={setNodeRef} style={style}>
+      <SidebarMenuButton asChild>
+        <div className="flex items-center w-full">
+          <div {...attributes} {...listeners} className="touch-none cursor-grab mr-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
+            <GripVertical className="w-3 h-3 text-muted-foreground" />
+          </div>
+          <NavLink
+            to={item.url}
+            end={item.url === "/"}
+            className="hover:bg-sidebar-accent/60 transition-colors flex-1 flex items-center"
+            activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+          >
+            <item.icon className="mr-2 h-4 w-4" />
+            {!collapsed && <span>{item.title}</span>}
+          </NavLink>
+        </div>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
+  );
+}
+
+function SortableNavGroup({ label, storageKey, defaults, collapsed, sensors }: {
+  label: string;
+  storageKey: string;
+  defaults: NavItem[];
+  collapsed: boolean;
+  sensors: ReturnType<typeof useSensors>;
+}) {
+  const [items, setItems] = useState(() => reorderFromStorage(storageKey, defaults));
+
+  const handleSortEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIdx = items.findIndex(i => i.title === active.id);
+    const newIdx = items.findIndex(i => i.title === over.id);
+    if (oldIdx === -1 || newIdx === -1) return;
+    const updated = arrayMove(items, oldIdx, newIdx);
+    setItems(updated);
+    localStorage.setItem(storageKey, JSON.stringify(updated.map(i => i.title)));
+  };
+
+  return (
+    <SidebarGroup>
+      <SidebarGroupLabel className="text-xs uppercase tracking-widest text-muted-foreground/70">
+        {label}
+      </SidebarGroupLabel>
+      <SidebarGroupContent>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleSortEnd}>
+          <SortableContext items={items.map(i => i.title)} strategy={verticalListSortingStrategy}>
+            <SidebarMenu>
+              {items.map((item) => (
+                <SortableNavItem key={item.title} item={item} collapsed={collapsed} />
+              ))}
+            </SidebarMenu>
+          </SortableContext>
+        </DndContext>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  );
+}
+
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { signOut, user } = useAuth();
   const { isAdmin } = useIsAdmin();
+
+  const pointerSensor = useSensor(PointerSensor, { activationConstraint: { distance: 5 } });
+  const touchSensor = useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } });
+  const sensors = useSensors(pointerSensor, touchSensor);
+
+  const generalItems = isAdmin
+    ? [...DEFAULT_GENERAL, { title: "Admin Panel", url: "/admin", icon: ShieldCheck }]
+    : DEFAULT_GENERAL;
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
@@ -59,81 +168,9 @@ export function AppSidebar() {
       </div>
 
       <SidebarContent>
-        {/* NFC Section */}
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-widest text-muted-foreground/70">
-            NFC
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {nfcItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.url}
-                      end={item.url === "/"}
-                      className="hover:bg-sidebar-accent/60 transition-colors"
-                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                    >
-                      <item.icon className="mr-2 h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {/* Commerce Section */}
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-widest text-muted-foreground/70">
-            Commerce
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {commerceItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.url}
-                      className="hover:bg-sidebar-accent/60 transition-colors"
-                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                    >
-                      <item.icon className="mr-2 h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {/* General Section */}
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-widest text-muted-foreground/70">
-            General
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {[...generalItems, ...(isAdmin ? [{ title: "Admin Panel", url: "/admin", icon: ShieldCheck }] : [])].map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.url}
-                      className="hover:bg-sidebar-accent/60 transition-colors"
-                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                    >
-                      <item.icon className="mr-2 h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        <SortableNavGroup label="NFC" storageKey="sidebar_nfc_order" defaults={DEFAULT_NFC} collapsed={collapsed} sensors={sensors} />
+        <SortableNavGroup label="Commerce" storageKey="sidebar_commerce_order" defaults={DEFAULT_COMMERCE} collapsed={collapsed} sensors={sensors} />
+        <SortableNavGroup label="General" storageKey="sidebar_general_order" defaults={generalItems} collapsed={collapsed} sensors={sensors} />
       </SidebarContent>
 
       <SidebarFooter className="p-4 space-y-3">
