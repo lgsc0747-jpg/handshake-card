@@ -44,13 +44,19 @@ export function PublicProductGrid({ personaId, sellerUserId, accentColor, textCo
       });
   }, [personaId]);
 
-  const addToCart = (p: Product) => {
+  const addToCart = (p: Product, variantLabel?: string, _priceModifier?: number) => {
     setCart((prev) => {
-      const exists = prev.find((c) => c.id === p.id);
+      // Unique key = product id + variant label
+      const key = `${p.id}|${variantLabel ?? ""}`;
+      const exists = prev.find((c) => `${c.id}|${c.variantLabel ?? ""}` === key);
       if (exists) {
-        return prev.map((c) => c.id === p.id ? { ...c, quantity: Math.min(c.quantity + 1, p.stock) } : c);
+        return prev.map((c) =>
+          `${c.id}|${c.variantLabel ?? ""}` === key
+            ? { ...c, quantity: Math.min(c.quantity + 1, p.stock) }
+            : c
+        );
       }
-      return [...prev, { id: p.id, name: p.name, price: p.price, image_url: p.image_url, quantity: 1, stock: p.stock }];
+      return [...prev, { id: p.id, name: p.name, price: p.price, image_url: p.image_url, quantity: 1, stock: p.stock, variantLabel }];
     });
   };
 
@@ -61,23 +67,15 @@ export function PublicProductGrid({ personaId, sellerUserId, accentColor, textCo
   return (
     <>
       <div className="space-y-5">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-display font-bold" style={{ color: textColor }}>Shop</h2>
           {cartCount > 0 && (
-            <Button
-              size="sm"
-              className="rounded-full h-9 px-4 gap-2 shadow-lg"
-              style={{ backgroundColor: accentColor, color: "#fff" }}
-              onClick={() => setCheckoutOpen(true)}
-            >
-              <ShoppingBag className="w-4 h-4" />
-              Cart ({cartCount})
+            <Button size="sm" className="rounded-full h-9 px-4 gap-2 shadow-lg" style={{ backgroundColor: accentColor, color: "#fff" }} onClick={() => setCheckoutOpen(true)}>
+              <ShoppingBag className="w-4 h-4" /> Cart ({cartCount})
             </Button>
           )}
         </div>
 
-        {/* Product Grid — Glossier-inspired */}
         <div className="grid grid-cols-2 gap-3">
           {products.map((p, i) => (
             <motion.button
@@ -91,12 +89,7 @@ export function PublicProductGrid({ personaId, sellerUserId, accentColor, textCo
             >
               {p.image_url ? (
                 <div className="aspect-square overflow-hidden">
-                  <img
-                    src={p.image_url}
-                    alt={p.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                  />
+                  <img src={p.image_url} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
                 </div>
               ) : (
                 <div className="aspect-square bg-muted/20 flex items-center justify-center">
@@ -105,21 +98,11 @@ export function PublicProductGrid({ personaId, sellerUserId, accentColor, textCo
               )}
               <div className="p-3 space-y-1.5">
                 <p className="text-sm font-semibold truncate" style={{ color: textColor }}>{p.name}</p>
-                {p.description && (
-                  <p className="text-[10px] leading-tight line-clamp-2" style={{ color: `${textColor ?? "#fff"}80` }}>
-                    {p.description}
-                  </p>
-                )}
+                {p.description && <p className="text-[10px] leading-tight line-clamp-2" style={{ color: `${textColor ?? "#fff"}80` }}>{p.description}</p>}
                 <div className="flex items-center justify-between pt-1">
-                  <span className="text-sm font-mono font-bold" style={{ color: accentColor }}>
-                    ₱{p.price.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
-                  </span>
+                  <span className="text-sm font-mono font-bold" style={{ color: accentColor }}>₱{p.price.toLocaleString("en-PH", { minimumFractionDigits: 2 })}</span>
                   {p.stock > 0 ? (
-                    <div
-                      className="h-7 w-7 rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                      style={{ backgroundColor: accentColor }}
-                      onClick={(e) => { e.stopPropagation(); addToCart(p); }}
-                    >
+                    <div className="h-7 w-7 rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: accentColor }} onClick={(e) => { e.stopPropagation(); addToCart(p); }}>
                       <Plus className="w-3.5 h-3.5 text-white" />
                     </div>
                   ) : (
@@ -132,7 +115,6 @@ export function PublicProductGrid({ personaId, sellerUserId, accentColor, textCo
         </div>
       </div>
 
-      {/* Product Detail Sheet (Glossier-style) */}
       <ProductDetailSheet
         product={detailProduct}
         open={!!detailProduct}
@@ -142,7 +124,6 @@ export function PublicProductGrid({ personaId, sellerUserId, accentColor, textCo
         textColor={textColor}
       />
 
-      {/* Checkout Sheet */}
       <CheckoutSheet
         open={checkoutOpen}
         onClose={() => { setCheckoutOpen(false); setCart([]); }}
