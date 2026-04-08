@@ -388,6 +388,20 @@ function PageBuilderPage() {
     pushHistory(updated);
   };
 
+  const handlePageSortEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIdx = pages.findIndex(p => p.id === active.id);
+    const newIdx = pages.findIndex(p => p.id === over.id);
+    if (oldIdx === -1 || newIdx === -1) return;
+    const updated = arrayMove([...pages], oldIdx, newIdx);
+    updated.forEach((p, i) => p.sort_order = i);
+    setPages(updated);
+    for (const p of updated) {
+      await supabase.from("site_pages").update({ sort_order: p.sort_order }).eq("id", p.id);
+    }
+  };
+
   const addFromTemplate = async (template: PageTemplate) => {
     if (!user || !selectedPersonaId) return;
     const { data: newPage } = await supabase.from("site_pages").insert({
