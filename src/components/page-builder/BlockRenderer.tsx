@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Mail, Phone, Globe, Linkedin, Github, Twitter, Instagram, Facebook, Youtube, ExternalLink, MapPin, Quote as QuoteIcon, Star, ChevronDown, ChevronUp } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { InteractiveCard3D } from "@/components/InteractiveCard3D";
+import { PublicProductGrid } from "@/components/commerce/PublicProductGrid";
 
 const ANIMATION_PRESETS: Record<string, { initial: any; animate: any; transition: any }> = {
   none: { initial: {}, animate: {}, transition: {} },
@@ -360,15 +361,28 @@ export function BlockRenderer({ block, isEditing, onClick, persona }: BlockRende
         </div>
       );
 
-    case "products":
+    case "products": {
+      const pId = persona?.id;
+      const sellerId = persona?.user_id;
       return (
         <div ref={animRef} className="relative" style={wrapperStyle}>
           {editOverlay}
-          <div className="text-center p-8 rounded-xl bg-muted/20 border border-border/40">
-            <span className="text-sm text-muted-foreground">📦 Product grid loads from your store</span>
-          </div>
+          {pId && sellerId ? (
+            <PublicProductGrid
+              personaId={pId}
+              sellerUserId={sellerId}
+              accentColor={persona?.accent_color ?? "hsl(var(--primary))"}
+              textColor={styles.textColor}
+              gcashQrUrl={persona?.gcash_qr_url}
+            />
+          ) : (
+            <div className="text-center p-8 rounded-xl bg-muted/20 border border-border/40">
+              <span className="text-sm text-muted-foreground">📦 Product grid — add persona data to load products</span>
+            </div>
+          )}
         </div>
       );
+    }
 
     case "nfc_card":
       return (
@@ -376,7 +390,7 @@ export function BlockRenderer({ block, isEditing, onClick, persona }: BlockRende
           {editOverlay}
           {persona ? (
             <div className="flex justify-center" style={{ perspective: "1200px" }}>
-              <div className="scale-[0.85] origin-center">
+              <div className="scale-[0.95] origin-center">
                 <InteractiveCard3D
                   name={persona.display_name ?? "Your Name"}
                   headline={persona.headline ?? undefined}
