@@ -6,6 +6,12 @@ import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { BACKGROUND_PRESETS } from "@/components/DesignStudio/BackgroundPresets";
 import type { StudioPanelProps } from "./CardDesignPanel";
 
+const posToFit = (pos: { x: number; y: number; scale: number } | null) => ({
+  objectFit: "cover" as const,
+  objectPosition: `${pos?.x ?? 50}% ${pos?.y ?? 50}%`,
+  scale: pos?.scale ?? 100,
+});
+
 export function LandingPagePanel({ editing, update, isPro }: StudioPanelProps) {
   return (
     <div className="space-y-6">
@@ -64,6 +70,17 @@ export function LandingPagePanel({ editing, update, isPro }: StudioPanelProps) {
               value={editing?.background_image_url ?? null}
               onChange={(url) => update("background_image_url", url)}
               folder="landing-bg"
+              imageFit={posToFit(editing?.bg_image_position)}
+              onFitChange={(fit) => {
+                const parts = fit.objectPosition.split(" ");
+                update("bg_image_position", {
+                  x: parseInt(parts[0]) || 50,
+                  y: parseInt(parts[1]) || 50,
+                  scale: fit.scale,
+                });
+              }}
+              cropAspectRatio={9 / 16}
+              cropLabel="Landing Page Background"
             />
             <p className="text-[10px] text-muted-foreground">
               Overrides the color & pattern with a custom image.

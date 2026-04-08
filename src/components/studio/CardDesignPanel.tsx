@@ -175,7 +175,27 @@ export function CardDesignPanel({ editing, update, isPro }: StudioPanelProps) {
         <h3 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Card Background</h3>
         {isPro ? (
           <>
-            <ImageUploadField label="Card Face Image" value={editing?.card_bg_image_url ?? null} onChange={(url) => update("card_bg_image_url", url)} folder="card-bg" />
+            <ImageUploadField
+              label="Card Face Image"
+              value={editing?.card_bg_image_url ?? null}
+              onChange={(url) => update("card_bg_image_url", url)}
+              folder="card-bg"
+              imageFit={{
+                objectFit: "cover",
+                objectPosition: `${editing?.card_bg_position?.x ?? 50}% ${editing?.card_bg_position?.y ?? 50}%`,
+                scale: editing?.card_bg_position?.scale ?? 100,
+              }}
+              onFitChange={(fit) => {
+                const parts = fit.objectPosition.split(" ");
+                update("card_bg_position", {
+                  x: parseInt(parts[0]) || 50,
+                  y: parseInt(parts[1]) || 50,
+                  scale: fit.scale,
+                });
+              }}
+              cropAspectRatio={16 / 10}
+              cropLabel="Card Background"
+            />
             {editing?.card_bg_image_url && (
               <div className="grid grid-cols-2 gap-2">
                 {IMAGE_SIZING.map((opt) => (
