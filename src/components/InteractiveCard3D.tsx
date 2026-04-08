@@ -24,6 +24,8 @@ interface InteractiveCard3DProps {
   textColor?: string;
   cardBgImageUrl?: string;
   cardBgSize?: string;
+  avatarPosition?: { x: number; y: number; scale: number } | null;
+  cardBgPosition?: { x: number; y: number; scale: number } | null;
   glassOpacity?: number;
   linkedinUrl?: string;
   githubUrl?: string;
@@ -43,6 +45,8 @@ interface CardFrontProps {
   textColor: string;
   cardBgImageUrl?: string;
   cardBgSize?: string;
+  avatarPosition?: { x: number; y: number; scale: number } | null;
+  cardBgPosition?: { x: number; y: number; scale: number } | null;
   glassOpacity: number;
   avatarUrl?: string;
   glareBackground: MotionValue<string>;
@@ -100,6 +104,8 @@ export const InteractiveCard3D = forwardRef<HTMLDivElement, InteractiveCard3DPro
     textColor = "#ffffff",
     cardBgImageUrl,
     cardBgSize = "cover",
+    avatarPosition,
+    cardBgPosition,
     glassOpacity = 0.15,
     linkedinUrl,
     githubUrl,
@@ -202,6 +208,8 @@ export const InteractiveCard3D = forwardRef<HTMLDivElement, InteractiveCard3DPro
               textColor={textColor}
               cardBgImageUrl={cardBgImageUrl}
               cardBgSize={cardBgSize}
+              avatarPosition={avatarPosition}
+              cardBgPosition={cardBgPosition}
               glassOpacity={glassOpacity}
               avatarUrl={avatarUrl}
               glareBackground={glareBackground}

@@ -55,6 +55,9 @@ interface PersonaData {
   show_location: boolean | null;
   user_id: string;
   gcash_qr_url?: string | null;
+  avatar_position?: { x: number; y: number; scale: number } | null;
+  card_bg_position?: { x: number; y: number; scale: number } | null;
+  bg_image_position?: { x: number; y: number; scale: number } | null;
 }
 
 interface ProfileData {
@@ -394,14 +397,26 @@ const PublicProfilePage = () => {
       viewport={{ once: true, margin: "-60px" }}
       transition={{ duration: 0.5 }}
     >
-      {merged.avatar_url && (
-        <img
-          src={merged.avatar_url}
-          alt={merged.display_name ?? "Avatar"}
-          className="w-20 h-20 rounded-full mx-auto border-2 border-white/20 object-cover"
-          loading="lazy"
-        />
-      )}
+      {merged.avatar_url && (() => {
+        const ap = persona?.avatar_position as any;
+        const pos = ap ? { x: ap.x ?? 50, y: ap.y ?? 50, scale: ap.scale ?? 100 } : { x: 50, y: 50, scale: 100 };
+        return (
+          <div className="w-20 h-20 rounded-full mx-auto border-2 border-white/20 overflow-hidden">
+            <img
+              src={merged.avatar_url}
+              alt={merged.display_name ?? "Avatar"}
+              className="w-full h-full"
+              loading="lazy"
+              style={{
+                objectFit: "cover",
+                objectPosition: `${pos.x}% ${pos.y}%`,
+                transform: `scale(${pos.scale / 100})`,
+                transformOrigin: `${pos.x}% ${pos.y}%`,
+              }}
+            />
+          </div>
+        );
+      })()}
       <h1 className="text-2xl font-display font-bold" style={{ color: textColor }}>{merged.display_name}</h1>
       {merged.headline && <p style={{ color: `${textColor}99` }}>{merged.headline}</p>}
       <div className="flex items-center justify-center gap-2 flex-wrap">
@@ -434,7 +449,12 @@ const PublicProfilePage = () => {
           ? bgPresetCss
           : undefined,
         backgroundSize: bgImageUrl ? "cover" : undefined,
-        backgroundPosition: bgImageUrl ? "center" : undefined,
+        backgroundPosition: bgImageUrl
+          ? (() => {
+              const bp = persona?.bg_image_position as any;
+              return bp ? `${bp.x ?? 50}% ${bp.y ?? 50}%` : "center";
+            })()
+          : undefined,
       }}
     >
       <div
@@ -479,6 +499,8 @@ const PublicProfilePage = () => {
             textColor={textColor}
             cardBgImageUrl={persona?.card_bg_image_url ?? undefined}
             cardBgSize={(persona as any)?.card_bg_size ?? "cover"}
+            avatarPosition={persona?.avatar_position as any}
+            cardBgPosition={persona?.card_bg_position as any}
             glassOpacity={persona?.glass_opacity ?? 0.15}
             linkedinUrl={merged.linkedin_url ?? undefined}
             githubUrl={merged.github_url ?? undefined}
