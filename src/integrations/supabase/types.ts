@@ -323,10 +323,12 @@ export type Database = {
           avatar_url: string | null
           background_image_url: string | null
           background_preset: string | null
+          bg_image_position: Json | null
           bio: string | null
           border_radius: number | null
           card_animation: string | null
           card_bg_image_url: string | null
+          card_bg_position: Json | null
           card_bg_size: string | null
           card_blur: number | null
           card_texture: string | null
@@ -369,10 +371,12 @@ export type Database = {
           avatar_url?: string | null
           background_image_url?: string | null
           background_preset?: string | null
+          bg_image_position?: Json | null
           bio?: string | null
           border_radius?: number | null
           card_animation?: string | null
           card_bg_image_url?: string | null
+          card_bg_position?: Json | null
           card_bg_size?: string | null
           card_blur?: number | null
           card_texture?: string | null
@@ -415,10 +419,12 @@ export type Database = {
           avatar_url?: string | null
           background_image_url?: string | null
           background_preset?: string | null
+          bg_image_position?: Json | null
           bio?: string | null
           border_radius?: number | null
           card_animation?: string | null
           card_bg_image_url?: string | null
+          card_bg_position?: Json | null
           card_bg_size?: string | null
           card_blur?: number | null
           card_texture?: string | null
