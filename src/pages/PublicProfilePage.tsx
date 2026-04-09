@@ -442,7 +442,10 @@ const PublicProfilePage = () => {
   }
 
   const accentColor = merged.accent_color;
-  const textColor = persona?.text_color ?? "#ffffff";
+  const rawTextColor = persona?.text_color ?? "#ffffff";
+  // If a page theme is active and has --page-text, use that for readability
+  const themeTextColor = pageThemeId !== "default" ? (pageThemeStyles as any)["--page-text"] : null;
+  const textColor = themeTextColor || rawTextColor;
   const landingBgColor = persona?.landing_bg_color || "#0a0a0f";
   const bgPresetCss = getPresetCss(persona?.background_preset);
   const bgImageUrl = persona?.background_image_url;
