@@ -252,15 +252,6 @@ const Dashboard = () => {
             <TimeframeSelector value={timeframe} onChange={setTimeframe} />
             <ChartPaletteSelector />
             {isPro && <ExportButton stats={stats} chartData={chartData} />}
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-7 w-7 p-0"
-              onClick={resetAll}
-              title="Reset chart layout"
-            >
-              <RotateCcw className="w-3 h-3" />
-            </Button>
           </div>
         </div>
 
