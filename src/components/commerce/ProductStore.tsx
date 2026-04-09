@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -6,16 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ImageUploadField } from "@/components/DesignStudio/ImageUploadField";
-import { ProductImageGallery } from "@/components/commerce/ProductImageGallery";
-import { ProductVariantManager } from "@/components/commerce/ProductVariantManager";
 import { Switch } from "@/components/ui/switch";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Plus, Trash2, Edit, Loader2, Package, Eye, EyeOff,
-  ShoppingBag,
+  ShoppingBag, ExternalLink,
 } from "lucide-react";
 
 interface Product {
@@ -37,21 +36,20 @@ interface ProductStoreProps {
 }
 
 export function ProductStore({ personaId, personaLabel }: ProductStoreProps) {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [saving, setSaving] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  // Form state
+  // Quick-add form state
   const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [stock, setStock] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
     if (!user || !personaId) return;
@@ -72,72 +70,41 @@ export function ProductStore({ personaId, personaLabel }: ProductStoreProps) {
 
   const resetForm = () => {
     setName("");
-    setDescription("");
     setPrice("");
     setStock("");
     setImageUrl(null);
-    setIsVisible(true);
-    setEditingProduct(null);
   };
 
-  const openEdit = (p: Product) => {
-    setEditingProduct(p);
-    setName(p.name);
-    setDescription(p.description ?? "");
-    setPrice(p.price.toString());
-    setStock(p.stock.toString());
-    setImageUrl(p.image_url);
-    setIsVisible(p.is_visible);
-    setDialogOpen(true);
-  };
-
-  const openNew = () => {
-    resetForm();
-    setDialogOpen(true);
-  };
-
-  const handleSave = async () => {
+  const handleQuickAdd = async () => {
     if (!name.trim() || !price) {
       toast({ title: "Name and price are required", variant: "destructive" });
       return;
     }
     setSaving(true);
-
-    const payload = {
-      name: name.trim(),
-      description: description.trim() || null,
-      price: parseFloat(price),
-      stock: parseInt(stock) || 0,
-      image_url: imageUrl,
-      is_visible: isVisible,
-      persona_id: personaId,
-      user_id: user!.id,
-    };
-
-    if (editingProduct) {
-      const { error } = await supabase
-        .from("products")
-        .update(payload)
-        .eq("id", editingProduct.id);
-      if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
-      else toast({ title: "Product updated" });
-    } else {
-      const { error } = await supabase
-        .from("products")
-        .insert({ ...payload, sort_order: products.length });
-      if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
-      else toast({ title: "Product added" });
-    }
-
+    const { error } = await supabase
+      .from("products")
+      .insert({
+        name: name.trim(),
+        price: parseFloat(price),
+        stock: parseInt(stock) || 0,
+        image_url: imageUrl,
+        persona_id: personaId,
+        user_id: user!.id,
+        sort_order: products.length,
+      });
+    if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
+    else toast({ title: "Product added" });
     setSaving(false);
     setDialogOpen(false);
     resetForm();
     loadProducts();
   };
 
-  const handleDelete = async (id: string) => {
-    await supabase.from("products").delete().eq("id", id);
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    await supabase.from("products").delete().eq("id", deleteId);
     toast({ title: "Product deleted" });
+    setDeleteId(null);
     loadProducts();
   };
 
@@ -167,24 +134,18 @@ export function ProductStore({ personaId, personaLabel }: ProductStoreProps) {
         </div>
         <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
           <DialogTrigger asChild>
-            <Button size="sm" className="gradient-primary text-primary-foreground" onClick={openNew}>
+            <Button size="sm" className="gradient-primary text-primary-foreground" onClick={() => setDialogOpen(true)}>
               <Plus className="w-4 h-4 mr-1" /> Add Product
             </Button>
           </DialogTrigger>
-          <DialogContent className="ios-card max-h-[88vh] max-w-md overflow-y-auto border-border/60">
+          <DialogContent className="ios-card max-w-sm border-border/60">
             <DialogHeader>
-              <DialogTitle className="font-display">
-                {editingProduct ? "Edit Product" : "Add Product"}
-              </DialogTitle>
+              <DialogTitle className="font-display">Quick Add Product</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 pt-2">
               <div className="space-y-1">
                 <Label>Product Name</Label>
                 <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Premium NFC Card" className="rounded-xl" />
-              </div>
-              <div className="space-y-1">
-                <Label>Description</Label>
-                <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Matte black with gold foil" className="rounded-xl" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
@@ -196,38 +157,11 @@ export function ProductStore({ personaId, personaLabel }: ProductStoreProps) {
                   <Input type="number" value={stock} onChange={(e) => setStock(e.target.value)} placeholder="50" className="rounded-xl" />
                 </div>
               </div>
-              <ImageUploadField
-                label="Featured Image"
-                value={imageUrl}
-                onChange={setImageUrl}
-                folder="product-images"
-              />
-              <div className="flex items-center justify-between">
-                <Label>Visible to customers</Label>
-                <Switch checked={isVisible} onCheckedChange={setIsVisible} />
-              </div>
-              {editingProduct ? (
-                <div key={editingProduct.id} className="space-y-4 rounded-xl border border-border/60 bg-muted/20 p-3">
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold">Gallery</p>
-                    <p className="text-[10px] text-muted-foreground">Add extra photos or video to this single product page.</p>
-                  </div>
-                  <ProductImageGallery productId={editingProduct.id} />
-
-                  <div className="border-t border-border/60 pt-4">
-                    <div className="mb-3 space-y-1">
-                      <p className="text-xs font-semibold">Variants</p>
-                      <p className="text-[10px] text-muted-foreground">Create options like color, size, material, or style inside one product.</p>
-                    </div>
-                    <ProductVariantManager productId={editingProduct.id} />
-                  </div>
-                </div>
-              ) : (
-                <p className="text-[10px] text-muted-foreground">Save the product first, then add its gallery and variants.</p>
-              )}
-              <Button onClick={handleSave} disabled={saving} className="w-full gradient-primary text-primary-foreground rounded-xl h-11">
+              <ImageUploadField label="Featured Image" value={imageUrl} onChange={setImageUrl} folder="product-images" />
+              <p className="text-[10px] text-muted-foreground">Save to add gallery, variants, and full description.</p>
+              <Button onClick={handleQuickAdd} disabled={saving} className="w-full gradient-primary text-primary-foreground rounded-xl h-11">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
-                {editingProduct ? "Update Product" : "Add Product"}
+                Add Product
               </Button>
             </div>
           </DialogContent>
@@ -273,10 +207,10 @@ export function ProductStore({ personaId, personaLabel }: ProductStoreProps) {
                     <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => toggleVisibility(p)}>
                       {p.is_visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                     </Button>
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(p)}>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => navigate(`/commerce/products/${p.id}`)}>
                       <Edit className="w-3.5 h-3.5" />
                     </Button>
-                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => handleDelete(p.id)}>
+                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setDeleteId(p.id)}>
                       <Trash2 className="w-3.5 h-3.5" />
                     </Button>
                   </div>
@@ -286,6 +220,14 @@ export function ProductStore({ personaId, personaLabel }: ProductStoreProps) {
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        title="Delete Product?"
+        description="This product and all its variants will be permanently removed."
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }
