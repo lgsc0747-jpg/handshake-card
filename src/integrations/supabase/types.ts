@@ -544,6 +544,38 @@ export type Database = {
           },
         ]
       }
+      product_variant_images: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          sort_order: number
+          variant_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url: string
+          sort_order?: number
+          variant_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          sort_order?: number
+          variant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_variant_images_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_variants: {
         Row: {
           created_at: string
