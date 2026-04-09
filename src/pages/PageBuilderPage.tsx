@@ -192,6 +192,7 @@ function PageBuilderPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const pageThemeCtx = usePageTheme();
   const isMobile = useIsMobile();
   const [personas, setPersonas] = useState<{ id: string; label: string; slug: string }[]>([]);
   const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null);
