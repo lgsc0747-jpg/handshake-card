@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  DndContext, closestCenter, KeyboardSensor, PointerSensor,
+  DndContext, closestCenter, PointerSensor, TouchSensor,
   useSensor, useSensors, DragEndEvent,
 } from "@dnd-kit/core";
 import {
-  arrayMove, SortableContext, sortableKeyboardCoordinates,
+  arrayMove, SortableContext,
   useSortable, rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -16,7 +16,7 @@ import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger,
 } from "@/components/ui/sheet";
 import {
-  Zap, Users, Smartphone, Eye, FileText, Settings2, GripVertical, LayoutGrid,
+  Zap, Users, Smartphone, Eye, FileText, GripVertical, LayoutGrid,
   Clock, Shield, BarChart3, MousePointerClick, RotateCcw,
 } from "lucide-react";
 
@@ -83,8 +83,8 @@ function loadVisibility(): Record<WidgetKey, boolean> {
   return DEFAULT_VISIBILITY;
 }
 
-function SortableWidget({ id, title, value, icon, editMode }: {
-  id: string; title: string; value: string; icon: React.ReactNode; editMode: boolean;
+function SortableWidget({ id, title, value, icon }: {
+  id: string; title: string; value: string; icon: React.ReactNode;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
@@ -92,7 +92,7 @@ function SortableWidget({ id, title, value, icon, editMode }: {
     transform: CSS.Transform.toString(transform),
     transition,
     zIndex: isDragging ? 50 : undefined,
-    opacity: isDragging ? 0.8 : 1,
+    opacity: isDragging ? 0.5 : 1,
   };
 
   return (
@@ -100,29 +100,23 @@ function SortableWidget({ id, title, value, icon, editMode }: {
       ref={setNodeRef} style={style} layout
       initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.2 }}
-      className="relative"
+      className="relative group"
     >
-      {editMode && (
-        <button
-          className="absolute -top-2 -left-2 z-10 w-6 h-6 rounded-full bg-muted border border-border flex items-center justify-center cursor-grab active:cursor-grabbing"
-          {...attributes} {...listeners}
-        >
-          <GripVertical className="w-3 h-3 text-muted-foreground" />
-        </button>
-      )}
+      <div {...attributes} {...listeners} className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab touch-none z-10">
+        <GripVertical className="w-3 h-3 text-muted-foreground" />
+      </div>
       <StatCard title={title} value={value} icon={icon} />
     </motion.div>
   );
 }
 
 export function WidgetManager({ stats }: WidgetManagerProps) {
-  const [editMode, setEditMode] = useState(false);
   const [order, setOrder] = useState<WidgetKey[]>(loadOrder);
   const [visible, setVisible] = useState<Record<WidgetKey, boolean>>(loadVisibility);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
   );
 
   useEffect(() => { localStorage.setItem(STORAGE_KEY_ORDER, JSON.stringify(order)); }, [order]);
@@ -210,15 +204,6 @@ export function WidgetManager({ stats }: WidgetManagerProps) {
           >
             <RotateCcw className="w-3 h-3" />
           </Button>
-          <Button
-            size="sm"
-            variant={editMode ? "default" : "outline"}
-            className={editMode ? "gradient-primary text-primary-foreground h-7 text-xs" : "h-7 text-xs"}
-            onClick={() => setEditMode(!editMode)}
-          >
-            <Settings2 className="w-3 h-3 mr-1" />
-            {editMode ? "Lock" : "Reorder"}
-          </Button>
         </div>
       </div>
 
@@ -229,7 +214,7 @@ export function WidgetManager({ stats }: WidgetManagerProps) {
               {activeWidgets.map((w) => (
                 <SortableWidget
                   key={w.key} id={w.key} title={w.label}
-                  value={getValue(w.key)} icon={w.icon} editMode={editMode}
+                  value={getValue(w.key)} icon={w.icon}
                 />
               ))}
             </AnimatePresence>

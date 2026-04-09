@@ -22,7 +22,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { UpgradeOverlay } from "@/components/UpgradePrompt";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, RotateCcw } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -252,15 +252,6 @@ const Dashboard = () => {
             <TimeframeSelector value={timeframe} onChange={setTimeframe} />
             <ChartPaletteSelector />
             {isPro && <ExportButton stats={stats} chartData={chartData} />}
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-7 w-7 p-0"
-              onClick={resetAll}
-              title="Reset chart layout"
-            >
-              <RotateCcw className="w-3 h-3" />
-            </Button>
           </div>
         </div>
 
