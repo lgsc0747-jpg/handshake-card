@@ -22,7 +22,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { UpgradeOverlay } from "@/components/UpgradePrompt";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Settings2, RotateCcw } from "lucide-react";
+import { Loader2, RotateCcw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -66,7 +66,8 @@ const Dashboard = () => {
   const { stats, chartData, timeframe, setTimeframe, loading } = useNfcData();
   const { isPro } = useSubscription();
   const [recentLogs, setRecentLogs] = useState<any[]>([]);
-  const [editMode, setEditMode] = useState(false);
+
+  const editMode = true;
 
   const [engOrder, setEngOrder] = useState<EngagementCard[]>(() => loadArr(LS_ENG, DEFAULT_ENGAGEMENT));
   const [techOrder, setTechOrder] = useState<TechnicalCard[]>(() => loadArr(LS_TECH, DEFAULT_TECHNICAL));
@@ -259,15 +260,6 @@ const Dashboard = () => {
               title="Reset chart layout"
             >
               <RotateCcw className="w-3 h-3" />
-            </Button>
-            <Button
-              size="sm"
-              variant={editMode ? "default" : "outline"}
-              className={`h-7 text-[10px] sm:text-xs px-2 ${editMode ? "gradient-primary text-primary-foreground" : ""}`}
-              onClick={() => setEditMode(!editMode)}
-            >
-              <Settings2 className="w-3 h-3 mr-1" />
-              {editMode ? "Lock" : "Reorder"}
             </Button>
           </div>
         </div>
