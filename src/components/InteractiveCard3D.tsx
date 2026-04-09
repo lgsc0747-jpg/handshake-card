@@ -35,6 +35,7 @@ interface InteractiveCard3DProps {
   textAlignment?: string;
   cardBlur?: number;
   cardTexture?: string;
+  borderRadius?: number;
   onFlipToBack?: () => void;
   onLinkClick?: (linkType: string) => void;
 }
@@ -58,6 +59,7 @@ interface CardFrontProps {
   textAlignment: string;
   cardBlur: number;
   cardTexture: string;
+  borderRadius: number;
 }
 
 interface CardBackProps {
@@ -115,6 +117,7 @@ export const InteractiveCard3D = forwardRef<HTMLDivElement, InteractiveCard3DPro
     textAlignment = "left",
     cardBlur = 12,
     cardTexture = "none",
+    borderRadius = 24,
     onFlipToBack,
     onLinkClick,
   },
