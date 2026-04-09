@@ -23,8 +23,8 @@ export interface PlanLimits {
 
 const PLAN_LIMITS: Record<Plan, PlanLimits> = {
   free: {
-    maxPersonas: 2,
-    maxProducts: 0,
+    maxPersonas: 1,
+    maxProducts: 3,
     analyticsAccess: "basic",
     analyticsDaysHistory: 7,
     privateMode: false,
@@ -40,7 +40,7 @@ const PLAN_LIMITS: Record<Plan, PlanLimits> = {
   },
   pro: {
     maxPersonas: Infinity,
-    maxProducts: 10,
+    maxProducts: Infinity,
     analyticsAccess: "full",
     analyticsDaysHistory: 365,
     privateMode: true,

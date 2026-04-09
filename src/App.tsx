@@ -17,7 +17,6 @@ import PersonasPage from "./pages/PersonasPage.tsx";
 import LeadsPage from "./pages/LeadsPage.tsx";
 import DesignStudioPage from "./pages/DesignStudioPage.tsx";
 import PageBuilderPage from "./pages/PageBuilderPage.tsx";
-import StorefrontEditorPage from "./pages/StorefrontEditorPage.tsx";
 import CommercePage from "./pages/CommercePage.tsx";
 import CommerceDashboardPage from "./pages/CommerceDashboardPage.tsx";
 import SettingsPage from "./pages/SettingsPage.tsx";
@@ -62,8 +61,8 @@ const App = () => (
             <Route path="/leads" element={<ProtectedRoute><LeadsPage /></ProtectedRoute>} />
             <Route path="/design-studio" element={<ProtectedRoute><DesignStudioPage /></ProtectedRoute>} />
             <Route path="/page-builder" element={<ProtectedRoute><PageBuilderPage /></ProtectedRoute>} />
-            <Route path="/storefront" element={<ProtectedRoute><StorefrontEditorPage /></ProtectedRoute>} />
             <Route path="/commerce" element={<ProtectedRoute><CommercePage /></ProtectedRoute>} />
+            <Route path="/orders" element={<ProtectedRoute><CommercePage /></ProtectedRoute>} />
             <Route path="/commerce-dashboard" element={<ProtectedRoute><CommerceDashboardPage /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
             <Route path="/plans" element={<ProtectedRoute><PlansPage /></ProtectedRoute>} />

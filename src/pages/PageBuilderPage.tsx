@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { DashboardLayout } from "@/components/DashboardLayout";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -28,7 +28,7 @@ import {
   MousePointerClick, Quote, Users, BarChart3, MessageSquareQuote,
   HelpCircle, Grid3x3, ShoppingBag, CreditCard, Mail, Share2, Code,
   Home, PanelLeftClose, PanelLeft, FilePlus, Undo2, Redo2, BookTemplate,
-  CheckSquare, Square,
+  CheckSquare, Square, ArrowLeft, Wifi,
 } from "lucide-react";
 
 const ICON_MAP: Record<string, any> = {
@@ -115,7 +115,7 @@ function SortablePageTab({ page, isActive, onSelect, onRename, onDelete, canDele
       ref={setNodeRef}
       style={style}
       className={cn(
-        "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all border group/tab",
+        "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all border group/tab",
         isActive
           ? "bg-primary/10 text-primary border-primary/30"
           : "text-muted-foreground border-border/40 hover:border-primary/20"
@@ -184,6 +184,7 @@ function SortablePreviewBlock({ block, editingBlockId, onSelect }: {
 }
 
 function PageBuilderPage() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -195,8 +196,8 @@ function PageBuilderPage() {
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [deviceMode, setDeviceMode] = useState<"desktop" | "mobile">("mobile");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [deviceMode, setDeviceMode] = useState<"desktop" | "mobile">("desktop");
+  const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [addBlockOpen, setAddBlockOpen] = useState(false);
   const [templateOpen, setTemplateOpen] = useState(false);
 
@@ -216,7 +217,6 @@ function PageBuilderPage() {
       return next;
     });
   };
-
 
   // Undo/Redo history
   const historyRef = useRef<PageBlock[][]>([]);
@@ -249,23 +249,18 @@ function PageBuilderPage() {
     setBlocks(JSON.parse(JSON.stringify(historyRef.current[historyIdxRef.current])));
   }, []);
 
-  // Keyboard shortcuts for undo/redo
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "z") {
         e.preventDefault();
         if (e.shiftKey) redo(); else undo();
       }
-      if ((e.metaKey || e.ctrlKey) && e.key === "y") {
-        e.preventDefault();
-        redo();
-      }
+      if ((e.metaKey || e.ctrlKey) && e.key === "y") { e.preventDefault(); redo(); }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [undo, redo]);
 
-  // Load personas
   useEffect(() => {
     if (!user) return;
     supabase.from("personas").select("id, label, slug").eq("user_id", user.id).order("created_at").then(({ data }) => {
@@ -276,7 +271,6 @@ function PageBuilderPage() {
     });
   }, [user]);
 
-  // Load pages for persona
   useEffect(() => {
     if (!user || !selectedPersonaId) return;
     loadPages();
@@ -284,58 +278,38 @@ function PageBuilderPage() {
 
   const loadPages = async () => {
     const { data } = await supabase
-      .from("site_pages")
-      .select("*")
+      .from("site_pages").select("*")
       .eq("persona_id", selectedPersonaId!)
       .eq("user_id", user!.id)
       .order("sort_order");
-
     if (data && data.length > 0) {
       setPages(data as SitePage[]);
-      if (!selectedPageId || !data.find(p => p.id === selectedPageId)) {
-        setSelectedPageId(data[0].id);
-      }
+      if (!selectedPageId || !data.find(p => p.id === selectedPageId)) setSelectedPageId(data[0].id);
     } else {
-      // Create default homepage
       const { data: newPage } = await supabase.from("site_pages").insert({
-        persona_id: selectedPersonaId!,
-        user_id: user!.id,
-        title: "Home",
-        slug: "home",
-        is_homepage: true,
-        sort_order: 0,
+        persona_id: selectedPersonaId!, user_id: user!.id,
+        title: "Home", slug: "home", is_homepage: true, sort_order: 0,
       }).select().single();
       if (newPage) {
         setPages([newPage as SitePage]);
         setSelectedPageId(newPage.id);
-        // Add default blocks
-        const defaultBlocks = [
-          { block_type: "heading", content: { text: "Welcome", subtitle: "Your personal page", fontSize: 36 }, styles: { alignment: "center", paddingY: 40 }, sort_order: 0 },
-          { block_type: "text", content: { text: "Click any block to edit it. Add new blocks from the + button.", fontSize: 16 }, styles: { alignment: "center", maxWidth: "640px" }, sort_order: 1 },
-          { block_type: "nfc_card", content: {}, styles: { alignment: "center", paddingY: 32 }, sort_order: 2 },
-          { block_type: "divider", content: { thickness: 1 }, styles: { paddingY: 16 }, sort_order: 3 },
-          { block_type: "contact", content: { title: "Get in Touch", buttonText: "Send" }, styles: { maxWidth: "640px" }, sort_order: 4 },
-        ];
-        await supabase.from("page_blocks").insert(
-          defaultBlocks.map(b => ({ ...b, page_id: newPage.id, user_id: user!.id }))
-        );
+        await supabase.from("page_blocks").insert([
+          { block_type: "heading", content: { text: "Welcome", subtitle: "Your personal page", fontSize: 36 }, styles: { alignment: "center", paddingY: 40 }, sort_order: 0, page_id: newPage.id, user_id: user!.id },
+          { block_type: "nfc_card", content: {}, styles: { alignment: "center", paddingY: 32 }, sort_order: 1, page_id: newPage.id, user_id: user!.id },
+          { block_type: "contact", content: { title: "Get in Touch", buttonText: "Send" }, styles: { maxWidth: "640px" }, sort_order: 2, page_id: newPage.id, user_id: user!.id },
+        ]);
       }
     }
   };
 
-  // Load blocks for selected page
   useEffect(() => {
     if (!selectedPageId || !user) return;
     loadBlocks();
   }, [selectedPageId, user]);
 
   const loadBlocks = async () => {
-    const { data } = await supabase
-      .from("page_blocks")
-      .select("*")
-      .eq("page_id", selectedPageId!)
-      .eq("user_id", user!.id)
-      .order("sort_order");
+    const { data } = await supabase.from("page_blocks").select("*")
+      .eq("page_id", selectedPageId!).eq("user_id", user!.id).order("sort_order");
     const loaded = (data as PageBlock[]) ?? [];
     setBlocks(loaded);
     historyRef.current = [JSON.parse(JSON.stringify(loaded))];
@@ -345,18 +319,11 @@ function PageBuilderPage() {
   const addPage = async () => {
     if (!user || !selectedPersonaId) return;
     const title = `Page ${pages.length + 1}`;
-    const slug = title.toLowerCase().replace(/\s+/g, "-");
     const { data } = await supabase.from("site_pages").insert({
-      persona_id: selectedPersonaId,
-      user_id: user.id,
-      title,
-      slug,
-      sort_order: pages.length,
+      persona_id: selectedPersonaId, user_id: user.id,
+      title, slug: title.toLowerCase().replace(/\s+/g, "-"), sort_order: pages.length,
     }).select().single();
-    if (data) {
-      setPages([...pages, data as SitePage]);
-      setSelectedPageId(data.id);
-    }
+    if (data) { setPages([...pages, data as SitePage]); setSelectedPageId(data.id); }
   };
 
   const deletePage = async (id: string) => {
@@ -376,69 +343,49 @@ function PageBuilderPage() {
 
   const addBlock = async (type: BlockTypeId) => {
     if (!user || !selectedPageId) return;
-    const newBlock = {
-      page_id: selectedPageId,
-      user_id: user.id,
-      block_type: type,
-      content: {},
-      styles: {},
-      sort_order: blocks.length,
-    };
-    const { data } = await supabase.from("page_blocks").insert(newBlock).select().single();
+    const { data } = await supabase.from("page_blocks").insert({
+      page_id: selectedPageId, user_id: user.id, block_type: type,
+      content: {}, styles: {}, sort_order: blocks.length,
+    }).select().single();
     if (data) {
       const newBlocks = [...blocks, data as PageBlock];
-      setBlocks(newBlocks);
-      pushHistory(newBlocks);
-      setEditingBlockId(data.id);
-      setAddBlockOpen(false);
+      setBlocks(newBlocks); pushHistory(newBlocks);
+      setEditingBlockId(data.id); setAddBlockOpen(false);
     }
   };
 
   const updateBlock = (updated: PageBlock) => {
     const newBlocks = blocks.map(b => b.id === updated.id ? updated : b);
-    setBlocks(newBlocks);
-    pushHistory(newBlocks);
+    setBlocks(newBlocks); pushHistory(newBlocks);
   };
 
   const deleteBlock = async (id: string) => {
     await supabase.from("page_blocks").delete().eq("id", id);
     const newBlocks = blocks.filter(b => b.id !== id);
-    setBlocks(newBlocks);
-    pushHistory(newBlocks);
-    setEditingBlockId(null);
-    setConfirmDeleteBlock(null);
+    setBlocks(newBlocks); pushHistory(newBlocks);
+    setEditingBlockId(null); setConfirmDeleteBlock(null);
   };
 
   const bulkDeleteBlocks = async () => {
     if (selectedBlockIds.size === 0) return;
-    for (const id of selectedBlockIds) {
-      await supabase.from("page_blocks").delete().eq("id", id);
-    }
+    for (const id of selectedBlockIds) await supabase.from("page_blocks").delete().eq("id", id);
     const newBlocks = blocks.filter(b => !selectedBlockIds.has(b.id));
-    setBlocks(newBlocks);
-    pushHistory(newBlocks);
+    setBlocks(newBlocks); pushHistory(newBlocks);
     if (editingBlockId && selectedBlockIds.has(editingBlockId)) setEditingBlockId(null);
     toast({ title: `${selectedBlockIds.size} block(s) deleted` });
-    setSelectedBlockIds(new Set());
-    setBulkMode(false);
-    setConfirmBulkDelete(false);
+    setSelectedBlockIds(new Set()); setBulkMode(false); setConfirmBulkDelete(false);
   };
 
   const bulkToggleVisibility = (visible: boolean) => {
     const newBlocks = blocks.map(b => selectedBlockIds.has(b.id) ? { ...b, is_visible: visible } : b);
-    setBlocks(newBlocks);
-    pushHistory(newBlocks);
+    setBlocks(newBlocks); pushHistory(newBlocks);
   };
 
   const duplicateBlock = async (block: PageBlock) => {
     if (!user) return;
     const { data } = await supabase.from("page_blocks").insert({
-      page_id: block.page_id,
-      user_id: user.id,
-      block_type: block.block_type,
-      content: block.content,
-      styles: block.styles,
-      sort_order: block.sort_order + 1,
+      page_id: block.page_id, user_id: user.id, block_type: block.block_type,
+      content: block.content, styles: block.styles, sort_order: block.sort_order + 1,
     }).select().single();
     if (data) {
       const idx = blocks.findIndex(b => b.id === block.id);
@@ -471,8 +418,7 @@ function PageBuilderPage() {
     if (oldIdx === -1 || newIdx === -1) return;
     const updated = arrayMove([...blocks], oldIdx, newIdx);
     updated.forEach((b, i) => b.sort_order = i);
-    setBlocks(updated);
-    pushHistory(updated);
+    setBlocks(updated); pushHistory(updated);
   };
 
   const handlePageSortEnd = async (event: DragEndEvent) => {
@@ -484,30 +430,21 @@ function PageBuilderPage() {
     const updated = arrayMove([...pages], oldIdx, newIdx);
     updated.forEach((p, i) => p.sort_order = i);
     setPages(updated);
-    for (const p of updated) {
-      await supabase.from("site_pages").update({ sort_order: p.sort_order }).eq("id", p.id);
-    }
+    for (const p of updated) await supabase.from("site_pages").update({ sort_order: p.sort_order }).eq("id", p.id);
   };
 
   const addFromTemplate = async (template: PageTemplate) => {
     if (!user || !selectedPersonaId) return;
     const { data: newPage } = await supabase.from("site_pages").insert({
-      persona_id: selectedPersonaId,
-      user_id: user.id,
-      title: template.pageTitle,
-      slug: template.pageSlug,
-      sort_order: pages.length,
-      page_icon: template.icon,
+      persona_id: selectedPersonaId, user_id: user.id,
+      title: template.pageTitle, slug: template.pageSlug,
+      sort_order: pages.length, page_icon: template.icon,
     }).select().single();
     if (newPage) {
       await supabase.from("page_blocks").insert(
         template.blocks.map((b, i) => ({
-          page_id: newPage.id,
-          user_id: user!.id,
-          block_type: b.block_type,
-          content: b.content,
-          styles: b.styles,
-          sort_order: i,
+          page_id: newPage.id, user_id: user!.id,
+          block_type: b.block_type, content: b.content, styles: b.styles, sort_order: i,
         }))
       );
       setPages([...pages, newPage as SitePage]);
@@ -522,79 +459,63 @@ function PageBuilderPage() {
 
   if (loading) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-        </div>
-      </DashboardLayout>
+      <div className="fixed inset-0 flex items-center justify-center bg-background z-50">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      </div>
     );
   }
 
   if (personas.length === 0) {
     return (
-      <DashboardLayout>
-        <div className="glass-card rounded-2xl p-12 text-center">
-          <FileText className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+      <div className="fixed inset-0 flex items-center justify-center bg-background z-50">
+        <div className="text-center space-y-4">
+          <FileText className="w-10 h-10 text-muted-foreground mx-auto" />
           <p className="text-muted-foreground">
             Create a persona in the <a href="/personas" className="text-primary underline">Persona Vault</a> first.
           </p>
+          <Button variant="outline" onClick={() => navigate("/")}>
+            <ArrowLeft className="w-4 h-4 mr-2" /> Back to Dashboard
+          </Button>
         </div>
-      </DashboardLayout>
+      </div>
     );
   }
 
   return (
-    <DashboardLayout>
-      <div className="space-y-3">
-        {/* Top Bar */}
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-3">
-            <h1 className="text-lg font-display font-bold">Page Builder</h1>
-            <Select value={selectedPersonaId ?? ""} onValueChange={setSelectedPersonaId}>
-              <SelectTrigger className="w-36 rounded-xl h-8 text-xs">
-                <SelectValue placeholder="Persona" />
-              </SelectTrigger>
-              <SelectContent>
-                {personas.map(p => <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-0.5">
-              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={undo} title="Undo (Ctrl+Z)" disabled={historyIdxRef.current <= 0}>
-                <Undo2 className="w-3.5 h-3.5" />
-              </Button>
-              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={redo} title="Redo (Ctrl+Shift+Z)" disabled={historyIdxRef.current >= historyRef.current.length - 1}>
-                <Redo2 className="w-3.5 h-3.5" />
-              </Button>
-            </div>
-            <div className="hidden md:flex items-center gap-1 bg-muted/50 rounded-lg p-0.5">
-              <Button size="sm" variant={deviceMode === "desktop" ? "default" : "ghost"} className="h-6 w-6 p-0" onClick={() => setDeviceMode("desktop")}>
-                <Monitor className="w-3 h-3" />
-              </Button>
-              <Button size="sm" variant={deviceMode === "mobile" ? "default" : "ghost"} className="h-6 w-6 p-0" onClick={() => setDeviceMode("mobile")}>
-                <Smartphone className="w-3 h-3" />
-              </Button>
-            </div>
-            <Button onClick={saveAll} disabled={saving} size="sm" className="gradient-primary text-primary-foreground rounded-xl h-8 text-xs">
-              {saving ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Save className="w-3 h-3 mr-1" />}
-              Save
-            </Button>
-          </div>
+    <div className="fixed inset-0 flex flex-col bg-background z-50">
+      {/* ═══ Top Toolbar ═══ */}
+      <header className="h-12 flex items-center gap-2 px-3 border-b border-border bg-card/80 backdrop-blur-sm shrink-0">
+        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => navigate("/")} title="Back to Dashboard">
+          <ArrowLeft className="w-4 h-4" />
+        </Button>
+        <div className="w-px h-5 bg-border" />
+        <div className="flex items-center gap-1.5">
+          <Wifi className="w-3.5 h-3.5 text-primary" />
+          <span className="text-xs font-display font-bold hidden sm:inline">Page Builder</span>
         </div>
+        <Select value={selectedPersonaId ?? ""} onValueChange={setSelectedPersonaId}>
+          <SelectTrigger className="w-28 sm:w-36 rounded-lg h-7 text-xs">
+            <SelectValue placeholder="Persona" />
+          </SelectTrigger>
+          <SelectContent>
+            {personas.map(p => <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
 
-        {/* Page Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        <div className="flex-1" />
+
+        {/* Page tabs - center */}
+        <div className="hidden md:flex items-center gap-1 overflow-x-auto max-w-[40%]">
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handlePageSortEnd}>
             <SortableContext items={pages.map(p => p.id)} strategy={verticalListSortingStrategy}>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 {pages.map(page => (
                   <SortablePageTab
                     key={page.id}
                     page={page}
                     isActive={selectedPageId === page.id}
                     onSelect={() => setSelectedPageId(page.id)}
-                    onRename={(newTitle) => updatePageTitle(page.id, newTitle)}
+                    onRename={(t) => updatePageTitle(page.id, t)}
                     onDelete={() => setConfirmDeletePage(page.id)}
                     canDelete={pages.length > 1}
                   />
@@ -602,206 +523,250 @@ function PageBuilderPage() {
               </div>
             </SortableContext>
           </DndContext>
-          <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={addPage}>
-            <FilePlus className="w-3.5 h-3.5 mr-1" /> Add Page
+          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={addPage} title="Add page">
+            <FilePlus className="w-3 h-3" />
           </Button>
-          <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setTemplateOpen(true)}>
-            <BookTemplate className="w-3.5 h-3.5 mr-1" /> Templates
+          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setTemplateOpen(true)} title="Templates">
+            <BookTemplate className="w-3 h-3" />
           </Button>
         </div>
 
-        {/* Main Layout */}
-        <div className="flex gap-0 rounded-2xl border border-border/60 bg-card/30 backdrop-blur-sm overflow-hidden" style={{ height: "calc(100vh - 220px)" }}>
-          {/* Left Sidebar — Page settings & block list */}
-          {sidebarOpen && (
-            <div className="w-64 shrink-0 border-r border-border/40 bg-card/50 hidden md:flex flex-col overflow-hidden">
-              {/* Page settings */}
-              <div className="p-3 border-b border-border/40 space-y-2">
-                <div className="flex items-center gap-2">
-                  <Input
-                    value={selectedPage?.title ?? ""}
-                    onChange={(e) => selectedPage && updatePageTitle(selectedPage.id, e.target.value)}
-                    className="h-7 text-xs font-semibold"
-                  />
-                  {pages.length > 1 && (
-                     <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive" onClick={() => selectedPage && setConfirmDeletePage(selectedPage.id)}>
-                       <Trash2 className="w-3 h-3" />
-                     </Button>
-                  )}
-                </div>
-              </div>
+        <div className="flex-1" />
 
-              {/* Block list */}
-              <ScrollArea className="flex-1">
-                <div className="p-2 space-y-1">
-                  <div className="flex items-center justify-between px-2 py-1">
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">Blocks</p>
-                    <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="sm" className="h-5 px-1 text-[9px]" onClick={() => { setBulkMode(!bulkMode); setSelectedBlockIds(new Set()); }}>
-                        {bulkMode ? "Cancel" : "Select"}
-                      </Button>
-                      {bulkMode && selectedBlockIds.size > 0 && (
-                        <>
-                          <Button variant="ghost" size="sm" className="h-5 px-1 text-[9px]" onClick={() => bulkToggleVisibility(true)} title="Show selected">
-                            <Eye className="w-3 h-3" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="h-5 px-1 text-[9px]" onClick={() => bulkToggleVisibility(false)} title="Hide selected">
-                            <EyeOff className="w-3 h-3" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="h-5 px-1 text-[9px] text-destructive" onClick={() => setConfirmBulkDelete(true)} title="Delete selected">
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleSortEnd}>
-                    <SortableContext items={blocks.map(b => b.id)} strategy={verticalListSortingStrategy}>
-                      {blocks.map((block) => {
-                        const meta = BLOCK_TYPES.find(b => b.id === block.block_type);
-                        const Icon = meta ? ICON_MAP[meta.icon] ?? FileText : FileText;
-                        return (
-                          <div key={block.id} className="flex items-center gap-1">
-                            {bulkMode && (
-                              <Checkbox
-                                checked={selectedBlockIds.has(block.id)}
-                                onCheckedChange={() => toggleBulkSelect(block.id)}
-                                className="w-3.5 h-3.5"
-                              />
-                            )}
-                            <div className="flex-1">
-                              <SortableBlockItem
-                                block={block}
-                                Icon={Icon}
-                                meta={meta}
-                                isActive={editingBlockId === block.id}
-                                onSelect={() => bulkMode ? toggleBulkSelect(block.id) : setEditingBlockId(block.id)}
-                                onDuplicate={() => duplicateBlock(block)}
-                                onDelete={() => setConfirmDeleteBlock(block.id)}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </SortableContext>
-                  </DndContext>
-                </div>
-              </ScrollArea>
+        {/* Right controls */}
+        <div className="flex items-center gap-1">
+          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={undo} title="Undo">
+            <Undo2 className="w-3.5 h-3.5" />
+          </Button>
+          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={redo} title="Redo">
+            <Redo2 className="w-3.5 h-3.5" />
+          </Button>
+          <div className="w-px h-5 bg-border mx-1 hidden sm:block" />
+          <div className="hidden sm:flex items-center gap-0.5 bg-muted/50 rounded-lg p-0.5">
+            <Button size="sm" variant={deviceMode === "desktop" ? "default" : "ghost"} className="h-6 w-6 p-0" onClick={() => setDeviceMode("desktop")}>
+              <Monitor className="w-3 h-3" />
+            </Button>
+            <Button size="sm" variant={deviceMode === "mobile" ? "default" : "ghost"} className="h-6 w-6 p-0" onClick={() => setDeviceMode("mobile")}>
+              <Smartphone className="w-3 h-3" />
+            </Button>
+          </div>
+          <Button onClick={saveAll} disabled={saving} size="sm" className="gradient-primary text-primary-foreground rounded-lg h-7 text-xs px-3">
+            {saving ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Save className="w-3 h-3 mr-1" />}
+            Save
+          </Button>
+        </div>
+      </header>
 
-              {/* Add block button */}
-              <div className="p-2 border-t border-border/40">
-                <Button variant="outline" size="sm" className="w-full text-xs h-8 rounded-xl" onClick={() => setAddBlockOpen(true)}>
-                  <Plus className="w-3.5 h-3.5 mr-1" /> Add Block
-                </Button>
+      {/* Mobile page tabs */}
+      <div className="md:hidden flex items-center gap-1 px-2 py-1.5 border-b border-border/40 overflow-x-auto bg-card/50 shrink-0">
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handlePageSortEnd}>
+          <SortableContext items={pages.map(p => p.id)} strategy={verticalListSortingStrategy}>
+            {pages.map(page => (
+              <SortablePageTab
+                key={page.id}
+                page={page}
+                isActive={selectedPageId === page.id}
+                onSelect={() => setSelectedPageId(page.id)}
+                onRename={(t) => updatePageTitle(page.id, t)}
+                onDelete={() => setConfirmDeletePage(page.id)}
+                canDelete={pages.length > 1}
+              />
+            ))}
+          </SortableContext>
+        </DndContext>
+        <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] shrink-0" onClick={addPage}>
+          <FilePlus className="w-3 h-3 mr-1" /> Add
+        </Button>
+        <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] shrink-0" onClick={() => setTemplateOpen(true)}>
+          <BookTemplate className="w-3 h-3" />
+        </Button>
+      </div>
+
+      {/* ═══ Main Area ═══ */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Sidebar — Block list */}
+        {sidebarOpen && !isMobile && (
+          <div className="w-56 shrink-0 border-r border-border/40 bg-card/30 flex flex-col overflow-hidden">
+            <div className="p-2 border-b border-border/40">
+              <div className="flex items-center gap-2">
+                <Input
+                  value={selectedPage?.title ?? ""}
+                  onChange={(e) => selectedPage && updatePageTitle(selectedPage.id, e.target.value)}
+                  className="h-6 text-[11px] font-semibold"
+                />
+                {pages.length > 1 && (
+                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive shrink-0" onClick={() => selectedPage && setConfirmDeletePage(selectedPage.id)}>
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                )}
               </div>
             </div>
-          )}
 
-          {/* Toggle sidebar */}
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="hidden md:flex items-center justify-center w-5 bg-card/50 hover:bg-muted/50 border-r border-border/40 transition-colors"
-          >
-            {sidebarOpen ? <PanelLeftClose className="w-3 h-3 text-muted-foreground" /> : <PanelLeft className="w-3 h-3 text-muted-foreground" />}
-          </button>
-
-          {/* Center Preview */}
-          <div className="flex-1 flex flex-col overflow-hidden">
             <ScrollArea className="flex-1">
-              <div className="flex justify-center p-4 md:p-8">
-                <div
-                  className={cn(
-                    "relative transition-all duration-300 bg-background",
-                    deviceMode === "mobile"
-                      ? "w-[375px] min-h-[667px] border-[6px] border-muted-foreground/15 rounded-[2.5rem]"
-                      : "w-full max-w-4xl min-h-[500px] rounded-2xl border border-border/60"
-                  )}
-                >
-                  <div className="p-0">
-                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleSortEnd}>
-                      <SortableContext items={blocks.filter(b => b.is_visible || editingBlockId === b.id).map(b => b.id)} strategy={verticalListSortingStrategy}>
-                        {blocks.filter(b => b.is_visible || editingBlockId === b.id).map(block => (
-                          <SortablePreviewBlock
-                            key={block.id}
-                            block={block}
-                            editingBlockId={editingBlockId}
-                            onSelect={() => setEditingBlockId(block.id)}
-                          />
-                        ))}
-                      </SortableContext>
-                    </DndContext>
-                    {blocks.length === 0 && (
-                      <div className="flex flex-col items-center justify-center min-h-[300px] text-muted-foreground">
-                        <Plus className="w-8 h-8 mb-2" />
-                        <p className="text-sm">Add your first block</p>
-                      </div>
+              <div className="p-2 space-y-1">
+                <div className="flex items-center justify-between px-1 py-1">
+                  <p className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/60">Blocks</p>
+                  <div className="flex items-center gap-0.5">
+                    <Button variant="ghost" size="sm" className="h-5 px-1 text-[9px]" onClick={() => { setBulkMode(!bulkMode); setSelectedBlockIds(new Set()); }}>
+                      {bulkMode ? "Cancel" : "Select"}
+                    </Button>
+                    {bulkMode && selectedBlockIds.size > 0 && (
+                      <>
+                        <Button variant="ghost" size="sm" className="h-5 px-1 text-[9px]" onClick={() => bulkToggleVisibility(true)} title="Show">
+                          <Eye className="w-3 h-3" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-5 px-1 text-[9px]" onClick={() => bulkToggleVisibility(false)} title="Hide">
+                          <EyeOff className="w-3 h-3" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-5 px-1 text-[9px] text-destructive" onClick={() => setConfirmBulkDelete(true)} title="Delete">
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </>
                     )}
                   </div>
                 </div>
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleSortEnd}>
+                  <SortableContext items={blocks.map(b => b.id)} strategy={verticalListSortingStrategy}>
+                    {blocks.map((block) => {
+                      const meta = BLOCK_TYPES.find(b => b.id === block.block_type);
+                      const Icon = meta ? ICON_MAP[meta.icon] ?? FileText : FileText;
+                      return (
+                        <div key={block.id} className="flex items-center gap-1">
+                          {bulkMode && (
+                            <Checkbox
+                              checked={selectedBlockIds.has(block.id)}
+                              onCheckedChange={() => toggleBulkSelect(block.id)}
+                              className="w-3 h-3"
+                            />
+                          )}
+                          <div className="flex-1">
+                            <SortableBlockItem
+                              block={block} Icon={Icon} meta={meta}
+                              isActive={editingBlockId === block.id}
+                              onSelect={() => bulkMode ? toggleBulkSelect(block.id) : setEditingBlockId(block.id)}
+                              onDuplicate={() => duplicateBlock(block)}
+                              onDelete={() => setConfirmDeleteBlock(block.id)}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </SortableContext>
+                </DndContext>
               </div>
             </ScrollArea>
-          </div>
 
-          {/* Right Panel — Block Editor */}
-          {editingBlock && !isMobile && (
-            <div className="w-80 shrink-0 border-l border-border/40 bg-card/50 overflow-y-auto p-4">
-              <BlockEditor
-                block={editingBlock}
-                onChange={updateBlock}
-                onDelete={() => deleteBlock(editingBlock.id)}
-                onClose={() => setEditingBlockId(null)}
-              />
+            <div className="p-2 border-t border-border/40">
+              <Button variant="outline" size="sm" className="w-full text-[10px] h-7 rounded-lg" onClick={() => setAddBlockOpen(true)}>
+                <Plus className="w-3 h-3 mr-1" /> Add Block
+              </Button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Mobile: Bottom bar for blocks + FAB */}
-        {isMobile && (
-          <>
-            {/* Block list bottom sheet trigger */}
-            <div className="fixed bottom-0 left-0 right-0 bg-card/90 backdrop-blur-md border-t border-border/40 p-2 z-40">
-              <div className="flex items-center gap-2 overflow-x-auto">
-                {blocks.map(block => {
-                  const meta = BLOCK_TYPES.find(b => b.id === block.block_type);
-                  return (
-                    <button
-                      key={block.id}
-                      onClick={() => setEditingBlockId(block.id)}
-                      className={cn(
-                        "flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] whitespace-nowrap shrink-0 border",
-                        editingBlockId === block.id
-                          ? "bg-primary/10 text-primary border-primary/30"
-                          : "text-muted-foreground border-border/40"
-                      )}
-                    >
-                      {meta?.label ?? block.block_type}
-                    </button>
-                  );
-                })}
-                <button onClick={() => setAddBlockOpen(true)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] text-primary border border-primary/30 whitespace-nowrap shrink-0">
-                  <Plus className="w-3 h-3" /> Add
-                </button>
+        {/* Toggle sidebar */}
+        {!isMobile && (
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="flex items-center justify-center w-5 bg-card/30 hover:bg-muted/50 border-r border-border/40 transition-colors shrink-0"
+          >
+            {sidebarOpen ? <PanelLeftClose className="w-3 h-3 text-muted-foreground" /> : <PanelLeft className="w-3 h-3 text-muted-foreground" />}
+          </button>
+        )}
+
+        {/* ═══ Center Canvas ═══ */}
+        <div className="flex-1 flex flex-col overflow-hidden bg-muted/20">
+          <ScrollArea className="flex-1">
+            <div className="flex justify-center p-4 md:p-8 min-h-full">
+              <div
+                className={cn(
+                  "relative transition-all duration-300 bg-background shadow-lg",
+                  deviceMode === "mobile"
+                    ? "w-[375px] min-h-[667px] border-[6px] border-muted-foreground/15 rounded-[2.5rem]"
+                    : "w-full max-w-5xl min-h-[600px] rounded-xl border border-border/60"
+                )}
+              >
+                <div className="p-0">
+                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleSortEnd}>
+                    <SortableContext items={blocks.filter(b => b.is_visible || editingBlockId === b.id).map(b => b.id)} strategy={verticalListSortingStrategy}>
+                      {blocks.filter(b => b.is_visible || editingBlockId === b.id).map(block => (
+                        <SortablePreviewBlock
+                          key={block.id} block={block}
+                          editingBlockId={editingBlockId}
+                          onSelect={() => setEditingBlockId(block.id)}
+                        />
+                      ))}
+                    </SortableContext>
+                  </DndContext>
+                  {blocks.length === 0 && (
+                    <div className="flex flex-col items-center justify-center min-h-[300px] text-muted-foreground">
+                      <Plus className="w-8 h-8 mb-2" />
+                      <p className="text-sm">Add your first block</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
+          </ScrollArea>
+        </div>
 
-            {/* Mobile block editor sheet */}
-            <Sheet open={!!editingBlockId} onOpenChange={(open) => !open && setEditingBlockId(null)}>
-              <SheetContent side="bottom" className="h-[70vh] rounded-t-3xl overflow-y-auto p-4">
-                {editingBlock && (
-                  <BlockEditor
-                    block={editingBlock}
-                    onChange={updateBlock}
-                    onDelete={() => deleteBlock(editingBlock.id)}
-                    onClose={() => setEditingBlockId(null)}
-                  />
-                )}
-              </SheetContent>
-            </Sheet>
-          </>
+        {/* ═══ Right Panel — Block Editor ═══ */}
+        {editingBlock && !isMobile && (
+          <div className="w-72 shrink-0 border-l border-border/40 bg-card/30 overflow-y-auto p-3">
+            <BlockEditor
+              block={editingBlock}
+              onChange={updateBlock}
+              onDelete={() => deleteBlock(editingBlock.id)}
+              onClose={() => setEditingBlockId(null)}
+            />
+          </div>
         )}
       </div>
 
-      {/* Add Block Dialog */}
+      {/* ═══ Mobile Bottom Bar ═══ */}
+      {isMobile && (
+        <>
+          <div className="bg-card/90 backdrop-blur-md border-t border-border/40 p-2 shrink-0">
+            <div className="flex items-center gap-2 overflow-x-auto">
+              {blocks.map(block => {
+                const meta = BLOCK_TYPES.find(b => b.id === block.block_type);
+                return (
+                  <button
+                    key={block.id}
+                    onClick={() => setEditingBlockId(block.id)}
+                    className={cn(
+                      "flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] whitespace-nowrap shrink-0 border",
+                      editingBlockId === block.id
+                        ? "bg-primary/10 text-primary border-primary/30"
+                        : "text-muted-foreground border-border/40"
+                    )}
+                  >
+                    {meta?.label ?? block.block_type}
+                  </button>
+                );
+              })}
+              <button onClick={() => setAddBlockOpen(true)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] text-primary border border-primary/30 whitespace-nowrap shrink-0">
+                <Plus className="w-3 h-3" /> Add
+              </button>
+            </div>
+          </div>
+
+          <Sheet open={!!editingBlockId} onOpenChange={(open) => !open && setEditingBlockId(null)}>
+            <SheetContent side="bottom" className="h-[70vh] rounded-t-3xl overflow-y-auto p-4">
+              {editingBlock && (
+                <BlockEditor
+                  block={editingBlock}
+                  onChange={updateBlock}
+                  onDelete={() => deleteBlock(editingBlock.id)}
+                  onClose={() => setEditingBlockId(null)}
+                />
+              )}
+            </SheetContent>
+          </Sheet>
+        </>
+      )}
+
+      {/* ═══ Sheets & Dialogs ═══ */}
       <Sheet open={addBlockOpen} onOpenChange={setAddBlockOpen}>
         <SheetContent side={isMobile ? "bottom" : "right"} className={cn(isMobile ? "h-[80vh] rounded-t-3xl" : "", "overflow-y-auto")}>
           <div className="space-y-4 p-2">
@@ -826,12 +791,11 @@ function PageBuilderPage() {
         </SheetContent>
       </Sheet>
 
-      {/* Template Sheet */}
       <Sheet open={templateOpen} onOpenChange={setTemplateOpen}>
         <SheetContent side={isMobile ? "bottom" : "right"} className={cn(isMobile ? "h-[80vh] rounded-t-3xl" : "", "overflow-y-auto")}>
           <div className="space-y-4 p-2">
             <h3 className="text-sm font-semibold">Page Templates</h3>
-            <p className="text-xs text-muted-foreground">Start from a pre-built template — adds a new page with blocks already filled in.</p>
+            <p className="text-xs text-muted-foreground">Start from a pre-built template.</p>
             <div className="grid grid-cols-1 gap-3">
               {PAGE_TEMPLATES.map(t => (
                 <button
@@ -851,7 +815,6 @@ function PageBuilderPage() {
         </SheetContent>
       </Sheet>
 
-      {/* Confirmation Dialogs */}
       <ConfirmDialog
         open={!!confirmDeleteBlock}
         onOpenChange={(open) => !open && setConfirmDeleteBlock(null)}
@@ -873,7 +836,7 @@ function PageBuilderPage() {
         description="All selected blocks will be permanently removed."
         onConfirm={bulkDeleteBlocks}
       />
-    </DashboardLayout>
+    </div>
   );
 }
 

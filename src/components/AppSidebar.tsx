@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { CreditCard, LayoutDashboard, List, User, Wifi, LogOut, Tag, Smartphone, Users, Mail, Palette, Settings, Crown, ShieldCheck, ShoppingBag, Store, BarChart3, FileText, GripVertical, RotateCcw } from "lucide-react";
+import { CreditCard, LayoutDashboard, List, User, Wifi, LogOut, Tag, Smartphone, Users, Mail, Palette, Settings, Crown, ShieldCheck, ShoppingBag, Store, BarChart3, FileText, GripVertical, RotateCcw, ClipboardList } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -42,8 +42,8 @@ const DEFAULT_NFC: NavItem[] = [
 
 const DEFAULT_COMMERCE: NavItem[] = [
   { title: "Commerce Dashboard", url: "/commerce-dashboard", icon: BarChart3 },
-  { title: "Storefront", url: "/storefront", icon: Store },
-  { title: "Commerce", url: "/commerce", icon: ShoppingBag },
+  { title: "Products", url: "/commerce", icon: ShoppingBag },
+  { title: "Orders", url: "/orders", icon: ClipboardList },
 ];
 
 const DEFAULT_GENERAL: NavItem[] = [
@@ -55,7 +55,7 @@ const DEFAULT_GENERAL: NavItem[] = [
 
 const ICON_MAP: Record<string, any> = {
   LayoutDashboard, CreditCard, Smartphone, Palette, FileText, List, Tag,
-  BarChart3, Store, ShoppingBag, Users, Mail, Settings, Crown, ShieldCheck,
+  BarChart3, Store, ShoppingBag, Users, Mail, Settings, Crown, ShieldCheck, ClipboardList,
 };
 
 function reorderFromStorage(key: string, defaults: NavItem[]): NavItem[] {

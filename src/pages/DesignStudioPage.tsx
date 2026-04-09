@@ -6,7 +6,6 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
-import { UpgradeOverlay } from "@/components/UpgradePrompt";
 import { supabase } from "@/integrations/supabase/client";
 import { InteractiveCard3D } from "@/components/InteractiveCard3D";
 import { getPresetCss } from "@/components/DesignStudio/BackgroundPresets";
@@ -14,20 +13,8 @@ import type { PersonaDesign } from "@/components/DesignStudio/types";
 import { CardDesignPanel } from "@/components/studio/CardDesignPanel";
 import { cn } from "@/lib/utils";
 import {
-  Loader2, Monitor, Smartphone, Save, Eye,
-  CreditCard, Layout, LayoutGrid, User, Wifi,
+  Loader2, Monitor, Smartphone, Save, Eye, CreditCard, Wifi,
 } from "lucide-react";
-
-type PanelId = "card";
-
-const NAV_SECTIONS = [
-  {
-    group: "NFC Card",
-    items: [
-      { id: "card" as PanelId, label: "Card Design", icon: CreditCard },
-    ],
-  },
-];
 
 const DesignStudioPage = () => {
   const { user } = useAuth();
@@ -39,7 +26,6 @@ const DesignStudioPage = () => {
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [activePanel, setActivePanel] = useState<PanelId>("card");
   const [deviceMode, setDeviceMode] = useState<"desktop" | "mobile">("mobile");
 
   useEffect(() => {
@@ -52,10 +38,7 @@ const DesignStudioPage = () => {
       const list = (personaData as unknown as PersonaDesign[]) ?? [];
       setPersonas(list);
       setUsername(profile?.username ?? "");
-      if (list.length > 0) {
-        setSelectedId(list[0].id);
-        setEditing({ ...list[0] });
-      }
+      if (list.length > 0) { setSelectedId(list[0].id); setEditing({ ...list[0] }); }
       setLoading(false);
     };
     load();
@@ -103,18 +86,12 @@ const DesignStudioPage = () => {
         <div className="glass-card rounded-2xl p-12 text-center">
           <CreditCard className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
           <p className="text-muted-foreground">
-            Create a persona in the{" "}
-            <a href="/personas" className="text-primary underline">Persona Vault</a>{" "}
-            first, then customize its design here.
+            Create a persona in the <a href="/personas" className="text-primary underline">Persona Vault</a> first.
           </p>
         </div>
       </DashboardLayout>
     );
   }
-
-  const renderPanel = () => {
-    return <CardDesignPanel editing={editing} update={update} isPro={isPro} />;
-  };
 
   return (
     <DashboardLayout>
@@ -140,69 +117,14 @@ const DesignStudioPage = () => {
           </Button>
         </div>
 
-        {/* Main Layout: Sidebar + Panel + Preview */}
-        <div className="flex flex-col md:flex-row gap-0 rounded-2xl border border-border/60 bg-card/30 backdrop-blur-sm overflow-hidden" style={{ height: "calc(100vh - 180px)" }}>
-          {/* Sub-Sidebar Nav */}
-          <nav className="w-48 shrink-0 border-r border-border/40 bg-card/50 hidden md:block overflow-y-auto">
-            <div className="p-3 space-y-1">
-              {NAV_SECTIONS.map((section) => (
-                <div key={section.group} className="mb-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 px-3 py-2">
-                    {section.group}
-                  </p>
-                  {section.items.map((item) => {
-                    const Icon = item.icon;
-                    const active = activePanel === item.id;
-                    return (
-                      <button
-                        key={item.id}
-                        onClick={() => setActivePanel(item.id)}
-                        className={cn(
-                          "w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                          active
-                            ? "bg-primary/10 text-primary"
-                            : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                        )}
-                      >
-                        <Icon className="w-4 h-4 shrink-0" />
-                        {item.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
-          </nav>
-
-          {/* Mobile Nav */}
-          <div className="md:hidden w-full border-b border-border/40 bg-card/50 overflow-x-auto shrink-0">
-            <div className="flex gap-1 p-2 min-w-max">
-              {NAV_SECTIONS.flatMap((s) => s.items).map((item) => {
-                const Icon = item.icon;
-                const active = activePanel === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => setActivePanel(item.id)}
-                    className={cn(
-                      "flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-medium whitespace-nowrap transition-all",
-                      active ? "bg-primary/10 text-primary" : "text-muted-foreground"
-                    )}
-                  >
-                    <Icon className="w-3.5 h-3.5" />
-                    {item.label}
-                  </button>
-                );
-              })}
-            </div>
+        {/* Main Layout: Panel + Preview — no side nav, direct content */}
+        <div className="flex flex-col lg:flex-row gap-0 rounded-2xl border border-border/60 bg-card/30 backdrop-blur-sm overflow-hidden" style={{ height: "calc(100vh - 180px)" }}>
+          {/* Panel Content — Card Design */}
+          <div className="flex-1 min-h-0 overflow-y-auto p-5 lg:max-w-md lg:border-r lg:border-border/40">
+            <CardDesignPanel editing={editing} update={update} isPro={isPro} />
           </div>
 
-          {/* Panel Content */}
-          <div className="flex-1 min-h-0 overflow-y-auto p-5 lg:max-w-sm lg:border-r lg:border-border/40">
-            {renderPanel()}
-          </div>
-
-          {/* Live Preview — Always Visible */}
+          {/* Live Preview — Desktop */}
           <div className="flex-1 hidden lg:flex flex-col overflow-y-auto bg-background/50">
             <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
               <div className="flex items-center gap-2">
@@ -237,21 +159,13 @@ const DesignStudioPage = () => {
                 }}
               >
                 <div className="relative flex flex-col items-center justify-center min-h-[350px] p-6">
-                  {/* Ambient glow */}
-                  <div
-                    className="pointer-events-none absolute inset-0"
-                    style={{ background: `radial-gradient(ellipse 60% 50% at 50% 40%, ${editing?.accent_color ?? "#0d9488"}25, transparent 70%)` }}
-                  />
-
-                  {/* Brand badge */}
+                  <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse 60% 50% at 50% 40%, ${editing?.accent_color ?? "#0d9488"}25, transparent 70%)` }} />
                   <div className="flex items-center gap-1.5 absolute top-4">
                     <div className="w-4 h-4 rounded-md flex items-center justify-center" style={{ background: editing?.accent_color ?? "#0d9488" }}>
                       <Wifi className="w-2 h-2 text-white" />
                     </div>
                     <span className="text-[9px] font-display font-semibold tracking-widest uppercase text-muted-foreground">NFC Hub</span>
                   </div>
-
-                  {/* 3D Card */}
                   <div className="scale-[0.85] origin-center mt-6">
                     <InteractiveCard3D
                       name={editing?.display_name ?? "Your Name"}
@@ -275,8 +189,6 @@ const DesignStudioPage = () => {
                       cardTexture={editing?.card_texture ?? "none"}
                     />
                   </div>
-
-                  {/* Mini profile info */}
                   <div className="w-full max-w-[260px] space-y-2 mt-5 opacity-70">
                     <div className="text-center">
                       <h2 className="text-xs font-display font-bold" style={{ color: editing?.text_color ?? "#fff" }}>
@@ -286,16 +198,7 @@ const DesignStudioPage = () => {
                         <p className="text-[9px]" style={{ color: `${editing?.text_color ?? "#fff"}99` }}>{editing.headline}</p>
                       )}
                     </div>
-                    {editing?.bio && (
-                      <div className="rounded-xl p-2 text-[9px] leading-relaxed bg-white/5 backdrop-blur-md border border-white/10" style={{ color: `${editing?.text_color ?? "#fff"}cc` }}>
-                        {editing.bio}
-                      </div>
-                    )}
-                    <Button
-                      size="sm"
-                      className="w-full text-[10px] h-8 rounded-xl"
-                      style={{ background: editing?.accent_color ?? "#0d9488", color: editing?.text_color ?? "#fff" }}
-                    >
+                    <Button size="sm" className="w-full text-[10px] h-8 rounded-xl" style={{ background: editing?.accent_color ?? "#0d9488", color: editing?.text_color ?? "#fff" }}>
                       Save Contact
                     </Button>
                   </div>
@@ -304,7 +207,7 @@ const DesignStudioPage = () => {
             </div>
           </div>
 
-          {/* Mobile Preview FAB + Sheet */}
+          {/* Mobile Preview FAB */}
           <div className="lg:hidden fixed bottom-6 right-6 z-50">
             <Sheet>
               <SheetTrigger asChild>
@@ -332,10 +235,7 @@ const DesignStudioPage = () => {
                     }}
                   >
                     <div className="relative flex flex-col items-center justify-center min-h-[350px] p-6">
-                      <div
-                        className="pointer-events-none absolute inset-0"
-                        style={{ background: `radial-gradient(ellipse 60% 50% at 50% 40%, ${editing?.accent_color ?? "#0d9488"}25, transparent 70%)` }}
-                      />
+                      <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse 60% 50% at 50% 40%, ${editing?.accent_color ?? "#0d9488"}25, transparent 70%)` }} />
                       <div className="flex items-center gap-1.5 absolute top-4">
                         <div className="w-4 h-4 rounded-md flex items-center justify-center" style={{ background: editing?.accent_color ?? "#0d9488" }}>
                           <Wifi className="w-2 h-2 text-white" />
@@ -374,11 +274,7 @@ const DesignStudioPage = () => {
                             <p className="text-[9px]" style={{ color: `${editing?.text_color ?? "#fff"}99` }}>{editing.headline}</p>
                           )}
                         </div>
-                        <Button
-                          size="sm"
-                          className="w-full text-[10px] h-8 rounded-xl"
-                          style={{ background: editing?.accent_color ?? "#0d9488", color: editing?.text_color ?? "#fff" }}
-                        >
+                        <Button size="sm" className="w-full text-[10px] h-8 rounded-xl" style={{ background: editing?.accent_color ?? "#0d9488", color: editing?.text_color ?? "#fff" }}>
                           Save Contact
                         </Button>
                       </div>
