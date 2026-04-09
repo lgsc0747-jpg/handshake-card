@@ -297,6 +297,7 @@ function CardFront({
   textAlignment,
   cardBlur,
   cardTexture,
+  borderRadius,
 }: CardFrontProps) {
   const textureCss = getTextureCss(cardTexture);
 
