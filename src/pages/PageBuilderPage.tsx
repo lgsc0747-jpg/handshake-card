@@ -30,7 +30,7 @@ import {
   Home, PanelLeftClose, PanelLeft, FilePlus, Undo2, Redo2, BookTemplate,
   CheckSquare, Square, ArrowLeft, Wifi, Paintbrush, Check,
 } from "lucide-react";
-import { PageBuilderThemeProvider, usePageBuilderTheme, PB_THEMES, type PBTheme } from "@/contexts/PageBuilderThemeContext";
+import { PageThemeProvider, usePageTheme, PAGE_THEMES, getPageThemeStyles, PAGE_THEME_CLASS } from "@/contexts/PageBuilderThemeContext";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator,
@@ -499,7 +499,7 @@ function PageBuilderPage() {
           <Wifi className="w-3.5 h-3.5 text-primary" />
           <span className="text-xs font-display font-bold hidden sm:inline">Page Builder</span>
         </div>
-        <Select value={selectedPersonaId ?? ""} onValueChange={setSelectedPersonaId}>
+        <Select value={selectedPersonaId ?? ""} onValueChange={(v) => { setSelectedPersonaId(v); pageThemeCtx.setPersonaId(v); }}>
           <SelectTrigger className="w-28 sm:w-36 rounded-lg h-7 text-xs">
             <SelectValue placeholder="Persona" />
           </SelectTrigger>
@@ -695,12 +695,19 @@ function PageBuilderPage() {
             <div className="flex justify-center p-4 md:p-8 min-h-full">
               <div
                 className={cn(
-                  "relative transition-all duration-300 bg-background shadow-lg",
+                  "relative transition-all duration-300 shadow-lg",
+                  PAGE_THEME_CLASS,
                   deviceMode === "mobile"
                     ? "w-[375px] min-h-[667px] border-[6px] border-muted-foreground/15 rounded-[2.5rem]"
                     : "w-full max-w-5xl min-h-[600px] rounded-xl border border-border/60"
                 )}
-              >
+                style={{
+                  ...getPageThemeStyles(pageThemeCtx.themeId),
+                  backgroundColor: "var(--page-bg, hsl(var(--background)))",
+                  color: "var(--page-text, hsl(var(--foreground)))",
+                  fontFamily: "var(--page-font, inherit)",
+                  borderRadius: deviceMode === "mobile" ? undefined : "var(--page-radius, 0.75rem)",
+                }}>
                 <div className="p-0">
                   <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleSortEnd}>
                     <SortableContext items={blocks.filter(b => b.is_visible || editingBlockId === b.id).map(b => b.id)} strategy={verticalListSortingStrategy}>
@@ -856,24 +863,45 @@ function PageBuilderPage() {
 }
 
 function PBThemeSwitcher() {
-  const { theme, setTheme } = usePageBuilderTheme();
+  const { themeId, setThemeId } = usePageTheme();
+  const colorThemes = PAGE_THEMES.filter(t => t.type === "color");
+  const layoutThemes = PAGE_THEMES.filter(t => t.type === "layout");
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Builder Theme">
+        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Page Theme">
           <Paintbrush className="w-3.5 h-3.5" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-44 max-h-64 overflow-y-auto">
+      <DropdownMenuContent align="end" className="w-52 max-h-80 overflow-y-auto">
         <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
-          Builder Theme
+          Color Schemes
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {(Object.entries(PB_THEMES) as [PBTheme, { label: string; preview: string }][]).map(([key, cfg]) => (
-          <DropdownMenuItem key={key} onClick={() => setTheme(key)} className="flex items-center gap-2 cursor-pointer text-xs">
-            <span className="w-2.5 h-2.5 rounded-full shrink-0 border border-border" style={{ background: cfg.preview }} />
-            <span className="flex-1">{cfg.label}</span>
-            {theme === key && <Check className="w-3 h-3 text-primary shrink-0" />}
+        {colorThemes.map((t) => (
+          <DropdownMenuItem key={t.id} onClick={() => setThemeId(t.id)} className="flex items-center gap-2 cursor-pointer">
+            <span className="w-3 h-3 rounded-full shrink-0 border border-border" style={{ background: t.preview }} />
+            <div className="flex-1 min-w-0">
+              <span className="text-xs font-medium">{t.label}</span>
+              <p className="text-[9px] text-muted-foreground truncate">{t.description}</p>
+            </div>
+            {themeId === t.id && <Check className="w-3 h-3 text-primary shrink-0" />}
+          </DropdownMenuItem>
+        ))}
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
+          Layout Themes
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {layoutThemes.map((t) => (
+          <DropdownMenuItem key={t.id} onClick={() => setThemeId(t.id)} className="flex items-center gap-2 cursor-pointer">
+            <span className="w-3 h-3 rounded-full shrink-0 border border-border" style={{ background: t.preview }} />
+            <div className="flex-1 min-w-0">
+              <span className="text-xs font-medium">{t.label}</span>
+              <p className="text-[9px] text-muted-foreground truncate">{t.description}</p>
+            </div>
+            {themeId === t.id && <Check className="w-3 h-3 text-primary shrink-0" />}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
@@ -883,9 +911,9 @@ function PBThemeSwitcher() {
 
 function PageBuilderWithTheme() {
   return (
-    <PageBuilderThemeProvider>
+    <PageThemeProvider>
       <PageBuilderPage />
-    </PageBuilderThemeProvider>
+    </PageThemeProvider>
   );
 }
 
