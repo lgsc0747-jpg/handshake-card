@@ -5,8 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, Loader2 } from "lucide-react";
+import { Plus, Trash2, Loader2, ChevronDown, ChevronUp, Image as ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { VariantImageGallery } from "./VariantImageGallery";
 
 interface ProductVariant {
   id: string;
