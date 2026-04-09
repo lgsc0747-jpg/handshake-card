@@ -9,26 +9,20 @@ interface SortableChartCardProps {
   className?: string;
 }
 
-export function SortableChartCard({ id, children, editMode, className }: SortableChartCardProps) {
+export function SortableChartCard({ id, children, className }: SortableChartCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.6 : 1,
+    opacity: isDragging ? 0.5 : 1,
     zIndex: isDragging ? 50 : undefined,
   };
 
   return (
     <div ref={setNodeRef} style={style} className={`relative group ${className ?? ""}`}>
-      {editMode && (
-        <button
-          {...attributes}
-          {...listeners}
-          className="absolute -top-2 -left-2 z-10 w-6 h-6 rounded-full bg-muted border border-border flex items-center justify-center cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity touch-none"
-        >
-          <GripVertical className="w-3 h-3 text-muted-foreground" />
-        </button>
-      )}
+      <div {...attributes} {...listeners} className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab touch-none z-10">
+        <GripVertical className="w-3 h-3 text-muted-foreground" />
+      </div>
       {children}
     </div>
   );
