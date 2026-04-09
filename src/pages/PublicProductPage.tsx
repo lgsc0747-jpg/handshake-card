@@ -132,6 +132,7 @@ const PublicProductPage = () => {
   const pageThemeId = personaData?.page_theme ?? "default";
   const pageThemeStyles = useMemo(() => getPageThemeStyles(pageThemeId), [pageThemeId]);
   const hasPageTheme = pageThemeId !== "default" && Object.keys(pageThemeStyles).length > 0;
+  const grouped = variants.reduce<Record<string, ProductVariant[]>>((acc, v) => {
     (acc[v.variant_type] = acc[v.variant_type] || []).push(v);
     return acc;
   }, {});
