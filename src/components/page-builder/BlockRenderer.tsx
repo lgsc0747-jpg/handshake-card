@@ -430,6 +430,7 @@ export function BlockRenderer({ block, isEditing, onClick, persona }: BlockRende
                   textAlignment={persona.text_alignment ?? "left"}
                   cardBlur={persona.card_blur ?? 12}
                   cardTexture={persona.card_texture ?? "none"}
+                  borderRadius={persona.border_radius ?? 24}
                 />
               </div>
             </div>

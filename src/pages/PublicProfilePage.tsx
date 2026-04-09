@@ -573,6 +573,7 @@ const PublicProfilePage = () => {
             textAlignment={persona?.text_alignment ?? "left"}
             cardBlur={persona?.card_blur ?? 12}
             cardTexture={persona?.card_texture ?? "none"}
+            borderRadius={(persona as any)?.border_radius ?? 24}
             onFlipToBack={trackCardFlip}
             onLinkClick={trackLinkClick}
           />

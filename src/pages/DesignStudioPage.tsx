@@ -181,6 +181,7 @@ const DesignStudioPage = () => {
                       textAlignment={editing?.text_alignment ?? "left"}
                       cardBlur={editing?.card_blur ?? 12}
                       cardTexture={editing?.card_texture ?? "none"}
+                      borderRadius={editing?.border_radius ?? 24}
                     />
                   </div>
                   <div className="flex items-center gap-2 mt-5">
@@ -249,6 +250,7 @@ const DesignStudioPage = () => {
                           textAlignment={editing?.text_alignment ?? "left"}
                           cardBlur={editing?.card_blur ?? 12}
                           cardTexture={editing?.card_texture ?? "none"}
+                          borderRadius={editing?.border_radius ?? 24}
                         />
                       </div>
                       <div className="flex items-center gap-2 mt-4">
