@@ -54,7 +54,7 @@ const DEFAULT_GENERAL: NavItem[] = [
 
 const ICON_MAP: Record<string, any> = {
   LayoutDashboard, CreditCard, Smartphone, Palette, FileText, List, Tag,
-  BarChart3, Store, ShoppingBag, Users, Mail, Settings, Crown, ShieldCheck, ClipboardList,
+  BarChart3, Store, ShoppingBag, Users, Mail, Settings, Crown, ShieldCheck,
 };
 
 function reorderFromStorage(key: string, defaults: NavItem[]): NavItem[] {
