@@ -51,8 +51,10 @@ const PublicProductPage = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [personaData, setPersonaData] = useState<{ accent_color: string; text_color: string; gcash_qr_url: string | null; page_theme: string } | null>(null);
+  const pageThemeId = personaData?.page_theme ?? "default";
+  const pageThemeStyles = useMemo(() => getPageThemeStyles(pageThemeId), [pageThemeId]);
+  const hasPageTheme = pageThemeId !== "default" && Object.keys(pageThemeStyles).length > 0;
 
-  useEffect(() => {
     // Strip dashboard theme classes for clean public page
     const root = document.documentElement;
     const themeClasses = Array.from(root.classList).filter((c) => c.startsWith("theme-"));
