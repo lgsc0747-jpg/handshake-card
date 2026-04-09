@@ -3,9 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, Loader2, ChevronDown, ChevronUp, Image as ImageIcon } from "lucide-react";
+import { Plus, Trash2, Loader2, ChevronUp, Image as ImageIcon, Pencil, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { VariantImageGallery } from "./VariantImageGallery";
 
@@ -44,6 +43,9 @@ export function ProductVariantManager({ productId }: ProductVariantManagerProps)
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [expandedVariant, setExpandedVariant] = useState<string | null>(null);
+  const [editingVariant, setEditingVariant] = useState<string | null>(null);
+  const [editFields, setEditFields] = useState({ type: "", value: "", price: "", stock: "" });
+  const [saving, setSaving] = useState(false);
   const [newType, setNewType] = useState<string>("Color");
   const [newValue, setNewValue] = useState("");
   const [newPrice, setNewPrice] = useState("0");
@@ -82,7 +84,35 @@ export function ProductVariantManager({ productId }: ProductVariantManagerProps)
 
   const removeVariant = async (id: string) => {
     await (supabase as any).from("product_variants").delete().eq("id", id);
+    if (editingVariant === id) setEditingVariant(null);
+    if (expandedVariant === id) setExpandedVariant(null);
     await loadVariants();
+  };
+
+  const startEdit = (v: ProductVariant) => {
+    setEditingVariant(v.id);
+    setEditFields({
+      type: v.variant_type,
+      value: v.variant_value,
+      price: v.price_modifier.toString(),
+      stock: v.stock.toString(),
+    });
+  };
+
+  const cancelEdit = () => setEditingVariant(null);
+
+  const saveEdit = async (id: string) => {
+    if (!editFields.value.trim()) return;
+    setSaving(true);
+    await (supabase as any).from("product_variants").update({
+      variant_type: editFields.type,
+      variant_value: editFields.value.trim(),
+      price_modifier: parseFloat(editFields.price) || 0,
+      stock: parseInt(editFields.stock) || 0,
+    }).eq("id", id);
+    setEditingVariant(null);
+    await loadVariants();
+    setSaving(false);
   };
 
   if (loading) return <div className="flex items-center justify-center h-24"><Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /></div>;
@@ -107,34 +137,98 @@ export function ProductVariantManager({ productId }: ProductVariantManagerProps)
           <div className="space-y-1.5">
             {items.map((v) => {
               const isExpanded = expandedVariant === v.id;
+              const isEditing = editingVariant === v.id;
               return (
                 <div key={v.id} className="rounded-lg border border-border/40 bg-muted/10 overflow-hidden">
-                  <div className="flex items-center gap-1.5 px-2.5 py-1.5">
-                    {type === "Color" && COLOR_SWATCHES[v.variant_value] && (
-                      <span
-                        className="w-3 h-3 rounded-full border border-border/60 flex-shrink-0"
-                        style={{ backgroundColor: COLOR_SWATCHES[v.variant_value] }}
-                      />
-                    )}
-                    <span className="text-xs font-medium flex-1">{v.variant_value}</span>
-                    {v.price_modifier !== 0 && (
-                      <span className="text-[9px] text-muted-foreground">
-                        {v.price_modifier > 0 ? "+" : ""}₱{v.price_modifier}
-                      </span>
-                    )}
-                    <span className="text-[9px] text-muted-foreground">({v.stock})</span>
-                    <button
-                      onClick={() => setExpandedVariant(isExpanded ? null : v.id)}
-                      className="p-0.5 hover:bg-muted rounded transition-colors"
-                      title="Toggle images"
-                    >
-                      {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ImageIcon className="w-3 h-3 text-muted-foreground" />}
-                    </button>
-                    <button onClick={() => removeVariant(v.id)} className="p-0.5 hover:text-destructive transition-colors">
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                  </div>
-                  {isExpanded && (
+                  {isEditing ? (
+                    /* Inline edit form */
+                    <div className="p-2.5 space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-[9px]">Type</Label>
+                          <Select value={editFields.type} onValueChange={(val) => setEditFields(f => ({ ...f, type: val }))}>
+                            <SelectTrigger className="h-7 rounded-lg text-[11px]"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {VARIANT_TYPES.map((t) => (
+                                <SelectItem key={t} value={t}>{t}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-[9px]">Value</Label>
+                          <Input
+                            value={editFields.value}
+                            onChange={(e) => setEditFields(f => ({ ...f, value: e.target.value }))}
+                            className="h-7 rounded-lg text-[11px]"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-[9px]">Price ±</Label>
+                          <Input
+                            type="number"
+                            value={editFields.price}
+                            onChange={(e) => setEditFields(f => ({ ...f, price: e.target.value }))}
+                            className="h-7 rounded-lg text-[11px]"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-[9px]">Stock</Label>
+                          <Input
+                            type="number"
+                            value={editFields.stock}
+                            onChange={(e) => setEditFields(f => ({ ...f, stock: e.target.value }))}
+                            className="h-7 rounded-lg text-[11px]"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-1.5 justify-end">
+                        <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px] rounded-lg" onClick={cancelEdit}>
+                          <X className="w-3 h-3 mr-1" /> Cancel
+                        </Button>
+                        <Button size="sm" className="h-6 px-2 text-[10px] rounded-lg" onClick={() => saveEdit(v.id)} disabled={saving}>
+                          {saving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Check className="w-3 h-3 mr-1" />} Save
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Display row */
+                    <div className="flex items-center gap-1.5 px-2.5 py-1.5">
+                      {type === "Color" && COLOR_SWATCHES[v.variant_value] && (
+                        <span
+                          className="w-3 h-3 rounded-full border border-border/60 flex-shrink-0"
+                          style={{ backgroundColor: COLOR_SWATCHES[v.variant_value] }}
+                        />
+                      )}
+                      <span className="text-xs font-medium flex-1">{v.variant_value}</span>
+                      {v.price_modifier !== 0 && (
+                        <span className="text-[9px] text-muted-foreground">
+                          {v.price_modifier > 0 ? "+" : ""}₱{v.price_modifier}
+                        </span>
+                      )}
+                      <span className="text-[9px] text-muted-foreground">({v.stock})</span>
+                      <button
+                        onClick={() => startEdit(v)}
+                        className="p-0.5 hover:bg-muted rounded transition-colors"
+                        title="Edit variant"
+                      >
+                        <Pencil className="w-3 h-3 text-muted-foreground" />
+                      </button>
+                      <button
+                        onClick={() => setExpandedVariant(isExpanded ? null : v.id)}
+                        className="p-0.5 hover:bg-muted rounded transition-colors"
+                        title="Toggle images"
+                      >
+                        {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ImageIcon className="w-3 h-3 text-muted-foreground" />}
+                      </button>
+                      <button onClick={() => removeVariant(v.id)} className="p-0.5 hover:text-destructive transition-colors">
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+                  {isExpanded && !isEditing && (
                     <div className="px-2.5 pb-2.5">
                       <VariantImageGallery variantId={v.id} />
                     </div>
