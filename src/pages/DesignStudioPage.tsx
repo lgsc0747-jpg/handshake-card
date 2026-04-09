@@ -13,7 +13,7 @@ import type { PersonaDesign } from "@/components/DesignStudio/types";
 import { CardDesignPanel } from "@/components/studio/CardDesignPanel";
 import { cn } from "@/lib/utils";
 import {
-  Loader2, Monitor, Smartphone, Save, Eye, CreditCard, Wifi,
+  Loader2, Monitor, Smartphone, Save, Eye, CreditCard,
 } from "lucide-react";
 
 const DesignStudioPage = () => {
