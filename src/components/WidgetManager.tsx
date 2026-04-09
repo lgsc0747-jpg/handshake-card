@@ -204,15 +204,6 @@ export function WidgetManager({ stats }: WidgetManagerProps) {
           >
             <RotateCcw className="w-3 h-3" />
           </Button>
-          <Button
-            size="sm"
-            variant={editMode ? "default" : "outline"}
-            className={editMode ? "gradient-primary text-primary-foreground h-7 text-xs" : "h-7 text-xs"}
-            onClick={() => setEditMode(!editMode)}
-          >
-            <Settings2 className="w-3 h-3 mr-1" />
-            {editMode ? "Lock" : "Reorder"}
-          </Button>
         </div>
       </div>
 
@@ -223,7 +214,8 @@ export function WidgetManager({ stats }: WidgetManagerProps) {
               {activeWidgets.map((w) => (
                 <SortableWidget
                   key={w.key} id={w.key} title={w.label}
-                  value={getValue(w.key)} icon={w.icon} editMode={editMode}
+                  value={getValue(w.key)} icon={w.icon}
+                />
                 />
               ))}
             </AnimatePresence>
