@@ -87,7 +87,7 @@ const PublicProductPage = () => {
     // Load persona colors
     const { data: persona } = await supabase
       .from("personas")
-      .select("accent_color, text_color, gcash_qr_url")
+      .select("accent_color, text_color, gcash_qr_url, page_theme")
       .eq("id", prod.persona_id)
       .single();
     if (persona) setPersonaData(persona as any);
