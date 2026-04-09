@@ -272,7 +272,10 @@ function PageBuilderPage() {
     supabase.from("personas").select("id, label, slug").eq("user_id", user.id).order("created_at").then(({ data }) => {
       const list = data ?? [];
       setPersonas(list);
-      if (list.length > 0) setSelectedPersonaId(list[0].id);
+      if (list.length > 0) {
+        setSelectedPersonaId(list[0].id);
+        pageThemeCtx.setPersonaId(list[0].id);
+      }
       setLoading(false);
     });
   }, [user]);
