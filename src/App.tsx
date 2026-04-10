@@ -17,10 +17,6 @@ import PersonasPage from "./pages/PersonasPage.tsx";
 import LeadsPage from "./pages/LeadsPage.tsx";
 import DesignStudioPage from "./pages/DesignStudioPage.tsx";
 import PageBuilderPage from "./pages/PageBuilderPage.tsx";
-import CommercePage from "./pages/CommercePage.tsx";
-import CommerceDashboardPage from "./pages/CommerceDashboardPage.tsx";
-import ProductEditPage from "./pages/ProductEditPage.tsx";
-import PublicProductPage from "./pages/PublicProductPage.tsx";
 import SettingsPage from "./pages/SettingsPage.tsx";
 import PublicProfilePage from "./pages/PublicProfilePage.tsx";
 import LoginPage from "./pages/LoginPage.tsx";
@@ -63,16 +59,11 @@ const App = () => (
             <Route path="/leads" element={<ProtectedRoute><LeadsPage /></ProtectedRoute>} />
             <Route path="/design-studio" element={<ProtectedRoute><DesignStudioPage /></ProtectedRoute>} />
             <Route path="/page-builder" element={<ProtectedRoute><PageBuilderPage /></ProtectedRoute>} />
-            <Route path="/commerce" element={<ProtectedRoute><CommercePage /></ProtectedRoute>} />
-            <Route path="/commerce/products/:productId" element={<ProtectedRoute><ProductEditPage /></ProtectedRoute>} />
-            <Route path="/commerce-dashboard" element={<ProtectedRoute><CommerceDashboardPage /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
             <Route path="/plans" element={<ProtectedRoute><PlansPage /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
             <Route path="/p/:username" element={<PublicProfilePage />} />
             <Route path="/p/:username/:personaSlug" element={<PublicProfilePage />} />
-            <Route path="/p/:username/:personaSlug/product/:productId" element={<PublicProductPage />} />
-            <Route path="/p/:username/product/:productId" element={<PublicProductPage />} />
             <Route path="/u/:code" element={<ShortUrlRedirect />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />

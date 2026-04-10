@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { InteractiveCard3D } from "@/components/InteractiveCard3D";
 import { SecurityGate } from "@/components/SecurityGate";
 import { CardDisabledPage } from "@/components/CardDisabledPage";
-import { PublicProductGrid } from "@/components/commerce/PublicProductGrid";
+
 import { BlockRenderer } from "@/components/page-builder/BlockRenderer";
 import { PublicPageNav } from "@/components/page-builder/PublicPageNav";
 import type { PageBlock } from "@/components/page-builder/types";
@@ -179,7 +179,7 @@ const PublicProfilePage = () => {
           setSections([
             { section_type: "hero", sort_order: 0, is_visible: true },
             { section_type: "nfc_card", sort_order: 1, is_visible: true },
-            { section_type: "products", sort_order: 2, is_visible: true },
+            
             { section_type: "contact", sort_order: 3, is_visible: true },
             { section_type: "social_grid", sort_order: 4, is_visible: true },
           ]);
@@ -598,18 +598,6 @@ const PublicProfilePage = () => {
     </section>
   );
 
-  const renderProducts = () => {
-    if (!persona || !ownerIsPro) return null;
-    return (
-      <PublicProductGrid
-        personaId={persona.id}
-        sellerUserId={merged.user_id}
-        accentColor={accentColor}
-        textColor={textColor}
-        gcashQrUrl={persona.gcash_qr_url}
-      />
-    );
-  };
 
   const renderContact = () => (
     <motion.div
@@ -693,7 +681,7 @@ const PublicProfilePage = () => {
   const sectionRenderers: Record<string, () => React.ReactNode> = {
     hero: renderHero,
     nfc_card: renderNfcCard,
-    products: renderProducts,
+    
     contact: renderContact,
     social_grid: renderSocialGrid,
   };

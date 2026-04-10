@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Mail, Phone, Globe, Linkedin, Github, Twitter, Instagram, Facebook, Youtube, ExternalLink, MapPin, Quote as QuoteIcon, Star, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { InteractiveCard3D } from "@/components/InteractiveCard3D";
-import { PublicProductGrid } from "@/components/commerce/PublicProductGrid";
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -378,28 +378,6 @@ export function BlockRenderer({ block, isEditing, onClick, persona }: BlockRende
         </div>
       );
 
-    case "products": {
-      const pId = persona?.id;
-      const sellerId = persona?.user_id;
-      return (
-        <div ref={animRef} className="relative" style={wrapperStyle}>
-          {editOverlay}
-          {pId && sellerId ? (
-            <PublicProductGrid
-              personaId={pId}
-              sellerUserId={sellerId}
-              accentColor={persona?.accent_color ?? "hsl(var(--primary))"}
-              textColor={styles.textColor}
-              gcashQrUrl={persona?.gcash_qr_url}
-            />
-          ) : (
-            <div className="text-center p-8 rounded-xl bg-muted/20 border border-border/40">
-              <span className="text-sm text-muted-foreground">📦 Product grid — add persona data to load products</span>
-            </div>
-          )}
-        </div>
-      );
-    }
 
     case "nfc_card": {
       const cardScale = content.cardScale ?? 0.95;

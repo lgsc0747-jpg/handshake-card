@@ -13,7 +13,7 @@ export const BLOCK_TYPES = [
   { id: "testimonial", label: "Testimonial", icon: "MessageSquareQuote", description: "Customer review" },
   { id: "faq", label: "FAQ", icon: "HelpCircle", description: "Collapsible Q&A" },
   { id: "icon_grid", label: "Icon Grid", icon: "Grid3x3", description: "Icons with labels" },
-  { id: "products", label: "Products", icon: "ShoppingBag", description: "Product showcase from store" },
+  
   { id: "nfc_card", label: "3D NFC Card", icon: "CreditCard", description: "Interactive digital card" },
   { id: "contact", label: "Contact Form", icon: "Mail", description: "Lead generation form" },
   { id: "social", label: "Social Links", icon: "Share2", description: "Social media grid" },

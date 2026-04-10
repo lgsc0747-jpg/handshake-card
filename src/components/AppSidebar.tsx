@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { CreditCard, LayoutDashboard, List, User, Wifi, LogOut, Tag, Smartphone, Users, Mail, Palette, Settings, Crown, ShieldCheck, ShoppingBag, Store, BarChart3, FileText, GripVertical, RotateCcw } from "lucide-react";
+import { CreditCard, LayoutDashboard, List, User, Wifi, LogOut, Tag, Smartphone, Users, Mail, Palette, Settings, Crown, ShieldCheck, FileText, GripVertical, RotateCcw } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -40,10 +40,6 @@ const DEFAULT_NFC: NavItem[] = [
   { title: "Categories", url: "/categories", icon: Tag },
 ];
 
-const DEFAULT_COMMERCE: NavItem[] = [
-  { title: "Commerce Dashboard", url: "/commerce-dashboard", icon: BarChart3 },
-  { title: "Products", url: "/commerce", icon: ShoppingBag },
-];
 
 const DEFAULT_GENERAL: NavItem[] = [
   { title: "Personas", url: "/personas", icon: Users },
@@ -54,7 +50,7 @@ const DEFAULT_GENERAL: NavItem[] = [
 
 const ICON_MAP: Record<string, any> = {
   LayoutDashboard, CreditCard, Smartphone, Palette, FileText, List, Tag,
-  BarChart3, Store, ShoppingBag, Users, Mail, Settings, Crown, ShieldCheck,
+  Users, Mail, Settings, Crown, ShieldCheck,
 };
 
 function reorderFromStorage(key: string, defaults: NavItem[]): NavItem[] {
@@ -168,7 +164,7 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SortableNavGroup label="NFC" storageKey="sidebar_nfc_order" defaults={DEFAULT_NFC} collapsed={collapsed} sensors={sensors} />
-        <SortableNavGroup label="Commerce" storageKey="sidebar_commerce_order" defaults={DEFAULT_COMMERCE} collapsed={collapsed} sensors={sensors} />
+        
         <SortableNavGroup label="General" storageKey="sidebar_general_order" defaults={generalItems} collapsed={collapsed} sensors={sensors} />
       </SidebarContent>
 
