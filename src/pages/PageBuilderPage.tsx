@@ -465,7 +465,7 @@ function PageBuilderPage() {
 
   const editingBlock = blocks.find(b => b.id === editingBlockId) ?? null;
   const selectedPage = pages.find(p => p.id === selectedPageId);
-  const hasProductBlocks = blocks.some(b => b.block_type === "products" && b.is_visible);
+  
 
   if (loading) {
     return (
@@ -561,14 +561,6 @@ function PageBuilderPage() {
               <Smartphone className="w-3 h-3" />
             </Button>
           </div>
-          {hasProductBlocks && (
-            <div className="flex items-center gap-1 px-1 border-l border-border/40 ml-1">
-              <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                <ShoppingCart className="w-3 h-3" />
-                <span className="hidden sm:inline">Cart enabled</span>
-              </div>
-            </div>
-          )}
           <Button onClick={saveAll} disabled={saving} size="sm" className="gradient-primary text-primary-foreground rounded-lg h-7 text-xs px-3">
             {saving ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Save className="w-3 h-3 mr-1" />}
             Save
