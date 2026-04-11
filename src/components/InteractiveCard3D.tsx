@@ -246,10 +246,10 @@ export const InteractiveCard3D = forwardRef<HTMLDivElement, InteractiveCard3DPro
       </div>
 
       <div className="flex items-center gap-2">
-        <Button size="sm" variant="outline" onClick={handleToggleFlip} className="text-xs">
+        <Button size="sm" variant="outline" onClick={handleToggleFlip} className="text-xs" style={{ color: textColor, borderColor: `${textColor}33`, backgroundColor: `${textColor}11` }}>
           <RotateCcw className="mr-1 h-3 w-3" /> {isFlipped ? "Front" : "Flip"}
         </Button>
-        <Button size="sm" variant="outline" onClick={handleShare} className="text-xs">
+        <Button size="sm" variant="outline" onClick={handleShare} className="text-xs" style={{ color: textColor, borderColor: `${textColor}33`, backgroundColor: `${textColor}11` }}>
           <Share2 className="mr-1 h-3 w-3" /> Share
         </Button>
       </div>

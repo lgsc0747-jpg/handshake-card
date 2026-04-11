@@ -104,6 +104,11 @@ function SortableNavGroup({ label, storageKey, defaults, collapsed, sensors }: {
 }) {
   const [items, setItems] = useState(() => reorderFromStorage(storageKey, defaults));
 
+  // Re-sync when defaults change (e.g. admin role loads async)
+  useEffect(() => {
+    setItems(reorderFromStorage(storageKey, defaults));
+  }, [defaults.length, storageKey]);
+
   const handleSortEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
