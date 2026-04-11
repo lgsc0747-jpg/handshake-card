@@ -57,6 +57,9 @@ export interface NfcStats {
   personaPerformance: PersonaPerf[];
   connectionSources: { nfc: number; qr: number; direct: number };
   tapVelocity: { label: string; taps: number }[];
+  ctaClicks: { label: string; clicks: number }[];
+  videoPlays: number;
+  contactFormSubmissions: number;
 }
 
 const DEVICE_COLORS: Record<string, string> = {
