@@ -285,6 +285,9 @@ export function useNfcData() {
       personaPerformance,
       connectionSources: { nfc: nfcSource, qr: qrSource, direct: directSource },
       tapVelocity,
+      ctaClicks: Array.from(ctaClicksMap.entries()).map(([label, clicks]) => ({ label, clicks })).sort((a, b) => b.clicks - a.clicks),
+      videoPlays,
+      contactFormSubmissions,
     });
 
     setLoading(false);
