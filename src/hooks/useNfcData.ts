@@ -202,6 +202,13 @@ export function useNfcData() {
         visitorsWithInteractions.add(log.entity_id);
       }
       if (log.interaction_type === "dwell_time" && meta.seconds) { totalDwell += Number(meta.seconds); dwellCount++; }
+      if (log.interaction_type === "cta_click") {
+        const label = meta.label || "Unknown CTA";
+        ctaClicksMap.set(label, (ctaClicksMap.get(label) ?? 0) + 1);
+        visitorsWithInteractions.add(log.entity_id);
+      }
+      if (log.interaction_type === "video_play") { videoPlays++; visitorsWithInteractions.add(log.entity_id); }
+      if (log.interaction_type === "contact_form_submit") { contactFormSubmissions++; visitorsWithInteractions.add(log.entity_id); }
       if (log.interaction_type === "security_attempt") {
         securityTotal++;
         if (meta.result === "success") securitySuccess++;
