@@ -443,7 +443,9 @@ export function BlockRenderer({ block, isEditing, onClick, persona, onTrackInter
           {editOverlay}
           <div className="flex flex-wrap gap-3 justify-center">
             {links.length > 0 ? links.map((l: { platform: string; url: string }, i: number) => (
-              <a key={i} href={l.url} target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded-xl bg-card/50 border border-border/60 flex items-center justify-center hover:border-primary/50 transition-colors">
+              <a key={i} href={l.url} target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded-xl bg-card/50 border border-border/60 flex items-center justify-center hover:border-primary/50 transition-colors" onClick={() => {
+                if (!isEditing) onTrackInteraction?.("link_click", { link_type: l.platform.toLowerCase() });
+              }}>
                 <span className="text-sm">{getSocialIcon(l.platform)}</span>
               </a>
             )) : (
