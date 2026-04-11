@@ -546,6 +546,7 @@ function ContactFormBlock({ content, isEditing, persona, onTrackInteraction }: {
       if (error) throw error;
       setSubmitted(true);
       toast.success("Message sent successfully!");
+      onTrackInteraction?.("contact_form_submit", { visitor_email: email });
     } catch {
       toast.error("Failed to send. Please try again.");
     } finally {
