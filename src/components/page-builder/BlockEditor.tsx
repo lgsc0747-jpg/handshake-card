@@ -421,6 +421,11 @@ function renderContentEditor(block: PageBlock, updateContent: (k: string, v: any
                   updated[i] = { ...updated[i], label: e.target.value };
                   updateContent("items", updated);
                 }} className="h-8 text-xs" placeholder="Label" />
+                <Textarea value={item.description ?? ""} onChange={(e) => {
+                  const updated = [...(c.items ?? [])];
+                  updated[i] = { ...updated[i], description: e.target.value };
+                  updateContent("items", updated);
+                }} className="text-xs min-h-[48px] resize-y" placeholder="Description (optional)" rows={2} />
               </div>
               <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => updateContent("items", (c.items ?? []).filter((_: any, j: number) => j !== i))}>
                 <X className="w-3 h-3" />
