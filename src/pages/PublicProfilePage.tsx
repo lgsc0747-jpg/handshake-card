@@ -4,6 +4,7 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { InteractiveCard3D } from "@/components/InteractiveCard3D";
 import { SecurityGate } from "@/components/SecurityGate";
+import { ContactMeModal } from "@/components/ContactMeModal";
 import { CardDisabledPage } from "@/components/CardDisabledPage";
 
 import { BlockRenderer } from "@/components/page-builder/BlockRenderer";
@@ -103,6 +104,8 @@ const PublicProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [gateUnlocked, setGateUnlocked] = useState(false);
+  const [contactModalOpen, setContactModalOpen] = useState(false);
+  const [scrolledPastHero, setScrolledPastHero] = useState(false);
   const [pageThemeId, setPageThemeId] = useState<string>("default");
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -110,6 +113,15 @@ const PublicProfilePage = () => {
   const cardScale = useTransform(scrollYProgress, [0, 0.3], [1, 0.85]);
   const cardOpacity = useTransform(scrollYProgress, [0.2, 0.4], [1, 0.6]);
   const chevronOpacity = useTransform(scrollYProgress, [0, 0.1], [1, 0]);
+
+  // Track scroll for floating Contact Me CTA
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolledPastHero(window.scrollY > window.innerHeight * 0.6);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -420,14 +432,14 @@ const PublicProfilePage = () => {
     return <CardDisabledPage ownerName={merged.display_name || username || undefined} />;
   }
 
-  if (persona?.is_private && !gateUnlocked) {
+  if (persona?.is_private && persona?.has_pin && !gateUnlocked) {
     return (
       <SecurityGate
         personaId={persona.id}
         ownerUserId={merged.user_id}
         ownerName={merged.display_name || username || ""}
-        pinRequired={!persona.require_contact_exchange}
-        contactRequired={persona.require_contact_exchange}
+        pinRequired={true}
+        contactRequired={false}
         accentColor={merged.accent_color}
         onUnlocked={() => setGateUnlocked(true)}
       />
@@ -618,6 +630,16 @@ const PublicProfilePage = () => {
 
       {/* Actions */}
       <div className="space-y-3">
+        {persona && (
+          <Button
+            onClick={() => setContactModalOpen(true)}
+            className="w-full h-12 rounded-2xl text-sm font-semibold border-2"
+            variant="outline"
+            style={{ borderColor: accentColor, color: accentColor }}
+          >
+            <Mail className="w-4 h-4 mr-2" /> Contact Me
+          </Button>
+        )}
         <Button
           onClick={handleDownloadVCard}
           className="w-full h-12 rounded-2xl text-sm font-semibold"
@@ -757,6 +779,37 @@ const PublicProfilePage = () => {
           </div>
         )}
       </div>
+
+      {/* Floating Contact Me CTA */}
+      {persona && scrolledPastHero && (
+        <motion.div
+          className="fixed bottom-6 right-6 z-40"
+          initial={{ opacity: 0, scale: 0.8, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.8, y: 20 }}
+          transition={{ type: "spring", stiffness: 300, damping: 25 }}
+        >
+          <Button
+            onClick={() => setContactModalOpen(true)}
+            className="h-12 px-5 rounded-2xl text-sm font-semibold shadow-lg"
+            style={{ backgroundColor: accentColor, color: "#fff", boxShadow: `0 8px 30px ${accentColor}40` }}
+          >
+            <Mail className="w-4 h-4 mr-2" /> Contact Me
+          </Button>
+        </motion.div>
+      )}
+
+      {/* Contact Me Modal */}
+      {persona && (
+        <ContactMeModal
+          open={contactModalOpen}
+          onClose={() => setContactModalOpen(false)}
+          personaId={persona.id}
+          ownerUserId={merged.user_id}
+          ownerName={merged.display_name || username || ""}
+          accentColor={accentColor}
+        />
+      )}
     </>
   );
 };

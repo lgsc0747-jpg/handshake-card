@@ -336,8 +336,8 @@ const PersonasPage = () => {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium">Private Mode</p>
-                      <p className="text-xs text-muted-foreground">Visitors must authenticate to view</p>
+                      <p className="text-sm font-medium">Private Mode (PIN Lock)</p>
+                      <p className="text-xs text-muted-foreground">Visitors must enter a PIN to view this persona</p>
                     </div>
                     {isPro ? (
                       <Switch
@@ -350,31 +350,22 @@ const PersonasPage = () => {
                   </div>
                   {editingPersona.is_private && (
                     <div className="space-y-3 pl-4 border-l-2 border-border">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium">Require Contact Exchange</p>
-                          <p className="text-xs text-muted-foreground">Visitors share their info to unlock</p>
-                        </div>
-                        <Switch
-                          checked={editingPersona.require_contact_exchange}
-                          onCheckedChange={(v) => updateField("require_contact_exchange", v)}
+                      <div className="space-y-1">
+                        <Label>PIN Code (4 digits)</Label>
+                        <Input
+                          value={newPinInput}
+                          onChange={(e) => setNewPinInput(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                          placeholder={editingPersona.pin_code ? "PIN set — enter new to change" : "Enter 4-digit PIN"}
+                          maxLength={4}
+                          className="w-48 font-mono"
                         />
+                        {editingPersona.pin_code && !newPinInput && (
+                          <p className="text-xs text-muted-foreground">A PIN is currently set. Enter a new one to change it.</p>
+                        )}
                       </div>
-                      {!editingPersona.require_contact_exchange && (
-                        <div className="space-y-1">
-                          <Label>PIN Code (4 digits)</Label>
-                          <Input
-                            value={newPinInput}
-                            onChange={(e) => setNewPinInput(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                            placeholder={editingPersona.pin_code ? "PIN set — enter new to change" : "Enter 4-digit PIN"}
-                            maxLength={4}
-                            className="w-48 font-mono"
-                          />
-                          {editingPersona.pin_code && !newPinInput && (
-                            <p className="text-xs text-muted-foreground">A PIN is currently set. Enter a new one to change it.</p>
-                          )}
-                        </div>
-                      )}
+                      <p className="text-xs text-muted-foreground">
+                        💡 Visitors can still reach you via the "Contact Me" button on your public profile — no gate required.
+                      </p>
                     </div>
                   )}
                 </div>
