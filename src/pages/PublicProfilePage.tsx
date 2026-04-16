@@ -423,14 +423,14 @@ const PublicProfilePage = () => {
     return <CardDisabledPage ownerName={merged.display_name || username || undefined} />;
   }
 
-  if (persona?.is_private && !gateUnlocked) {
+  if (persona?.is_private && persona?.has_pin && !gateUnlocked) {
     return (
       <SecurityGate
         personaId={persona.id}
         ownerUserId={merged.user_id}
         ownerName={merged.display_name || username || ""}
-        pinRequired={!persona.require_contact_exchange}
-        contactRequired={persona.require_contact_exchange}
+        pinRequired={true}
+        contactRequired={false}
         accentColor={merged.accent_color}
         onUnlocked={() => setGateUnlocked(true)}
       />
