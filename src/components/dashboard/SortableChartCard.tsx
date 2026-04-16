@@ -15,6 +15,7 @@ const MAX_WIDTH = 800;
 const MAX_HEIGHT = 600;
 const MIN_WIDTH = 200;
 const MIN_HEIGHT = 120;
+const DEFAULT_HEIGHT = 320;
 
 function loadSizes(): Record<string, { w: number; h: number }> {
   try {
@@ -60,7 +61,7 @@ export function SortableChartCard({ id, children, className }: SortableChartCard
       startX: clientX,
       startY: clientY,
       startW: rect?.width ?? 300,
-      startH: rect?.height ?? 200,
+      startH: rect?.height ?? DEFAULT_HEIGHT,
     };
     setIsResizing(true);
   }, []);
@@ -109,9 +110,12 @@ export function SortableChartCard({ id, children, className }: SortableChartCard
     <div ref={setNodeRef} style={style} className={`relative group ${className ?? ""}`}>
       <div
         ref={cardRef}
+        className="h-full"
         style={{
+          height: customSize.h ?? DEFAULT_HEIGHT,
+          maxHeight: MAX_HEIGHT,
+          overflow: "auto",
           ...(customSize.w ? { width: customSize.w, maxWidth: MAX_WIDTH } : {}),
-          ...(customSize.h ? { height: customSize.h, maxHeight: MAX_HEIGHT, overflow: "auto" } : {}),
         }}
       >
         <div {...attributes} {...listeners} className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab touch-none z-10 flex items-center gap-1">
@@ -122,7 +126,9 @@ export function SortableChartCard({ id, children, className }: SortableChartCard
           )}
           <GripVertical className="w-3 h-3 text-muted-foreground" />
         </div>
-        {children}
+        <div className="h-full [&>*]:h-full [&>.glass-card]:flex [&>.glass-card]:flex-col">
+          {children}
+        </div>
       </div>
       {/* Corner resize handle — bottom-right */}
       <div
