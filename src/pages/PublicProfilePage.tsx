@@ -8,7 +8,7 @@ import { CardDisabledPage } from "@/components/CardDisabledPage";
 
 import { BlockRenderer } from "@/components/page-builder/BlockRenderer";
 import { PublicPageNav } from "@/components/page-builder/PublicPageNav";
-import { BentoProfileView } from "@/components/public/BentoProfileView";
+
 import type { PageBlock } from "@/components/page-builder/types";
 import { downloadVCard } from "@/lib/vcard";
 import { getPresetCss } from "@/components/DesignStudio/BackgroundPresets";
@@ -708,16 +708,8 @@ const PublicProfilePage = () => {
           />
         )}
 
-        {/* Route based on page_mode: personal = bento, builder = page blocks, default = legacy */}
-        {persona?.page_mode === 'personal' || (!hasPageBuilder && !persona?.page_mode) ? (
-          <BentoProfileView
-            merged={merged}
-            persona={persona ? { slug: persona.slug, avatar_position: persona.avatar_position, font_family: persona.font_family } : null}
-            textColor={textColor}
-            accentColor={accentColor}
-            fontStack={fontStack}
-          />
-        ) : hasPageBuilder ? (
+        {/* Route based on page_mode: builder = page blocks, personal/default = legacy card fly-up */}
+        {persona?.page_mode === 'builder' && hasPageBuilder ? (
           <div style={{
             color: hasPageTheme ? (pageThemeStyles as any)["--page-text"] || textColor : textColor,
             ...(hasPageTheme ? pageThemeStyles : {}),

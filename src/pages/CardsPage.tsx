@@ -5,11 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { CreditCard, Save, Loader2, Plus } from "lucide-react";
+import { CreditCard, Save, Loader2, Plus, Trash2, Pencil, X, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -25,6 +26,10 @@ const CardsPage = () => {
   const [showAdd, setShowAdd] = useState(false);
   const [newSerial, setNewSerial] = useState("");
   const [newLabel, setNewLabel] = useState("");
+  const [editingCardId, setEditingCardId] = useState<string | null>(null);
+  const [editLabel, setEditLabel] = useState("");
+  const [editSerial, setEditSerial] = useState("");
+  const [deleteCardId, setDeleteCardId] = useState<string | null>(null);
 
   const fetchData = async () => {
     if (!user) return;
@@ -65,6 +70,32 @@ const CardsPage = () => {
       setNewSerial("");
       setNewLabel("");
     }
+  };
+
+  const deleteCard = async (id: string) => {
+    const { error } = await supabase.from("nfc_cards").delete().eq("id", id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      setCards((prev) => prev.filter((c) => c.id !== id));
+      toast({ title: "Card removed" });
+    }
+    setDeleteCardId(null);
+  };
+
+  const startEditing = (card: NfcCard) => {
+    setEditingCardId(card.id);
+    setEditLabel(card.label ?? "");
+    setEditSerial(card.serial_number);
+  };
+
+  const saveEdit = async () => {
+    if (!editingCardId) return;
+    await updateCard(editingCardId, {
+      label: editLabel.trim() || null,
+      serial_number: editSerial.trim(),
+    });
+    setEditingCardId(null);
   };
 
   const timeSince = (dateStr: string) => {
@@ -115,13 +146,54 @@ const CardsPage = () => {
                         <CreditCard className="w-5 h-5 text-accent-foreground" />
                       </div>
                       <div>
-                        <CardTitle className="text-sm font-mono">{card.serial_number}</CardTitle>
-                        <p className="text-xs text-muted-foreground">Updated: {timeSince(card.updated_at)}</p>
+                        {editingCardId === card.id ? (
+                          <div className="space-y-1">
+                            <Input
+                              value={editSerial}
+                              onChange={(e) => setEditSerial(e.target.value)}
+                              className="h-7 text-sm font-mono w-36"
+                              placeholder="Serial"
+                            />
+                            <Input
+                              value={editLabel}
+                              onChange={(e) => setEditLabel(e.target.value)}
+                              className="h-7 text-xs w-36"
+                              placeholder="Label (optional)"
+                            />
+                          </div>
+                        ) : (
+                          <>
+                            <CardTitle className="text-sm font-mono">{card.serial_number}</CardTitle>
+                            {card.label && <p className="text-xs text-muted-foreground">{card.label}</p>}
+                            <p className="text-[10px] text-muted-foreground">Updated: {timeSince(card.updated_at)}</p>
+                          </>
+                        )}
                       </div>
                     </div>
-                    <Badge variant={card.status === "active" ? "default" : "secondary"} className="text-[10px]">
-                      {card.status}
-                    </Badge>
+                    <div className="flex items-center gap-1">
+                      {editingCardId === card.id ? (
+                        <>
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={saveEdit}>
+                            <Check className="w-3.5 h-3.5 text-primary" />
+                          </Button>
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditingCardId(null)}>
+                            <X className="w-3.5 h-3.5" />
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => startEditing(card)}>
+                            <Pencil className="w-3 h-3" />
+                          </Button>
+                          <Button size="icon" variant="ghost" className="h-7 w-7 hover:text-destructive" onClick={() => setDeleteCardId(card.id)}>
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </>
+                      )}
+                      <Badge variant={card.status === "active" ? "default" : "secondary"} className="text-[10px] ml-1">
+                        {card.status}
+                      </Badge>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -177,6 +249,15 @@ const CardsPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!deleteCardId}
+        onOpenChange={(open) => !open && setDeleteCardId(null)}
+        title="Delete NFC Card"
+        description="This will permanently remove this card and any associated category assignments. This action cannot be undone."
+        onConfirm={() => deleteCardId && deleteCard(deleteCardId)}
+        variant="destructive"
+      />
     </DashboardLayout>
   );
 };

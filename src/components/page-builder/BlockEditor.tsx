@@ -93,6 +93,25 @@ export function BlockEditor({ block, onChange, onDelete, onClose }: BlockEditorP
           </Select>
         </div>
         <ColorPickerField label="Background" value={block.styles.bgColor ?? "transparent"} onChange={(v) => updateStyles("bgColor", v === "transparent" ? undefined : v)} />
+        <ImageUploadField
+          label="Background Image"
+          value={block.styles.bgImage ?? null}
+          onChange={(url) => updateStyles("bgImage", url)}
+          folder="page-blocks"
+        />
+        {block.styles.bgImage && (
+          <div className="space-y-2">
+            <Label className="text-xs">Background Size</Label>
+            <Select value={block.styles.bgSize ?? "cover"} onValueChange={(v) => updateStyles("bgSize", v)}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="cover">Cover</SelectItem>
+                <SelectItem value="contain">Contain</SelectItem>
+                <SelectItem value="auto">Auto</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label className="text-xs">Background Transparency</Label>

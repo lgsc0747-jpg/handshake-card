@@ -9,20 +9,25 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useSubscription } from "@/hooks/useSubscription";
 import { QRCodeSVG } from "qrcode.react";
 import {
-  Link2, Copy, Check, Download, Smartphone, ExternalLink, Info, Loader2,
+  Link2, Copy, Check, Download, Smartphone, ExternalLink, Info, Loader2, LayoutPanelLeft, User, Crown,
 } from "lucide-react";
+import { Label } from "@/components/ui/label";
 
 const NfcManagerPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { isPro } = useSubscription();
   const [username, setUsername] = useState<string | null>(null);
   const [shortCode, setShortCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [shortened, setShortened] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
+  const [pageMode, setPageMode] = useState<string>("personal");
+  const [activePersonaId, setActivePersonaId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -37,6 +42,18 @@ const NfcManagerPage = () => {
 
       setUsername(profile?.username ?? null);
 
+      // Get active persona for page_mode toggle
+      const { data: personaData } = await supabase
+        .from("personas")
+        .select("id, page_mode")
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .limit(1)
+        .single();
+      if (personaData) {
+        setActivePersonaId(personaData.id);
+        setPageMode(personaData.page_mode ?? "personal");
+      }
       // Get or create short link
       const { data: existingLink } = await supabase
         .from("short_links")
@@ -155,6 +172,39 @@ const NfcManagerPage = () => {
             <p className="text-xs text-muted-foreground">
               Short links are mapped to your account — even if you change your username, the link will always resolve correctly.
             </p>
+
+            {/* Page Mode Toggle */}
+            {activePersonaId && (
+              <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30 border border-border/60">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5 text-muted-foreground" />
+                    <Label className="text-xs text-muted-foreground cursor-pointer">Personal Profile</Label>
+                  </div>
+                  <Switch
+                    checked={pageMode === "builder"}
+                    disabled={!isPro && pageMode !== "builder"}
+                    onCheckedChange={async (checked) => {
+                      if (checked && !isPro) {
+                        toast({ title: "Pro Feature", description: "Page Builder requires Handshake+. Upgrade to unlock.", variant: "destructive" });
+                        return;
+                      }
+                      const mode = checked ? "builder" : "personal";
+                      setPageMode(mode);
+                      await supabase.from("personas").update({ page_mode: mode }).eq("id", activePersonaId);
+                      toast({ title: `Landing page set to ${checked ? "Page Builder" : "Personal Profile"}` });
+                    }}
+                  />
+                  <div className="flex items-center gap-1.5">
+                    <LayoutPanelLeft className="w-3.5 h-3.5 text-muted-foreground" />
+                    <Label className="text-xs text-muted-foreground cursor-pointer">Page Builder</Label>
+                    {!isPro && (
+                      <Crown className="w-3 h-3 text-amber-500" />
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="flex gap-2 flex-wrap">
               <Button variant="outline" size="sm" onClick={() => window.open(fullUrl, "_blank")}>
                 <ExternalLink className="w-3.5 h-3.5 mr-1.5" /> Preview

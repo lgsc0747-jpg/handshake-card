@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useSubscription } from "@/hooks/useSubscription";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -28,7 +29,7 @@ import {
   MousePointerClick, Quote, Users, BarChart3, MessageSquareQuote,
   HelpCircle, Grid3x3, CreditCard, Mail, Share2, Code,
   Home, PanelLeftClose, PanelLeft, FilePlus, Undo2, Redo2, BookTemplate,
-  CheckSquare, Square, ArrowLeft, Wifi, Paintbrush, Check,
+  CheckSquare, Square, ArrowLeft, Wifi, Paintbrush, Check, Crown,
 } from "lucide-react";
 import { PageThemeProvider, usePageTheme, PAGE_THEMES, getPageThemeStyles, PAGE_THEME_CLASS } from "@/contexts/PageBuilderThemeContext";
 import {
@@ -194,6 +195,7 @@ function PageBuilderPage() {
   const { toast } = useToast();
   const pageThemeCtx = usePageTheme();
   const isMobile = useIsMobile();
+  const { isPro, loading: subLoading } = useSubscription();
   const [personas, setPersonas] = useState<{ id: string; label: string; slug: string }[]>([]);
   const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null);
   const [pages, setPages] = useState<SitePage[]>([]);
@@ -467,10 +469,34 @@ function PageBuilderPage() {
   const selectedPage = pages.find(p => p.id === selectedPageId);
   
 
-  if (loading) {
+  if (loading || subLoading) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-background z-50">
         <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!isPro) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-background z-50">
+        <div className="text-center space-y-4 max-w-sm px-4">
+          <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto">
+            <Crown className="w-6 h-6 text-amber-500" />
+          </div>
+          <h2 className="text-xl font-display font-bold">Page Builder — Pro Only</h2>
+          <p className="text-sm text-muted-foreground">
+            The Page Builder is available exclusively on the Handshake+ plan. Upgrade to create fully customizable multi-page landing sites.
+          </p>
+          <div className="flex gap-3 justify-center">
+            <Button variant="outline" onClick={() => navigate("/")}>
+              <ArrowLeft className="w-4 h-4 mr-2" /> Dashboard
+            </Button>
+            <Button onClick={() => navigate("/plans")} className="bg-amber-500 hover:bg-amber-600 text-white">
+              <Crown className="w-4 h-4 mr-2" /> Upgrade
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }

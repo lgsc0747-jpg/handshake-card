@@ -1,0 +1,58 @@
+# Project Memory
+
+## Core
+- Cyber Dark & iOS aesthetic: slate-950/900, glassmorphism, 24px+ squircle, SF Pro/Inter.
+- Supabase relational DB: strict RLS, Security Definer RPCs for public access.
+- React 18 SPA: strict pin @tanstack/react-query@5.56.2, use react-router-dom Link.
+- Privacy-First: NEVER implement location tracking. Follow Philippine Data Privacy Act.
+- Commerce is completely removed. Focus purely on digital identity and networking.
+- Mobile-first: disable global scrolling during touch-based component interactions.
+- No UI redundancy: all user-level configuration strictly belongs in the /settings hub.
+- Page Builder is Pro-only. Personal Profile (fly-up 3D card) is the default free landing page.
+
+## Memories
+- [Visual Design](mem://style/visual-design) — Cyber Dark aesthetic, glassmorphism, slate colors, bento box grid
+- [Database](mem://architecture/database) — Supabase schemas, JSONB blocks, public RPCs, pgcrypto
+- [NFC Integration](mem://architecture/nfc-integration) — Web NFC API / mobile app bridge for secure card serial transmission
+- [NFC State Management](mem://features/nfc-state-management) — NFC cards 'current category' state for auto-tagging interactions
+- [Visitor Access](mem://architecture/visitor-access) — Mobile-first public profiles at /p/username and /p/username/slug
+- [Security](mem://architecture/security) — Security Definer RPCs (is_user_pro, verify_persona_pin), JWT claim validation
+- [CRM Logging](mem://features/crm-logging) — CRM interaction logs with manual edit and advanced search filters
+- [Auth System](mem://architecture/auth-system) — Supabase Auth with trigger for profile sync and unique slug enforcement
+- [Categories Management](mem://features/categories-management) — User-defined 'Occasion Types' with custom colors
+- [3D Visuals](mem://style/3d-visuals) — 3D interactive business card metrics: clamp scaling, framer-motion
+- [Multi Persona Management](mem://features/multi-persona-management) — Unlimited digital identities per user with isolated content
+- [Security Digital Handshake](mem://features/security-digital-handshake) — Private Mode gated by 4-digit PIN or lead gen
+- [Lead Management](mem://features/lead-management) — Bypassing RLS via insert_lead_capture RPC for unauthenticated visitor leads
+- [Persona Kill Switch](mem://features/persona-kill-switch) — Active/Inactive persona toggle redirecting to disabled landing page
+- [Dependencies](mem://architecture/dependencies) — Strict pin: @tanstack/react-query@5.56.2 to prevent React 18 crashes
+- [Legal Compliance](mem://features/legal-compliance) — Philippine Data Privacy Act, auth-gated cookie settings, secure deletion
+- [Settings Management](mem://features/settings-management) — Centralized /settings hub for user config, eliminating UI redundancy
+- [Landing Page Hero](mem://style/landing-page-hero) — Fly-up spring animation, scroll-driven scaling, active persona glow
+- [Analytics Reporting](mem://features/analytics-reporting) — Context-aware CSV data export matching selected dashboard timeframe
+- [Role Based Access Control](mem://architecture/role-based-access-control) — RBAC via user_roles table, Admin tab login, admin-manage Edge Function
+- [SaaS Tier System](mem://features/saas-tier-system) — Handshake (Free) vs Handshake+ (Pro) feature gating and upgrade prompts
+- [Security Analytics](mem://features/security-analytics) — Digital Handshake tracking: PIN success/fail rates and secure dwell time
+- [Engagement Metrics](mem://features/engagement-metrics) — Interaction Depth KPI, CTA/Video engagement charting
+- [Visitor Interaction Tracking](mem://architecture/visitor-interaction-tracking) — Comprehensive event logging via log-interaction Edge Function; strict bot filtering
+- [Analytics Dashboard](mem://features/analytics-dashboard) — SortableChartCard, auto-scaling, Supabase Realtime sync
+- [Independent Theme Engines](mem://features/independent-theme-engines) — localStorage admin_theme vs DB-backed page_theme
+- [Data Privacy Constraints](mem://constraints/data-privacy) — Strict prohibition on location tracking and geographic data collection
+- [iOS Design System](mem://style/ios-design-system) — iOS-inspired aesthetic, backdrop-blur-md, squircle corners, SF Pro
+- [Mobile Editor UX](mem://features/mobile-editor-ux) — Mobile-optimized FAB previews and bottom Sheet property editors
+- [Touch Interactions](mem://ux/touch-interactions) — Global page scrolling disabled during touch-based component manipulation
+- [Dashboard Color Palettes](mem://features/dashboard-color-palettes) — Global Recharts palette system via ChartPaletteProvider context
+- [Conversion Funnel](mem://features/conversion-funnel) — Funnel tracking from Profile Views down to Contact Saves
+- [Tap Velocity Tracking](mem://features/tap-velocity-tracking) — Tap intensity per hour line chart with peak detection
+- [Image Cropping System](mem://features/image-cropping-system) — Discord-style jsonb cropping overlay for avatars, bgs, and galleries
+- [Unified Site Builder](mem://features/unified-site-builder) — Fullscreen Canva-style editor, 19+ blocks, 50-level history, spring animations
+- [Navigation Structure](mem://architecture/navigation-structure) — NFC and General core pillars; Page Builder isolated from main wrapper
+- [Asset Management History](mem://features/asset-management-history) — Local history of last six uploads stored in localStorage
+- [Workspace Customization](mem://ux/workspace-customization) — Drag-and-drop dashboard/sidebar reordering via @dnd-kit and localStorage
+- [Card Studio Minimalism](mem://features/card-studio-minimalism) — Focused 3D card preview without landing page distractions; strict corner radius
+- [SPA Routing](mem://architecture/spa-routing) — SPA routing via react-router-dom Link and vercel.json rewrite rules
+- [NFC Device Manager](mem://features/nfc-device-manager) — NDEF write guide, Base64 shortener, high-res QR engine
+- [Short URL Redirection](mem://architecture/short-url-redirection) — /u/:shortId User ID mapping, resolved via supabase.functions.invoke
+- [Page Mode Toggle](mem://features/page-mode-toggle) — Per-persona personal/builder toggle in NFC Manager; Page Builder is Pro-only
+- [Professional CSV Exports](mem://features/professional-csv-exports) — Structured reports with ASCII charts for dashboard analytics and lead captures
+- [NFC Cards CRUD](mem://features/nfc-cards-crud) — Full create/read/update/delete for NFC card entries with inline editing

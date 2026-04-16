@@ -3,8 +3,6 @@ import { Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -81,7 +79,7 @@ const DesignStudioPage = () => {
   };
 
   const presetCss = getPresetCss(editing?.background_preset);
-  const isPageBuilder = editing?.page_mode === "builder";
+  
 
   if (loading) {
     return (
@@ -167,17 +165,6 @@ const DesignStudioPage = () => {
             </Select>
           </div>
           <div className="flex items-center gap-4">
-            {/* Page Mode Toggle */}
-            <div className="flex items-center gap-2">
-              <Label className="text-[10px] uppercase tracking-wider text-muted-foreground cursor-pointer" htmlFor="page-mode-toggle">
-                {isPageBuilder ? "Page Builder" : "Personal Profile"}
-              </Label>
-              <Switch
-                id="page-mode-toggle"
-                checked={isPageBuilder}
-                onCheckedChange={(checked) => update("page_mode", checked ? "builder" : "personal")}
-              />
-            </div>
             <Button onClick={handleSave} disabled={saving} size="sm" className="gradient-primary text-primary-foreground rounded-xl h-9">
               {saving ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Save className="w-3.5 h-3.5 mr-1.5" />}
               Save

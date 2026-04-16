@@ -106,6 +106,12 @@ export function BlockRenderer({ block, isEditing, onClick, persona, onTrackInter
     textAlign: (styles.alignment ?? "left") as any,
     maxWidth: styles.maxWidth ?? "100%",
     margin: "0 auto",
+    ...(styles.bgImage ? {
+      backgroundImage: `url(${styles.bgImage})`,
+      backgroundSize: styles.bgSize ?? "cover",
+      backgroundPosition: "center",
+      backgroundRepeat: "no-repeat",
+    } : {}),
     ...(shouldAnimate && !inView ? styleFromMotion(anim.initial) : {}),
     ...(shouldAnimate && inView ? { ...styleFromMotion(anim.animate), transition: cssTransition(anim.transition) } : {}),
   };
