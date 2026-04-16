@@ -310,7 +310,7 @@ const Dashboard = () => {
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={makeDragHandler(setTechOrder)}>
                 <SortableContext items={techOrder} strategy={rectSortingStrategy}>
                   <div className="flex flex-wrap gap-3">
-                    {techOrder.map(k => <div key={k} className="flex-1 min-w-[280px]">{techCards[k]}</div>)}
+                    {techOrder.map(k => <div key={k}>{techCards[k]}</div>)}
                   </div>
                 </SortableContext>
               </DndContext>
@@ -329,7 +329,7 @@ const Dashboard = () => {
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={makeDragHandler(setSecOrder)}>
               <SortableContext items={secOrder} strategy={rectSortingStrategy}>
                 <div className="flex flex-wrap gap-3">
-                  {secOrder.map(k => <div key={k} className="flex-1 min-w-[280px]">{secCards[k]}</div>)}
+                  {secOrder.map(k => <div key={k}>{secCards[k]}</div>)}
                 </div>
               </SortableContext>
             </DndContext>
