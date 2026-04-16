@@ -183,7 +183,12 @@ const NfcManagerPage = () => {
                   </div>
                   <Switch
                     checked={pageMode === "builder"}
+                    disabled={!isPro && pageMode !== "builder"}
                     onCheckedChange={async (checked) => {
+                      if (checked && !isPro) {
+                        toast({ title: "Pro Feature", description: "Page Builder requires Handshake+. Upgrade to unlock.", variant: "destructive" });
+                        return;
+                      }
                       const mode = checked ? "builder" : "personal";
                       setPageMode(mode);
                       await supabase.from("personas").update({ page_mode: mode }).eq("id", activePersonaId);
@@ -193,6 +198,9 @@ const NfcManagerPage = () => {
                   <div className="flex items-center gap-1.5">
                     <LayoutPanelLeft className="w-3.5 h-3.5 text-muted-foreground" />
                     <Label className="text-xs text-muted-foreground cursor-pointer">Page Builder</Label>
+                    {!isPro && (
+                      <Crown className="w-3 h-3 text-amber-500" />
+                    )}
                   </div>
                 </div>
               </div>
