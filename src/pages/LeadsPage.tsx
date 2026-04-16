@@ -56,13 +56,21 @@ const LeadsPage = () => {
     const wb = new ExcelJS.Workbook();
     wb.creator = "Handshake";
 
-    const headerFont = { bold: true, size: 11, color: { argb: "FFFFFFFF" } };
-    const headerFill = { type: "pattern" as const, pattern: "solid" as const, fgColor: { argb: "FF0D9488" } };
-    const borderThin = { top: { style: "thin" as const }, bottom: { style: "thin" as const }, left: { style: "thin" as const }, right: { style: "thin" as const } };
+    const headerFont: Partial<ExcelJS.Font> = { bold: true, size: 11, color: { argb: "FFFFFFFF" } };
+    const headerFill: ExcelJS.Fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0D9488" } };
+    const borderThin: Partial<ExcelJS.Borders> = {
+      top: { style: "thin" }, bottom: { style: "thin" },
+      left: { style: "thin" }, right: { style: "thin" },
+    };
+    const accentFill: ExcelJS.Fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF0FDFA" } };
 
     const ws = wb.addWorksheet("Leads");
-    ws.addRow(["HANDSHAKE — LEAD CAPTURES"]).font = { bold: true, size: 14, color: { argb: "FF0D9488" } };
-    ws.addRow([`Generated: ${new Date().toLocaleString()}`, "", "", `Total: ${leads.length}`]).font = { size: 10, italic: true, color: { argb: "FF666666" } };
+    ws.mergeCells("A1:G1");
+    ws.getCell("A1").value = "HANDSHAKE — LEAD CAPTURES";
+    ws.getCell("A1").font = { bold: true, size: 16, color: { argb: "FF0D9488" } };
+    ws.getCell("A1").alignment = { horizontal: "center" };
+    ws.getRow(2).values = ["", `Generated: ${new Date().toLocaleString()}`, "", "", "", "", `Total: ${leads.length}`];
+    ws.getRow(2).font = { size: 9, italic: true, color: { argb: "FF999999" } };
     ws.addRow([]);
 
     ws.addRow(["#", "Date", "Name", "Email", "Phone", "Company", "Message"]);
@@ -87,16 +95,17 @@ const LeadsPage = () => {
         lead.visitor_company || "—",
         (lead.visitor_message || "—").replace(/\n/g, " "),
       ]);
-      r.eachCell((c: any) => { c.border = borderThin; });
+      r.eachCell((c) => { c.border = borderThin; });
+      if (i % 2 === 0) r.eachCell((c) => { c.fill = accentFill; });
     });
 
     // Summary sheet
     const wsSummary = wb.addWorksheet("Summary");
     wsSummary.addRow(["LEAD SUMMARY"]).font = { bold: true, size: 14, color: { argb: "FF0D9488" } };
     wsSummary.addRow([]);
-    wsSummary.addRow(["Metric", "Count", "Percentage"]);
+    wsSummary.addRow(["Metric", "Count", "Percentage", "Visual"]);
     const shr = wsSummary.getRow(3);
-    for (let c = 1; c <= 3; c++) {
+    for (let c = 1; c <= 4; c++) {
       const cell = shr.getCell(c);
       cell.font = headerFont;
       cell.fill = headerFill;
@@ -107,34 +116,32 @@ const LeadsPage = () => {
     const withCompany = leads.filter((l) => l.visitor_company).length;
     const withMessage = leads.filter((l) => l.visitor_message).length;
 
-    [
+    const summaryData: [string, number, number][] = [
       ["Total Leads", leads.length, 1],
       ["With Phone", withPhone, withPhone / leads.length],
       ["With Company", withCompany, withCompany / leads.length],
       ["With Message", withMessage, withMessage / leads.length],
-    ].forEach(([m, v, p]) => {
-      const r = wsSummary.addRow([m, v, p]);
+    ];
+    summaryData.forEach(([m, v, p], i) => {
+      const rowNum = 4 + i;
+      const r = wsSummary.getRow(rowNum);
+      r.values = [m, v, p];
       r.getCell(3).numFmt = "0%";
-      r.eachCell((c: any) => { c.border = borderThin; });
+      r.eachCell((c) => { c.border = borderThin; });
+      if (i % 2 === 0) r.eachCell((c) => { c.fill = accentFill; });
+      // Visual bar
+      const bars = Math.round(p * 20);
+      const cell = r.getCell(4);
+      cell.value = "█".repeat(bars) + "░".repeat(20 - bars);
+      cell.font = { size: 9, color: { argb: "FF0D9488" } };
+      cell.border = borderThin;
     });
-
-    // Pie chart
-    const sumChart = wsSummary.addChart("pie", {
-      title: "Lead Data Completeness",
-      legend: { position: "right" },
-    } as any) as any;
-    sumChart.addSeries({
-      name: "Completeness",
-      categories: ["Summary!$A$4:$A$7"],
-      values: ["Summary!$B$4:$B$7"],
-    });
-    sumChart.setPosition("E", 1, "L", 16);
 
     // Auto-width
     [ws, wsSummary].forEach((sheet) => {
-      sheet.columns?.forEach((col: any) => {
+      sheet.columns?.forEach((col) => {
         let maxLen = 12;
-        col.eachCell?.({ includeEmpty: false }, (cell: any) => {
+        (col as any).eachCell?.({ includeEmpty: false }, (cell: ExcelJS.Cell) => {
           const len = String(cell.value ?? "").length;
           if (len > maxLen) maxLen = len;
         });
