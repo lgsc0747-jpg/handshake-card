@@ -78,8 +78,8 @@ function SortableNavItem({ item, collapsed }: { item: NavItem; collapsed: boolea
     <SidebarMenuItem ref={setNodeRef} style={style}>
       <SidebarMenuButton asChild>
         <div className="flex items-center w-full">
-          <div {...attributes} {...listeners} className="touch-none cursor-grab mr-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
-            <GripVertical className="w-3 h-3 text-muted-foreground" />
+          <div {...attributes} {...listeners} className="touch-none cursor-grab mr-1 opacity-0 group-hover/item:opacity-100 transition-opacity hover:text-primary">
+            <GripVertical className="w-3 h-3 text-muted-foreground hover:text-primary transition-colors" />
           </div>
           <NavLink
             to={item.url}
@@ -168,7 +168,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       <div className="p-4 flex items-center gap-3">
         <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center shrink-0">
-          <Wifi className="w-4 h-4 text-primary-foreground" />
+          <img src="/favicon.ico" alt="Handshake" className="w-5 h-5" />
         </div>
         {!collapsed && (
           <SidebarBrandName />
