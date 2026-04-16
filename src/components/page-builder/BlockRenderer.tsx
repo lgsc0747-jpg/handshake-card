@@ -530,7 +530,7 @@ export function BlockRenderer({ block, isEditing, onClick, persona, onTrackInter
 function FaqItem({ question, answer }: { question: string; answer: string }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="rounded-xl border border-border/60 overflow-hidden">
+    <div className="rounded-2xl border border-white/10 overflow-hidden bg-card/40 backdrop-blur-xl shadow-lg">
       <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between p-4 text-left text-sm font-medium">
         {question}
         {open ? <ChevronUp className="w-4 h-4 shrink-0" /> : <ChevronDown className="w-4 h-4 shrink-0" />}
@@ -616,13 +616,13 @@ function ContactFormBlock({ content, isEditing, persona, onTrackInteraction }: {
   }
 
   return (
-    <div className="p-5 rounded-2xl bg-card/50 border border-border/60 space-y-3 backdrop-blur-sm">
+    <div className="p-5 rounded-2xl bg-card/40 border border-white/10 space-y-3 backdrop-blur-xl shadow-lg">
       <h3 className="font-semibold text-sm">{content.title || "Get in Touch"}</h3>
-      <input className="w-full bg-background/50 border border-border rounded-xl px-3 py-2 text-sm" placeholder="Your name" value={name} onChange={e => setName(e.target.value)} disabled={isEditing} />
-      <input className="w-full bg-background/50 border border-border rounded-xl px-3 py-2 text-sm" placeholder="Email *" type="email" value={email} onChange={e => setEmail(e.target.value)} disabled={isEditing} required />
-      <input className="w-full bg-background/50 border border-border rounded-xl px-3 py-2 text-sm" placeholder="Phone" value={phone} onChange={e => setPhone(e.target.value)} disabled={isEditing} />
-      <input className="w-full bg-background/50 border border-border rounded-xl px-3 py-2 text-sm" placeholder="Company" value={company} onChange={e => setCompany(e.target.value)} disabled={isEditing} />
-      <textarea className="w-full bg-background/50 border border-border rounded-xl px-3 py-2 text-sm min-h-[60px]" placeholder="Message" value={message} onChange={e => setMessage(e.target.value)} disabled={isEditing} />
+      <input className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm backdrop-blur-sm" placeholder="Your name" value={name} onChange={e => setName(e.target.value)} disabled={isEditing} />
+      <input className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm backdrop-blur-sm" placeholder="Email *" type="email" value={email} onChange={e => setEmail(e.target.value)} disabled={isEditing} required />
+      <input className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm backdrop-blur-sm" placeholder="Phone" value={phone} onChange={e => setPhone(e.target.value)} disabled={isEditing} />
+      <input className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm backdrop-blur-sm" placeholder="Company" value={company} onChange={e => setCompany(e.target.value)} disabled={isEditing} />
+      <textarea className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm min-h-[60px] backdrop-blur-sm" placeholder="Message" value={message} onChange={e => setMessage(e.target.value)} disabled={isEditing} />
       <Button className="w-full rounded-xl" disabled={isEditing || submitting || !email} onClick={handleSubmit}>
         {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : (content.buttonText || "Send")}
       </Button>
