@@ -75,10 +75,10 @@ function SortableNavItem({ item, collapsed }: { item: NavItem; collapsed: boolea
     zIndex: isDragging ? 50 : undefined,
   };
   return (
-    <SidebarMenuItem ref={setNodeRef} style={style}>
+    <SidebarMenuItem ref={setNodeRef} style={style} className="group/item">
       <SidebarMenuButton asChild>
         <div className="flex items-center w-full">
-          <div {...attributes} {...listeners} className="touch-none cursor-grab mr-1 opacity-0 group-hover/item:opacity-100 transition-opacity hover:text-primary">
+          <div {...attributes} {...listeners} className="touch-none cursor-grab mr-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
             <GripVertical className="w-3 h-3 text-muted-foreground hover:text-primary transition-colors" />
           </div>
           <NavLink
