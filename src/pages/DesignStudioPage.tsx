@@ -114,10 +114,23 @@ const DesignStudioPage = () => {
           : presetCss !== "none" ? presetCss : undefined,
         backgroundSize: editing?.background_image_url ? "cover" : undefined,
         backgroundPosition: editing?.background_image_url ? "center" : undefined,
+        minHeight: "600px",
       }}
     >
+      {/* NFC Card Hero Section — full fly-up preview */}
       <div className="relative flex flex-col items-center justify-center min-h-[480px] p-8">
-        <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse 60% 50% at 50% 40%, ${editing?.accent_color ?? "#0d9488"}25, transparent 70%)` }} />
+        <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse 60% 50% at 50% 50%, ${editing?.accent_color ?? "#0d9488"}15, transparent 70%)` }} />
+
+        {/* Branding */}
+        <div className="absolute top-4 flex items-center gap-2">
+          <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: editing?.accent_color ?? "#0d9488" }}>
+            <span className="text-white text-[8px] font-bold">H</span>
+          </div>
+          <span className="text-[9px] font-display font-semibold tracking-widest uppercase" style={{ color: `${editing?.text_color ?? "#fff"}99` }}>
+            Handshake
+          </span>
+        </div>
+
         <div className="w-full max-w-xl">
           <InteractiveCard3D
             name={editing?.display_name ?? "Your Name"}
@@ -130,6 +143,8 @@ const DesignStudioPage = () => {
             textColor={editing?.text_color ?? "#ffffff"}
             cardBgImageUrl={editing?.card_bg_image_url ?? undefined}
             cardBgSize={editing?.card_bg_size ?? "cover"}
+            avatarPosition={editing?.avatar_position as any}
+            cardBgPosition={editing?.card_bg_position as any}
             glassOpacity={editing?.glass_opacity ?? 0.15}
             linkedinUrl={editing?.linkedin_url ?? undefined}
             githubUrl={editing?.github_url ?? undefined}
@@ -141,6 +156,69 @@ const DesignStudioPage = () => {
             cardTexture={editing?.card_texture ?? "none"}
             borderRadius={editing?.border_radius ?? 24}
           />
+        </div>
+
+        {/* Scroll indicator */}
+        <div className="absolute bottom-4 flex flex-col items-center gap-1" style={{ color: `${editing?.text_color ?? "#fff"}66` }}>
+          <span className="text-[8px] font-medium uppercase tracking-widest">Scroll</span>
+          <span className="text-xs">▾</span>
+        </div>
+      </div>
+
+      {/* Info Section Preview */}
+      <div style={{ backgroundColor: editing?.landing_bg_color ?? "#0a0a0f" }} className="px-6 py-8 space-y-4">
+        {/* Hero info */}
+        {editing?.avatar_url && (
+          <div className="w-14 h-14 rounded-full mx-auto border-2 border-white/20 overflow-hidden">
+            <img src={editing.avatar_url} alt="" className="w-full h-full object-cover" />
+          </div>
+        )}
+        <div className="text-center space-y-1">
+          <h2 className="text-lg font-display font-bold" style={{ color: editing?.text_color ?? "#fff" }}>
+            {editing?.display_name || "Your Name"}
+          </h2>
+          {editing?.headline && (
+            <p className="text-xs" style={{ color: `${editing?.text_color ?? "#fff"}99` }}>{editing.headline}</p>
+          )}
+          {editing?.bio && (
+            <div className="mt-3 p-3 rounded-xl bg-white/5 backdrop-blur-md border border-white/10">
+              <p className="text-xs leading-relaxed" style={{ color: `${editing?.text_color ?? "#fff"}dd` }}>{editing.bio}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Contact preview */}
+        <div className="rounded-xl divide-y divide-white/10 overflow-hidden bg-white/5 backdrop-blur-md border border-white/10">
+          {editing?.email_public && (
+            <div className="flex items-center gap-3 p-3 text-xs" style={{ color: editing?.text_color ?? "#fff" }}>
+              <span style={{ color: `${editing?.text_color ?? "#fff"}66` }}>✉</span>
+              {editing.email_public}
+            </div>
+          )}
+          {editing?.phone && (
+            <div className="flex items-center gap-3 p-3 text-xs" style={{ color: editing?.text_color ?? "#fff" }}>
+              <span style={{ color: `${editing?.text_color ?? "#fff"}66` }}>📞</span>
+              {editing.phone}
+            </div>
+          )}
+          {editing?.website && (
+            <div className="flex items-center gap-3 p-3 text-xs" style={{ color: editing?.text_color ?? "#fff" }}>
+              <span style={{ color: `${editing?.text_color ?? "#fff"}66` }}>🌐</span>
+              {editing.website}
+            </div>
+          )}
+        </div>
+
+        {/* Action buttons preview */}
+        <div className="space-y-2">
+          <div className="w-full h-10 rounded-xl flex items-center justify-center text-xs font-semibold text-white" style={{ backgroundColor: editing?.accent_color ?? "#0d9488" }}>
+            📇 Save Contact
+          </div>
+          {editing?.cv_url && (
+            <div className="w-full h-10 rounded-xl flex items-center justify-center text-xs border border-white/20" style={{ color: editing?.text_color ?? "#fff" }}>
+              📄 Download CV
+            </div>
+          )}
         </div>
       </div>
     </div>

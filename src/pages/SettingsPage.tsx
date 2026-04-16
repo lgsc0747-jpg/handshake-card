@@ -237,9 +237,15 @@ const SettingsPage = () => {
                     cropAspectRatio={1}
                     cropLabel="Profile Picture (circle crop)"
                     initialPosition={{ x: 50, y: 50, scale: 100 }}
-                    onConfirm={() => {
+                    onConfirm={async (position) => {
                       setShowAvatarCropper(false);
-                      toast({ title: "Avatar adjusted" });
+                      if (!user) return;
+                      // Save the cropped avatar_url with position params appended
+                      const baseUrl = avatarUrl.split("?")[0];
+                      const newUrl = `${baseUrl}?t=${Date.now()}&cx=${position.x}&cy=${position.y}&cs=${position.scale}`;
+                      await supabase.from("profiles").update({ avatar_url: newUrl }).eq("user_id", user.id);
+                      setAvatarUrl(newUrl);
+                      toast({ title: "Avatar position saved" });
                     }}
                     onCancel={() => setShowAvatarCropper(false)}
                   />
