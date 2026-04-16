@@ -106,16 +106,28 @@ export function SortableChartCard({ id, children, className }: SortableChartCard
 
   const hasCustom = customSize.w !== null || customSize.h !== null;
 
+  // When custom width is set, use fixed width on the outer wrapper so flex-wrap kicks in.
+  // When no custom width, flex-1 + min-width lets it fill available space.
+  const outerStyle: React.CSSProperties = {
+    ...style,
+    ...(customSize.w ? { width: customSize.w, flexGrow: 0, flexShrink: 0 } : { flexGrow: 1, flexShrink: 1, flexBasis: 0, minWidth: 280 }),
+  };
+
   return (
-    <div ref={setNodeRef} style={style} className={`relative group ${className ?? ""}`}>
+    <div
+      ref={(node) => {
+        setNodeRef(node);
+        // @ts-ignore
+        cardRef.current = node;
+      }}
+      style={outerStyle}
+      className={`relative group ${className ?? ""}`}
+    >
       <div
-        ref={cardRef}
-        className="h-full"
+        className="h-full w-full"
         style={{
           height: customSize.h ?? DEFAULT_HEIGHT,
           maxHeight: MAX_HEIGHT,
-          width: customSize.w ?? "100%",
-          maxWidth: "100%",
           overflow: "auto",
         }}
       >
