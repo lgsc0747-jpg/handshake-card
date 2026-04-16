@@ -661,6 +661,7 @@ export type Database = {
           landing_bg_color: string
           linkedin_url: string
           location: string
+          page_mode: string
           page_theme: string
           phone: string
           require_contact_exchange: boolean
