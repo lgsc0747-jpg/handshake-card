@@ -170,6 +170,31 @@ const NfcManagerPage = () => {
             <p className="text-xs text-muted-foreground">
               Short links are mapped to your account — even if you change your username, the link will always resolve correctly.
             </p>
+
+            {/* Page Mode Toggle */}
+            {activePersonaId && (
+              <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30 border border-border/60">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5 text-muted-foreground" />
+                    <Label className="text-xs text-muted-foreground cursor-pointer">Personal Profile</Label>
+                  </div>
+                  <Switch
+                    checked={pageMode === "builder"}
+                    onCheckedChange={async (checked) => {
+                      const mode = checked ? "builder" : "personal";
+                      setPageMode(mode);
+                      await supabase.from("personas").update({ page_mode: mode }).eq("id", activePersonaId);
+                      toast({ title: `Landing page set to ${checked ? "Page Builder" : "Personal Profile"}` });
+                    }}
+                  />
+                  <div className="flex items-center gap-1.5">
+                    <LayoutPanelLeft className="w-3.5 h-3.5 text-muted-foreground" />
+                    <Label className="text-xs text-muted-foreground cursor-pointer">Page Builder</Label>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="flex gap-2 flex-wrap">
               <Button variant="outline" size="sm" onClick={() => window.open(fullUrl, "_blank")}>
                 <ExternalLink className="w-3.5 h-3.5 mr-1.5" /> Preview
