@@ -1,11 +1,14 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { MousePointerClick } from "lucide-react";
 import { useChartPalette } from "@/components/dashboard/ChartPaletteSelector";
+import { ChartTitleWithInfo } from "@/components/dashboard/ChartTitleWithInfo";
 
 interface LinkCTRChartProps {
   data: { name: string; clicks: number; percentage: number }[];
 }
+
+const TITLE_INFO = "Each external link on your profile (LinkedIn, GitHub, website) ranked by clicks. The CTR is clicks divided by total profile views — higher means visitors are exploring further.";
 
 export function LinkCTRChart({ data }: LinkCTRChartProps) {
   const { colors: COLORS } = useChartPalette();
@@ -13,9 +16,11 @@ export function LinkCTRChart({ data }: LinkCTRChartProps) {
     return (
       <Card className="glass-card animate-fade-in">
         <CardHeader className="pb-2">
-          <CardTitle className="font-display text-sm flex items-center gap-2">
-            <MousePointerClick className="w-4 h-4" /> Link Click-Through Rate
-          </CardTitle>
+          <ChartTitleWithInfo
+            icon={<MousePointerClick className="w-4 h-4" />}
+            title="Link Click-Through Rate"
+            info={TITLE_INFO}
+          />
         </CardHeader>
         <CardContent className="flex items-center justify-center h-48">
           <p className="text-xs text-muted-foreground">No link clicks recorded yet</p>
@@ -27,9 +32,11 @@ export function LinkCTRChart({ data }: LinkCTRChartProps) {
   return (
     <Card className="glass-card animate-fade-in">
       <CardHeader className="pb-2">
-        <CardTitle className="font-display text-sm flex items-center gap-2">
-          <MousePointerClick className="w-4 h-4" /> Link Click-Through Rate
-        </CardTitle>
+        <ChartTitleWithInfo
+          icon={<MousePointerClick className="w-4 h-4" />}
+          title="Link Click-Through Rate"
+          info={TITLE_INFO}
+        />
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={Math.max(200, data.length * 32 + 40)}>

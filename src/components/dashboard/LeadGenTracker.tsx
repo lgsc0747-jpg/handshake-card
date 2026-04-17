@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { ChartTitleWithInfo } from "@/components/dashboard/ChartTitleWithInfo";
 
 interface Lead {
   id: string;
@@ -41,9 +42,11 @@ export function LeadGenTracker() {
   return (
     <Card className="glass-card animate-fade-in">
       <CardHeader className="pb-2">
-        <CardTitle className="font-display text-sm flex items-center gap-2">
-          <Users className="w-4 h-4" /> Lead Gen Tracker
-        </CardTitle>
+        <ChartTitleWithInfo
+          icon={<Users className="w-4 h-4" />}
+          title="Lead Gen Tracker"
+          info="Most recent visitors who submitted the contact form on a private persona — each row is a warm lead waiting for follow-up."
+        />
       </CardHeader>
       <CardContent>
         {leads.length === 0 ? (

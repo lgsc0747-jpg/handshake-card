@@ -1,6 +1,7 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Shield, ShieldCheck, ShieldAlert, UserPlus, Clock } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { ChartTitleWithInfo } from "@/components/dashboard/ChartTitleWithInfo";
 
 interface SecurityMetricsProps {
   authSuccessRate: number;
@@ -34,9 +35,11 @@ export function SecurityMetrics({ authSuccessRate, leadGenCount, unauthorizedAtt
   return (
     <Card className="glass-card animate-fade-in">
       <CardHeader className="pb-2">
-        <CardTitle className="font-display text-sm flex items-center gap-2">
-          <Shield className="w-4 h-4" /> Security & Privacy
-        </CardTitle>
+        <ChartTitleWithInfo
+          icon={<Shield className="w-4 h-4" />}
+          title="Security & Privacy"
+          info="Health check for your Digital Handshake gate: how often correct PINs are entered, how many failed attempts you've had, and how long visitors actually engage."
+        />
       </CardHeader>
       <CardContent className="space-y-4">
         <MetricRow

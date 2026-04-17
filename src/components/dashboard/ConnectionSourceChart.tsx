@@ -1,7 +1,8 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { Wifi } from "lucide-react";
 import { useChartPalette } from "@/components/dashboard/ChartPaletteSelector";
+import { ChartTitleWithInfo } from "@/components/dashboard/ChartTitleWithInfo";
 
 interface ConnectionSourceChartProps {
   sources: { nfc: number; qr: number; direct: number };
@@ -9,6 +10,7 @@ interface ConnectionSourceChartProps {
 
 const SOURCE_KEYS = ["nfc", "qr", "direct"] as const;
 const SOURCE_LABELS: Record<string, string> = { nfc: "NFC Tap", qr: "QR Scan", direct: "Direct Link" };
+const TITLE_INFO = "How visitors arrived at your profile: physical NFC tap, QR code scan, or direct URL. Helps you measure which channel drives the most reach.";
 
 export function ConnectionSourceChart({ sources }: ConnectionSourceChartProps) {
   const { colors } = useChartPalette();
@@ -22,9 +24,11 @@ export function ConnectionSourceChart({ sources }: ConnectionSourceChartProps) {
     return (
       <Card className="glass-card animate-fade-in">
         <CardHeader className="pb-2">
-          <CardTitle className="font-display text-sm flex items-center gap-2">
-            <Wifi className="w-4 h-4" /> Connection Source
-          </CardTitle>
+          <ChartTitleWithInfo
+            icon={<Wifi className="w-4 h-4" />}
+            title="Connection Source"
+            info={TITLE_INFO}
+          />
         </CardHeader>
         <CardContent className="flex items-center justify-center h-48">
           <p className="text-xs text-muted-foreground">No source data yet</p>
@@ -36,9 +40,11 @@ export function ConnectionSourceChart({ sources }: ConnectionSourceChartProps) {
   return (
     <Card className="glass-card animate-fade-in">
       <CardHeader className="pb-2">
-        <CardTitle className="font-display text-sm flex items-center gap-2">
-          <Wifi className="w-4 h-4" /> Connection Source
-        </CardTitle>
+        <ChartTitleWithInfo
+          icon={<Wifi className="w-4 h-4" />}
+          title="Connection Source"
+          info={TITLE_INFO}
+        />
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={200}>

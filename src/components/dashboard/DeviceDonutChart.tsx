@@ -1,22 +1,30 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { useChartPalette } from "@/components/dashboard/ChartPaletteSelector";
+import { ChartTitleWithInfo } from "@/components/dashboard/ChartTitleWithInfo";
 
 interface DeviceDonutChartProps {
   data: { name: string; value: number; color: string }[];
   title: string;
 }
 
+const INFO_BY_TITLE: Record<string, string> = {
+  "Device Type": "Breakdown of visitors by device — Mobile, Desktop, or Tablet — parsed from each visitor's browser. Helps you optimize the layout for whoever taps most.",
+  "Browser": "Which web browsers visitors use (Chrome, Safari, Firefox, etc.). Useful when debugging visual issues that only show up in one browser.",
+  "Operating System": "OS distribution of your visitors (iOS, Android, macOS, Windows, Linux). Indicates whether your audience is mobile-first or desktop-first.",
+};
+
 export function DeviceDonutChart({ data, title }: DeviceDonutChartProps) {
   const { colors: paletteColors } = useChartPalette();
   const coloredData = data.map((d, i) => ({ ...d, color: paletteColors[i % paletteColors.length] }));
   const total = data.reduce((s, d) => s + d.value, 0);
+  const info = INFO_BY_TITLE[title] ?? "Distribution breakdown for this metric.";
 
   if (data.length === 0 || total === 0) {
     return (
       <Card className="glass-card animate-fade-in">
         <CardHeader className="pb-2">
-          <CardTitle className="font-display text-sm">{title}</CardTitle>
+          <ChartTitleWithInfo title={title} info={info} />
         </CardHeader>
         <CardContent className="flex items-center justify-center h-48">
           <p className="text-xs text-muted-foreground">No data yet</p>
@@ -28,7 +36,7 @@ export function DeviceDonutChart({ data, title }: DeviceDonutChartProps) {
   return (
     <Card className="glass-card animate-fade-in">
       <CardHeader className="pb-2">
-        <CardTitle className="font-display text-sm">{title}</CardTitle>
+        <ChartTitleWithInfo title={title} info={info} />
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={200}>
