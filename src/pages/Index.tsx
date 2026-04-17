@@ -18,6 +18,8 @@ import { TimeframeSelector } from "@/components/dashboard/TimeframeSelector";
 import { SortableChartCard, resetChartSizes } from "@/components/dashboard/SortableChartCard";
 
 import { ChartPaletteProvider, ChartPaletteSelector } from "@/components/dashboard/ChartPaletteSelector";
+import { ChartTitleWithInfo } from "@/components/dashboard/ChartTitleWithInfo";
+import { AIInsightsCard } from "@/components/dashboard/AIInsightsCard";
 import { useNfcData } from "@/hooks/useNfcData";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -168,7 +170,13 @@ const Dashboard = () => {
     liveFeed: (
       <SortableChartCard id="liveFeed" editMode={editMode}>
         <div className="glass-card rounded-lg p-4 animate-fade-in">
-          <h2 className="font-display font-semibold mb-3 text-xs sm:text-sm">Live Feed</h2>
+          <div className="mb-3">
+            <ChartTitleWithInfo
+              title="Live Feed"
+              info="The 8 most recent interactions on your profile, in real time. Each row is one event — tap, save, link click — with the visitor's device and persona context."
+              className="text-xs sm:text-sm"
+            />
+          </div>
           {recentLogs.length === 0 ? (
             <p className="text-xs text-muted-foreground">No interactions yet.</p>
           ) : (
@@ -220,7 +228,11 @@ const Dashboard = () => {
     handshake: (
       <SortableChartCard id="handshake" editMode={editMode}>
         <div className="glass-card rounded-lg p-4 animate-fade-in space-y-2">
-          <h3 className="font-display font-semibold text-xs sm:text-sm">Digital Handshake</h3>
+          <ChartTitleWithInfo
+            title="Digital Handshake"
+            info="Quick-stack of engagement KPIs: how often visitors save your contact, submit forms, watch videos, and come back for a second look."
+            className="text-xs sm:text-sm"
+          />
           <div className="space-y-1.5 text-xs sm:text-sm">
             <div className="flex justify-between"><span className="text-muted-foreground">Save Rate</span><span className="font-bold">{stats.contactSaveRate}%</span></div>
             <div className="flex justify-between"><span className="text-muted-foreground">vCards</span><span className="font-bold">{stats.vcardDownloads}</span></div>
