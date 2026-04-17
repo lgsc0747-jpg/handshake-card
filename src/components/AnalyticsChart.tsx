@@ -1,7 +1,8 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Activity } from "lucide-react";
 import { useChartPalette } from "@/components/dashboard/ChartPaletteSelector";
+import { ChartTitleWithInfo } from "@/components/dashboard/ChartTitleWithInfo";
 
 interface AnalyticsChartProps {
   data: { label: string; taps: number; vcards: number }[];
@@ -12,9 +13,11 @@ export function AnalyticsChart({ data }: AnalyticsChartProps) {
   return (
     <Card className="glass-card animate-fade-in">
       <CardHeader className="pb-2">
-        <CardTitle className="font-display text-sm flex items-center gap-2">
-          <Activity className="w-4 h-4" /> The Pulse
-        </CardTitle>
+        <ChartTitleWithInfo
+          icon={<Activity className="w-4 h-4" />}
+          title="The Pulse"
+          info="Timeline of your profile views and contact saves over the selected timeframe. Each point is a time bucket — taller curves mean more taps in that window."
+        />
       </CardHeader>
       <CardContent>
         <div className="h-[240px]">

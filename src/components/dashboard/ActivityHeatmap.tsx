@@ -1,6 +1,7 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Clock } from "lucide-react";
+import { ChartTitleWithInfo } from "@/components/dashboard/ChartTitleWithInfo";
 
 interface HourlyHeat {
   day: string;
@@ -29,9 +30,11 @@ export function ActivityHeatmap({ data }: ActivityHeatmapProps) {
   return (
     <Card className="glass-card animate-fade-in">
       <CardHeader className="pb-2">
-        <CardTitle className="font-display text-sm flex items-center gap-2">
-          <Clock className="w-4 h-4" /> Peak Activity Hours
-        </CardTitle>
+        <ChartTitleWithInfo
+          icon={<Clock className="w-4 h-4" />}
+          title="Peak Activity Hours"
+          info="A 7-day × 24-hour grid where darker cells mean more interactions in that hour. Spot the days and times your card is tapped most."
+        />
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">

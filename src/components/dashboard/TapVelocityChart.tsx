@@ -1,7 +1,8 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useChartPalette } from "@/components/dashboard/ChartPaletteSelector";
 import { Activity } from "lucide-react";
+import { ChartTitleWithInfo } from "@/components/dashboard/ChartTitleWithInfo";
 
 interface TapVelocityData {
   label: string;
@@ -20,9 +21,11 @@ export function TapVelocityChart({ data }: TapVelocityChartProps) {
     <Card className="glass-card animate-fade-in">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="font-display text-sm flex items-center gap-2">
-            <Activity className="w-4 h-4" /> Tap Velocity
-          </CardTitle>
+          <ChartTitleWithInfo
+            icon={<Activity className="w-4 h-4" />}
+            title="Tap Velocity"
+            info="Profile views grouped per hour, plotted over time. The peak label highlights your single busiest hour — a great clue for when your network is most active."
+          />
           {peak.taps > 0 && (
             <span className="text-[10px] text-muted-foreground">
               Peak: <span className="font-bold text-foreground">{peak.taps} taps</span> at {peak.label}

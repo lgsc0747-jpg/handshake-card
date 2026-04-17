@@ -1,11 +1,14 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { Users } from "lucide-react";
 import { useChartPalette } from "@/components/dashboard/ChartPaletteSelector";
+import { ChartTitleWithInfo } from "@/components/dashboard/ChartTitleWithInfo";
 
 interface PersonaBarChartProps {
   data: { name: string; taps: number; saveRate: number }[];
 }
+
+const TITLE_INFO = "Side-by-side comparison of each persona's taps and contact save rate. Reveals which identity (e.g. Founder vs Engineer) actually converts visitors into saved contacts.";
 
 export function PersonaBarChart({ data }: PersonaBarChartProps) {
   const { colors } = useChartPalette();
@@ -13,9 +16,11 @@ export function PersonaBarChart({ data }: PersonaBarChartProps) {
     return (
       <Card className="glass-card animate-fade-in">
         <CardHeader className="pb-2">
-          <CardTitle className="font-display text-sm flex items-center gap-2">
-            <Users className="w-4 h-4" /> Persona Performance
-          </CardTitle>
+          <ChartTitleWithInfo
+            icon={<Users className="w-4 h-4" />}
+            title="Persona Performance"
+            info={TITLE_INFO}
+          />
         </CardHeader>
         <CardContent className="flex items-center justify-center h-48">
           <p className="text-xs text-muted-foreground">No persona data yet</p>
@@ -27,9 +32,11 @@ export function PersonaBarChart({ data }: PersonaBarChartProps) {
   return (
     <Card className="glass-card animate-fade-in">
       <CardHeader className="pb-2">
-        <CardTitle className="font-display text-sm flex items-center gap-2">
-          <Users className="w-4 h-4" /> Persona Performance
-        </CardTitle>
+        <ChartTitleWithInfo
+          icon={<Users className="w-4 h-4" />}
+          title="Persona Performance"
+          info={TITLE_INFO}
+        />
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={220}>

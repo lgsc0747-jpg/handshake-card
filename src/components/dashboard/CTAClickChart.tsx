@@ -1,11 +1,14 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { MousePointer } from "lucide-react";
 import { useChartPalette } from "@/components/dashboard/ChartPaletteSelector";
+import { ChartTitleWithInfo } from "@/components/dashboard/ChartTitleWithInfo";
 
 interface CTAClickChartProps {
   data: { label: string; clicks: number }[];
 }
+
+const TITLE_INFO = "Counts every tap on a custom call-to-action button you've placed on your landing page (e.g. 'Book a call', 'Hire me'). Reveals which prompts actually convert.";
 
 export function CTAClickChart({ data }: CTAClickChartProps) {
   const { colors: COLORS } = useChartPalette();
@@ -14,9 +17,11 @@ export function CTAClickChart({ data }: CTAClickChartProps) {
     return (
       <Card className="glass-card animate-fade-in">
         <CardHeader className="pb-2">
-          <CardTitle className="font-display text-sm flex items-center gap-2">
-            <MousePointer className="w-4 h-4" /> CTA Button Clicks
-          </CardTitle>
+          <ChartTitleWithInfo
+            icon={<MousePointer className="w-4 h-4" />}
+            title="CTA Button Clicks"
+            info={TITLE_INFO}
+          />
         </CardHeader>
         <CardContent className="flex items-center justify-center h-48">
           <p className="text-xs text-muted-foreground">No CTA clicks recorded yet</p>
@@ -28,9 +33,11 @@ export function CTAClickChart({ data }: CTAClickChartProps) {
   return (
     <Card className="glass-card animate-fade-in">
       <CardHeader className="pb-2">
-        <CardTitle className="font-display text-sm flex items-center gap-2">
-          <MousePointer className="w-4 h-4" /> CTA Button Clicks
-        </CardTitle>
+        <ChartTitleWithInfo
+          icon={<MousePointer className="w-4 h-4" />}
+          title="CTA Button Clicks"
+          info={TITLE_INFO}
+        />
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={Math.max(200, data.length * 32 + 40)}>

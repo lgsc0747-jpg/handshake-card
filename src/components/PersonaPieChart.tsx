@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { ChartTitleWithInfo } from "@/components/dashboard/ChartTitleWithInfo";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -68,7 +69,10 @@ export function PersonaPieChart() {
   return (
     <Card className="glass-card animate-fade-in">
       <CardHeader className="pb-2">
-        <CardTitle className="font-display text-sm">Taps by Persona</CardTitle>
+        <ChartTitleWithInfo
+          title="Taps by Persona"
+          info="Share of profile views attributed to each persona slug. Larger slices mean visitors engaged more with that identity."
+        />
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={220}>

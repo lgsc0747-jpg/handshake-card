@@ -1,6 +1,7 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Filter } from "lucide-react";
 import { useChartPalette } from "@/components/dashboard/ChartPaletteSelector";
+import { ChartTitleWithInfo } from "@/components/dashboard/ChartTitleWithInfo";
 
 interface ConversionFunnelProps {
   profileViews: number;
@@ -23,9 +24,11 @@ export function ConversionFunnel({ profileViews, cardFlips, linkClicks, vcardDow
   return (
     <Card className="glass-card animate-fade-in">
       <CardHeader className="pb-2">
-        <CardTitle className="font-display text-sm flex items-center gap-2">
-          <Filter className="w-4 h-4" /> Conversion Funnel
-        </CardTitle>
+        <ChartTitleWithInfo
+          icon={<Filter className="w-4 h-4" />}
+          title="Conversion Funnel"
+          info="Visitor journey from landing on your profile down to saving your contact. The percentage shows how many people made it from the previous step — drop-offs reveal where you lose attention."
+        />
       </CardHeader>
       <CardContent className="space-y-3">
         {steps.map((step, i) => {
