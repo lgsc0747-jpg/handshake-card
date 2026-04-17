@@ -128,7 +128,7 @@ export function SortableChartCard({ id, children, className }: SortableChartCard
         style={{
           height: customSize.h ?? DEFAULT_HEIGHT,
           maxHeight: MAX_HEIGHT,
-          overflow: "auto",
+          overflow: "visible",
         }}
       >
         <div {...attributes} {...listeners} className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab touch-none z-10 flex items-center gap-1">
