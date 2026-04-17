@@ -525,6 +525,256 @@ export function ExportButton({ stats, chartData }: ExportButtonProps) {
       });
     }
 
+    /* ════════════════════════════════════════════════════════
+       SHEET 9 — ANALYTICS REPORT (rendered chart images)
+       ════════════════════════════════════════════════════════ */
+    {
+      const ws = wb.addWorksheet("Analytics Report", {
+        properties: { tabColor: { argb: C.ink } },
+      });
+      setupSheet(ws, 14);
+      let row = 2;
+      row = titleBar(
+        ws,
+        row,
+        14,
+        "NFC Platform Performance Report",
+        "Visualised pulse and source distribution",
+      );
+
+      // Helper — hex ARGB → CSS rgba
+      const css = (argb: string, alpha = 1) => {
+        const h = argb.replace(/^FF/, "");
+        const r = parseInt(h.slice(0, 2), 16);
+        const g = parseInt(h.slice(2, 4), 16);
+        const b = parseInt(h.slice(4, 6), 16);
+        return `rgba(${r},${g},${b},${alpha})`;
+      };
+
+      // Chart 1 — Smooth line: Daily Profile Views (taps over time)
+      const drawLineChart = (data: { label: string; value: number }[]): string => {
+        const W = 1000;
+        const H = 500;
+        const cv = document.createElement("canvas");
+        cv.width = W;
+        cv.height = H;
+        const ctx = cv.getContext("2d")!;
+        // Background
+        ctx.fillStyle = css(C.white);
+        ctx.fillRect(0, 0, W, H);
+        // Title
+        ctx.fillStyle = css(C.ink);
+        ctx.font = "bold 22px Inter, system-ui, sans-serif";
+        ctx.fillText("Daily Taps / Interactions", 32, 40);
+        ctx.font = "12px Inter, system-ui, sans-serif";
+        ctx.fillStyle = css(C.muted);
+        ctx.fillText("Smoothed pulse across the selected period", 32, 62);
+
+        const padL = 60, padR = 32, padT = 90, padB = 60;
+        const cw = W - padL - padR;
+        const ch = H - padT - padB;
+        const max = Math.max(1, ...data.map((d) => d.value));
+        const stepX = data.length > 1 ? cw / (data.length - 1) : cw;
+
+        // Grid
+        ctx.strokeStyle = css(C.line);
+        ctx.lineWidth = 1;
+        ctx.font = "11px Inter, system-ui, sans-serif";
+        ctx.fillStyle = css(C.muted);
+        for (let i = 0; i <= 4; i++) {
+          const y = padT + (ch / 4) * i;
+          ctx.beginPath();
+          ctx.moveTo(padL, y);
+          ctx.lineTo(W - padR, y);
+          ctx.stroke();
+          const v = Math.round(max - (max / 4) * i);
+          ctx.fillText(String(v), 8, y + 4);
+        }
+
+        // X labels (every Nth)
+        const skip = Math.max(1, Math.floor(data.length / 8));
+        data.forEach((d, i) => {
+          if (i % skip !== 0 && i !== data.length - 1) return;
+          const x = padL + stepX * i;
+          ctx.fillStyle = css(C.muted);
+          ctx.fillText(d.label, x - 14, H - padB + 18);
+        });
+
+        // Smooth path (Catmull-Rom → Bezier)
+        const points = data.map((d, i) => ({
+          x: padL + stepX * i,
+          y: padT + ch - (d.value / max) * ch,
+        }));
+        if (points.length >= 2) {
+          // Gradient fill under curve
+          const grad = ctx.createLinearGradient(0, padT, 0, padT + ch);
+          grad.addColorStop(0, css(C.brand, 0.35));
+          grad.addColorStop(1, css(C.brand, 0));
+          ctx.beginPath();
+          ctx.moveTo(points[0].x, padT + ch);
+          ctx.lineTo(points[0].x, points[0].y);
+          for (let i = 0; i < points.length - 1; i++) {
+            const p0 = points[i - 1] || points[i];
+            const p1 = points[i];
+            const p2 = points[i + 1];
+            const p3 = points[i + 2] || p2;
+            const t = 0.4;
+            const cp1x = p1.x + ((p2.x - p0.x) / 6) * (1 + t);
+            const cp1y = p1.y + ((p2.y - p0.y) / 6) * (1 + t);
+            const cp2x = p2.x - ((p3.x - p1.x) / 6) * (1 + t);
+            const cp2y = p2.y - ((p3.y - p1.y) / 6) * (1 + t);
+            ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+          }
+          ctx.lineTo(points[points.length - 1].x, padT + ch);
+          ctx.closePath();
+          ctx.fillStyle = grad;
+          ctx.fill();
+
+          // Stroke
+          ctx.beginPath();
+          ctx.moveTo(points[0].x, points[0].y);
+          for (let i = 0; i < points.length - 1; i++) {
+            const p0 = points[i - 1] || points[i];
+            const p1 = points[i];
+            const p2 = points[i + 1];
+            const p3 = points[i + 2] || p2;
+            const t = 0.4;
+            const cp1x = p1.x + ((p2.x - p0.x) / 6) * (1 + t);
+            const cp1y = p1.y + ((p2.y - p0.y) / 6) * (1 + t);
+            const cp2x = p2.x - ((p3.x - p1.x) / 6) * (1 + t);
+            const cp2y = p2.y - ((p3.y - p1.y) / 6) * (1 + t);
+            ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+          }
+          ctx.strokeStyle = css(C.brand);
+          ctx.lineWidth = 3;
+          ctx.lineJoin = "round";
+          ctx.stroke();
+
+          // Dots
+          ctx.fillStyle = css(C.brand);
+          points.forEach((p) => {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+            ctx.fill();
+          });
+        }
+
+        return cv.toDataURL("image/png");
+      };
+
+      // Chart 2 — Donut/Pie: traffic source distribution
+      const drawPieChart = (
+        data: { name: string; value: number }[],
+        title: string,
+      ): string => {
+        const W = 700;
+        const H = 500;
+        const cv = document.createElement("canvas");
+        cv.width = W;
+        cv.height = H;
+        const ctx = cv.getContext("2d")!;
+        ctx.fillStyle = css(C.white);
+        ctx.fillRect(0, 0, W, H);
+
+        ctx.fillStyle = css(C.ink);
+        ctx.font = "bold 22px Inter, system-ui, sans-serif";
+        ctx.fillText(title, 32, 40);
+        ctx.font = "12px Inter, system-ui, sans-serif";
+        ctx.fillStyle = css(C.muted);
+        ctx.fillText("Share of overall visitor connections", 32, 62);
+
+        const cx = 220, cy = 280, rOuter = 150, rInner = 85;
+        const total = data.reduce((s, d) => s + d.value, 0) || 1;
+        const palette = [C.brand, C.accent, C.warn, C.success, C.danger, C.muted];
+
+        let start = -Math.PI / 2;
+        data.forEach((d, i) => {
+          const angle = (d.value / total) * Math.PI * 2;
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.arc(cx, cy, rOuter, start, start + angle);
+          ctx.closePath();
+          ctx.fillStyle = css(palette[i % palette.length]);
+          ctx.fill();
+          start += angle;
+        });
+
+        // Donut hole
+        ctx.beginPath();
+        ctx.arc(cx, cy, rInner, 0, Math.PI * 2);
+        ctx.fillStyle = css(C.white);
+        ctx.fill();
+
+        // Centre total
+        ctx.fillStyle = css(C.ink);
+        ctx.font = "bold 28px Inter, system-ui, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(String(total), cx, cy + 4);
+        ctx.font = "11px Inter, system-ui, sans-serif";
+        ctx.fillStyle = css(C.muted);
+        ctx.fillText("Total", cx, cy + 24);
+        ctx.textAlign = "left";
+
+        // Legend
+        const lx = 420;
+        let ly = 160;
+        ctx.font = "12px Inter, system-ui, sans-serif";
+        data.forEach((d, i) => {
+          ctx.fillStyle = css(palette[i % palette.length]);
+          ctx.fillRect(lx, ly, 14, 14);
+          ctx.fillStyle = css(C.ink);
+          const pct = ((d.value / total) * 100).toFixed(1);
+          ctx.fillText(`${d.name}`, lx + 22, ly + 11);
+          ctx.fillStyle = css(C.muted);
+          ctx.fillText(`${d.value}  ·  ${pct}%`, lx + 22, ly + 28);
+          ly += 44;
+        });
+
+        return cv.toDataURL("image/png");
+      };
+
+      // Inject line chart
+      if (chartData.length > 0) {
+        row = sectionHeader(ws, row, 14, "Card pulse");
+        const lineImg = drawLineChart(
+          chartData.map((d) => ({ label: d.label, value: d.taps })),
+        );
+        const lineId = wb.addImage({
+          base64: lineImg.split(",")[1],
+          extension: "png",
+        });
+        ws.addImage(lineId, {
+          tl: { col: 1, row: row - 1 },
+          ext: { width: 900, height: 360 },
+        });
+        // Reserve space (~18 rows of 22px)
+        for (let i = 0; i < 18; i++) ws.getRow(row + i).height = 22;
+        row += 19;
+      }
+
+      // Pie chart — connection sources
+      const sourceData = [
+        { name: "NFC Tap", value: stats.connectionSources.nfc },
+        { name: "QR Scan", value: stats.connectionSources.qr },
+        { name: "Direct Link", value: stats.connectionSources.direct },
+      ].filter((d) => d.value > 0);
+
+      if (sourceData.length > 0) {
+        row = sectionHeader(ws, row, 14, "Traffic sources");
+        const pieImg = drawPieChart(sourceData, "Connection Source Distribution");
+        const pieId = wb.addImage({
+          base64: pieImg.split(",")[1],
+          extension: "png",
+        });
+        ws.addImage(pieId, {
+          tl: { col: 1, row: row - 1 },
+          ext: { width: 640, height: 360 },
+        });
+        for (let i = 0; i < 18; i++) ws.getRow(row + i).height = 22;
+        row += 19;
+      }
+    }
+
     /* ─── Export ──────────────────────────────────────────── */
     const buf = await wb.xlsx.writeBuffer();
     const blob = new Blob([buf], {
