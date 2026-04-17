@@ -34,7 +34,7 @@ export function ExportButton({ stats, chartData }: ExportButtonProps) {
     wb.created = new Date();
 
     /* ─── Style primitives ─────────────────────────────────── */
-    const thinBorder = (color = C.line) => ({
+    const thinBorder = (color: string = C.line) => ({
       top: { style: "thin" as const, color: { argb: color } },
       left: { style: "thin" as const, color: { argb: color } },
       bottom: { style: "thin" as const, color: { argb: color } },
