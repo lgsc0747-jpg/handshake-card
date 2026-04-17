@@ -115,18 +115,42 @@ Deno.serve(async (req) => {
     else if (interaction_type === "contact_form_submit") occasion = "Contact Form";
     else if (interaction_type === "page_view") occasion = `Page: ${metadata?.page_title || "unknown"}`;
 
-    // Location tracking removed
-
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
+
+    // Build a privacy-safe context label for the `location` column.
+    // We never use IP / GPS — instead we describe the digital context:
+    // persona slug + page path, or referrer host if it's an external tap.
+    let contextLabel: string | null = null;
+    const personaSlug = metadata?.persona_slug;
+    const pagePath = metadata?.page_path || metadata?.page_title;
+    const referrer = metadata?.referrer;
+
+    if (personaSlug && pagePath) {
+      contextLabel = `${personaSlug} · ${pagePath}`;
+    } else if (personaSlug) {
+      contextLabel = personaSlug;
+    } else if (pagePath) {
+      contextLabel = pagePath;
+    }
+
+    if (referrer && typeof referrer === "string" && referrer.length > 0) {
+      try {
+        const host = new URL(referrer).hostname.replace(/^www\./, "");
+        if (host) contextLabel = contextLabel ? `${contextLabel} ← ${host}` : `via ${host}`;
+      } catch {
+        // ignore malformed referrer
+      }
+    }
 
     const { error } = await supabase.from("interaction_logs").insert({
       user_id: target_user_id,
       entity_id: metadata?.visitor_id || `visitor_${Date.now()}`,
       interaction_type,
       occasion,
+      location: contextLabel,
       metadata: enrichedMeta,
     });
 

@@ -243,6 +243,8 @@ const PublicProfilePage = () => {
             source: "public_landing",
             ua: navigator.userAgent + (isBrave ? " Brave" : ""),
             persona_slug: personaSlug || null,
+            page_path: window.location.pathname,
+            referrer: document.referrer || null,
             visitor_id: visitorId,
             is_return: isReturn,
             visit_count: visitHistory.length,
