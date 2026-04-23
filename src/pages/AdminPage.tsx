@@ -392,6 +392,8 @@ const AdminPage = () => {
             </p>
           </CardContent>
         </Card>
+        {/* Activity Log */}
+        <AdminActivityLog />
       </div>
 
       {/* Confirmation Dialog */}
