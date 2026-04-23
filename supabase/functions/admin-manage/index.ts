@@ -120,7 +120,7 @@ Deno.serve(async (req) => {
       const { limit = 200, offset = 0, interaction_type, entity_search } = body;
       let query = adminClient
         .from("interaction_logs")
-        .select("*, profiles:user_id(display_name, username, email_public)", { count: "exact" })
+        .select("*", { count: "exact" })
         .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);
 
@@ -134,7 +134,25 @@ Deno.serve(async (req) => {
       const { data: logs, count, error: logsError } = await query;
       if (logsError) throw logsError;
 
-      return new Response(JSON.stringify({ logs: logs ?? [], total: count ?? 0 }), {
+      // Fetch profiles for the user_ids in this page
+      const userIds = [...new Set((logs ?? []).map((l: any) => l.user_id))];
+      let profilesMap: Record<string, any> = {};
+      if (userIds.length > 0) {
+        const { data: profiles } = await adminClient
+          .from("profiles")
+          .select("user_id, display_name, username, email_public")
+          .in("user_id", userIds);
+        for (const p of profiles ?? []) {
+          profilesMap[p.user_id] = p;
+        }
+      }
+
+      const enrichedLogs = (logs ?? []).map((l: any) => ({
+        ...l,
+        profiles: profilesMap[l.user_id] || null,
+      }));
+
+      return new Response(JSON.stringify({ logs: enrichedLogs, total: count ?? 0 }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
