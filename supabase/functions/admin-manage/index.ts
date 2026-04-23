@@ -117,22 +117,24 @@ Deno.serve(async (req) => {
 
     // ACTION: list_activity_logs (admin activity monitoring)
     if (action === "list_activity_logs") {
-      const { limit = 200, offset = 0, interaction_type, entity_search, user_search } = body;
+      const { limit = 200, offset = 0, interaction_type, search } = body;
 
-      // If user_search is provided, first find matching user_ids from profiles
+      // Unified search: match against profiles (name, username, email) AND entity_id
       let filterUserIds: string[] | null = null;
-      if (user_search && typeof user_search === "string" && user_search.trim()) {
-        const term = `%${user_search.trim()}%`;
+      let entitySearchTerm: string | null = null;
+
+      if (search && typeof search === "string" && search.trim()) {
+        const term = `%${search.trim()}%`;
+
+        // Search profiles
         const { data: matchedProfiles } = await adminClient
           .from("profiles")
           .select("user_id")
           .or(`display_name.ilike.${term},username.ilike.${term},email_public.ilike.${term}`);
         filterUserIds = (matchedProfiles ?? []).map((p: any) => p.user_id);
-        if (filterUserIds.length === 0) {
-          return new Response(JSON.stringify({ logs: [], total: 0 }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
+
+        // Also search by entity_id
+        entitySearchTerm = search.trim();
       }
 
       let query = adminClient
@@ -144,11 +146,24 @@ Deno.serve(async (req) => {
       if (interaction_type && interaction_type !== "all") {
         query = query.eq("interaction_type", interaction_type);
       }
-      if (entity_search) {
-        query = query.ilike("entity_id", `%${entity_search}%`);
-      }
-      if (filterUserIds) {
-        query = query.in("user_id", filterUserIds);
+
+      // Apply unified search: user match OR entity match
+      if (search && search.trim()) {
+        const conditions: string[] = [];
+        if (entitySearchTerm) {
+          conditions.push(`entity_id.ilike.%${entitySearchTerm}%`);
+        }
+        if (filterUserIds && filterUserIds.length > 0) {
+          conditions.push(`user_id.in.(${filterUserIds.join(",")})`);
+        }
+        if (conditions.length > 0) {
+          query = query.or(conditions.join(","));
+        } else {
+          // No matches at all
+          return new Response(JSON.stringify({ logs: [], total: 0 }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
       }
 
       const { data: logs, count, error: logsError } = await query;
