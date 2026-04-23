@@ -119,6 +119,7 @@ export function AdminActivityLog() {
   const handleSearch = () => {
     setPage(0);
     setEntitySearch(searchInput);
+    setUserSearch(userSearchInput);
   };
 
   const formatDate = (dateStr: string) =>
