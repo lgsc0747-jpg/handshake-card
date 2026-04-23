@@ -100,6 +100,7 @@ export function AdminActivityLog() {
         offset: page * PAGE_SIZE,
         interaction_type: typeFilter,
         entity_search: entitySearch || undefined,
+        user_search: userSearch || undefined,
       },
     });
     if (error) {
