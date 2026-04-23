@@ -115,6 +115,30 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ACTION: list_activity_logs (admin activity monitoring)
+    if (action === "list_activity_logs") {
+      const { limit = 200, offset = 0, interaction_type, entity_search } = body;
+      let query = adminClient
+        .from("interaction_logs")
+        .select("*, profiles:user_id(display_name, username, email_public)", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (interaction_type && interaction_type !== "all") {
+        query = query.eq("interaction_type", interaction_type);
+      }
+      if (entity_search) {
+        query = query.ilike("entity_id", `%${entity_search}%`);
+      }
+
+      const { data: logs, count, error: logsError } = await query;
+      if (logsError) throw logsError;
+
+      return new Response(JSON.stringify({ logs: logs ?? [], total: count ?? 0 }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // ACTION: list_users (admin dashboard data)
     if (action === "list_users") {
       const { data: profiles } = await adminClient
