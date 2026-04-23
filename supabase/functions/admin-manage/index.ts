@@ -117,7 +117,24 @@ Deno.serve(async (req) => {
 
     // ACTION: list_activity_logs (admin activity monitoring)
     if (action === "list_activity_logs") {
-      const { limit = 200, offset = 0, interaction_type, entity_search } = body;
+      const { limit = 200, offset = 0, interaction_type, entity_search, user_search } = body;
+
+      // If user_search is provided, first find matching user_ids from profiles
+      let filterUserIds: string[] | null = null;
+      if (user_search && typeof user_search === "string" && user_search.trim()) {
+        const term = `%${user_search.trim()}%`;
+        const { data: matchedProfiles } = await adminClient
+          .from("profiles")
+          .select("user_id")
+          .or(`display_name.ilike.${term},username.ilike.${term},email_public.ilike.${term}`);
+        filterUserIds = (matchedProfiles ?? []).map((p: any) => p.user_id);
+        if (filterUserIds.length === 0) {
+          return new Response(JSON.stringify({ logs: [], total: 0 }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+
       let query = adminClient
         .from("interaction_logs")
         .select("*", { count: "exact" })
@@ -129,6 +146,9 @@ Deno.serve(async (req) => {
       }
       if (entity_search) {
         query = query.ilike("entity_id", `%${entity_search}%`);
+      }
+      if (filterUserIds) {
+        query = query.in("user_id", filterUserIds);
       }
 
       const { data: logs, count, error: logsError } = await query;
