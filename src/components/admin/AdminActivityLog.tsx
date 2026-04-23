@@ -49,6 +49,8 @@ interface ActivityLog {
   } | null;
 }
 
+const USER_SEARCH_PLACEHOLDER = "Search by user (name, username, email)…";
+
 const INTERACTION_TYPES = [
   "all",
   "profile_view",
@@ -87,7 +89,8 @@ export function AdminActivityLog() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [entitySearch, setEntitySearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
-
+  const [userSearchInput, setUserSearchInput] = useState("");
+  const [userSearch, setUserSearch] = useState("");
   const fetchLogs = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase.functions.invoke("admin-manage", {
@@ -97,6 +100,7 @@ export function AdminActivityLog() {
         offset: page * PAGE_SIZE,
         interaction_type: typeFilter,
         entity_search: entitySearch || undefined,
+        user_search: userSearch || undefined,
       },
     });
     if (error) {
@@ -106,7 +110,7 @@ export function AdminActivityLog() {
       setTotal(data.total ?? 0);
     }
     setLoading(false);
-  }, [page, typeFilter, entitySearch, toast]);
+  }, [page, typeFilter, entitySearch, userSearch, toast]);
 
   useEffect(() => {
     fetchLogs();
@@ -115,6 +119,7 @@ export function AdminActivityLog() {
   const handleSearch = () => {
     setPage(0);
     setEntitySearch(searchInput);
+    setUserSearch(userSearchInput);
   };
 
   const formatDate = (dateStr: string) =>
@@ -183,6 +188,16 @@ export function AdminActivityLog() {
       <CardContent className="space-y-4">
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder={USER_SEARCH_PLACEHOLDER}
+              value={userSearchInput}
+              onChange={(e) => setUserSearchInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              className="pl-9"
+            />
+          </div>
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
