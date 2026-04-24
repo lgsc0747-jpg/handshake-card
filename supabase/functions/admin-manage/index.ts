@@ -6,6 +6,12 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+function getClientIp(req: Request): string {
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff) return xff.split(",")[0].trim();
+  return req.headers.get("x-real-ip") ?? "unknown";
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -23,6 +29,7 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const ip = getClientIp(req);
 
     // Verify caller using getClaims
     const userClient = createClient(supabaseUrl, anonKey, {
@@ -38,16 +45,18 @@ Deno.serve(async (req) => {
     }
     const userId = claimsData.claims.sub as string;
 
-    // Check admin role
+    // Resolve roles for caller
     const adminClient = createClient(supabaseUrl, serviceKey);
-    const { data: roleCheck } = await adminClient
+    const { data: roleRows } = await adminClient
       .from("user_roles")
       .select("role")
-      .eq("user_id", userId)
-      .eq("role", "admin")
-      .maybeSingle();
+      .eq("user_id", userId);
 
-    if (!roleCheck) {
+    const roles = new Set((roleRows ?? []).map((r: any) => r.role));
+    const isAdmin = roles.has("admin") || roles.has("super_admin");
+    const isSuperAdmin = roles.has("super_admin");
+
+    if (!isAdmin) {
       return new Response(JSON.stringify({ error: "Forbidden: admin only" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -56,6 +65,21 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
     const { action } = body;
+
+    // Helper: write an audit entry
+    const audit = async (
+      auditAction: string,
+      target_user_id: string | null,
+      details: Record<string, unknown> = {},
+    ) => {
+      await adminClient.from("admin_audit_log").insert({
+        admin_user_id: userId,
+        action: auditAction,
+        target_user_id,
+        details,
+        ip_address: ip,
+      });
+    };
 
     // ACTION: update_plan
     if (action === "update_plan") {
@@ -66,7 +90,7 @@ Deno.serve(async (req) => {
           {
             status: 400,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
+          },
         );
       }
       const { error } = await adminClient
@@ -77,13 +101,23 @@ Deno.serve(async (req) => {
         })
         .eq("user_id", target_user_id);
       if (error) throw error;
+      await audit("update_plan", target_user_id, { plan });
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // ACTION: assign_role
+    // ACTION: assign_role — SUPER ADMIN ONLY
     if (action === "assign_role") {
+      if (!isSuperAdmin) {
+        return new Response(
+          JSON.stringify({ error: "Super-admin only" }),
+          {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
       const { target_user_id, role } = body;
       if (!target_user_id || !["admin", "user"].includes(role)) {
         return new Response(
@@ -91,7 +125,7 @@ Deno.serve(async (req) => {
           {
             status: 400,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
+          },
         );
       }
       if (role === "admin") {
@@ -99,41 +133,128 @@ Deno.serve(async (req) => {
           .from("user_roles")
           .upsert(
             { user_id: target_user_id, role: "admin" },
-            { onConflict: "user_id,role" }
+            { onConflict: "user_id,role" },
           );
         if (error) throw error;
+        await audit("grant_admin", target_user_id, {});
       } else {
-        // Remove admin role
         await adminClient
           .from("user_roles")
           .delete()
           .eq("user_id", target_user_id)
           .eq("role", "admin");
+        await audit("revoke_admin", target_user_id, {});
       }
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    // ACTION: list_lockouts — SUPER ADMIN ONLY
+    if (action === "list_lockouts") {
+      if (!isSuperAdmin) {
+        return new Response(JSON.stringify({ error: "Super-admin only" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { data: lockouts } = await adminClient
+        .from("account_lockouts")
+        .select("*")
+        .gt("locked_until", new Date().toISOString())
+        .order("locked_until", { ascending: false });
+      return new Response(JSON.stringify({ lockouts: lockouts ?? [] }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ACTION: clear_lockout — SUPER ADMIN ONLY
+    if (action === "clear_lockout") {
+      if (!isSuperAdmin) {
+        return new Response(JSON.stringify({ error: "Super-admin only" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { email } = body;
+      if (!email) {
+        return new Response(JSON.stringify({ error: "Missing email" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      await adminClient
+        .from("account_lockouts")
+        .delete()
+        .eq("email", String(email).toLowerCase());
+      await audit("clear_lockout", null, { email });
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ACTION: list_audit_log
+    if (action === "list_audit_log") {
+      const { limit = 100, offset = 0 } = body;
+      let query = adminClient
+        .from("admin_audit_log")
+        .select("*", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      // Regular admins see only their own entries
+      if (!isSuperAdmin) {
+        query = query.eq("admin_user_id", userId);
+      }
+
+      const { data: entries, count } = await query;
+
+      // Enrich with profile names for actor + target
+      const ids = new Set<string>();
+      for (const e of entries ?? []) {
+        if (e.admin_user_id) ids.add(e.admin_user_id);
+        if (e.target_user_id) ids.add(e.target_user_id);
+      }
+      const profilesMap: Record<string, any> = {};
+      if (ids.size) {
+        const { data: profiles } = await adminClient
+          .from("profiles")
+          .select("user_id, display_name, username, email_public")
+          .in("user_id", Array.from(ids));
+        for (const p of profiles ?? []) profilesMap[p.user_id] = p;
+      }
+
+      const enriched = (entries ?? []).map((e: any) => ({
+        ...e,
+        actor: profilesMap[e.admin_user_id] ?? null,
+        target: e.target_user_id ? profilesMap[e.target_user_id] ?? null : null,
+      }));
+
+      return new Response(
+        JSON.stringify({ entries: enriched, total: count ?? 0 }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
     // ACTION: list_activity_logs (admin activity monitoring)
     if (action === "list_activity_logs") {
       const { limit = 200, offset = 0, interaction_type, search } = body;
 
-      // Unified search: match against profiles (name, username, email) AND entity_id
       let filterUserIds: string[] | null = null;
       let entitySearchTerm: string | null = null;
 
       if (search && typeof search === "string" && search.trim()) {
         const term = `%${search.trim()}%`;
 
-        // Search profiles
         const { data: matchedProfiles } = await adminClient
           .from("profiles")
           .select("user_id")
-          .or(`display_name.ilike.${term},username.ilike.${term},email_public.ilike.${term}`);
+          .or(
+            `display_name.ilike.${term},username.ilike.${term},email_public.ilike.${term}`,
+          );
         filterUserIds = (matchedProfiles ?? []).map((p: any) => p.user_id);
-
-        // Also search by entity_id
         entitySearchTerm = search.trim();
       }
 
@@ -147,7 +268,6 @@ Deno.serve(async (req) => {
         query = query.eq("interaction_type", interaction_type);
       }
 
-      // Apply unified search: user match OR entity match
       if (search && search.trim()) {
         const conditions: string[] = [];
         if (entitySearchTerm) {
@@ -159,7 +279,6 @@ Deno.serve(async (req) => {
         if (conditions.length > 0) {
           query = query.or(conditions.join(","));
         } else {
-          // No matches at all
           return new Response(JSON.stringify({ logs: [], total: 0 }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
@@ -169,7 +288,6 @@ Deno.serve(async (req) => {
       const { data: logs, count, error: logsError } = await query;
       if (logsError) throw logsError;
 
-      // Fetch profiles for the user_ids in this page
       const userIds = [...new Set((logs ?? []).map((l: any) => l.user_id))];
       let profilesMap: Record<string, any> = {};
       if (userIds.length > 0) {
@@ -187,41 +305,46 @@ Deno.serve(async (req) => {
         profiles: profilesMap[l.user_id] || null,
       }));
 
-      return new Response(JSON.stringify({ logs: enrichedLogs, total: count ?? 0 }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ logs: enrichedLogs, total: count ?? 0 }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     // ACTION: list_users (admin dashboard data)
     if (action === "list_users") {
       const { data: profiles } = await adminClient
         .from("profiles")
-        .select("user_id, username, display_name, email_public, avatar_url, created_at")
+        .select(
+          "user_id, username, display_name, email_public, avatar_url, created_at",
+        )
         .order("created_at", { ascending: false });
 
       const { data: subs } = await adminClient
         .from("user_subscriptions")
         .select("user_id, plan, started_at, expires_at");
 
-      const { data: roles } = await adminClient
+      const { data: rolesAll } = await adminClient
         .from("user_roles")
         .select("user_id, role");
 
-      // Merge
       const users = (profiles ?? []).map((p: any) => ({
         ...p,
-        plan:
-          subs?.find((s: any) => s.user_id === p.user_id)?.plan ?? "free",
-        started_at: subs?.find((s: any) => s.user_id === p.user_id)
-          ?.started_at,
-        roles: (roles ?? [])
+        plan: subs?.find((s: any) => s.user_id === p.user_id)?.plan ?? "free",
+        started_at: subs?.find((s: any) => s.user_id === p.user_id)?.started_at,
+        roles: (rolesAll ?? [])
           .filter((r: any) => r.user_id === p.user_id)
           .map((r: any) => r.role),
       }));
 
-      return new Response(JSON.stringify({ users }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ users, viewer: { is_super_admin: isSuperAdmin } }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     return new Response(JSON.stringify({ error: "Unknown action" }), {

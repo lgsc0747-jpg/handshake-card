@@ -5,6 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { AdminActivityLog } from "@/components/admin/AdminActivityLog";
+import { AdminAuditTrail } from "@/components/admin/AdminAuditTrail";
+import { AdminLockouts } from "@/components/admin/AdminLockouts";
+import { useIsSuperAdmin } from "@/hooks/useIsSuperAdmin";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Select,
   SelectContent,
@@ -56,6 +60,7 @@ interface AdminUser {
 const AdminPage = () => {
   const { user } = useAuth();
   const { isAdmin, loading: adminLoading } = useIsAdmin();
+  const { isSuperAdmin } = useIsSuperAdmin();
   const { toast } = useToast();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -353,30 +358,53 @@ const AdminPage = () => {
                               <ArrowUpDown className="w-3 h-3 mr-1" />
                               {u.plan === "pro" ? "Downgrade" : "Upgrade"}
                             </Button>
-                            {/* Role toggle */}
+                            {/* Role toggle (super-admin only) */}
                             {u.user_id !== user?.id && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-7 text-xs"
-                                onClick={() =>
-                                  setConfirmDialog({
-                                    open: true,
-                                    type: "role",
-                                    userId: u.user_id,
-                                    userName:
-                                      u.display_name ?? u.username ?? "User",
-                                    value: u.roles.includes("admin")
-                                      ? "user"
-                                      : "admin",
-                                  })
-                                }
-                              >
-                                <Shield className="w-3 h-3 mr-1" />
-                                {u.roles.includes("admin")
-                                  ? "Remove Admin"
-                                  : "Make Admin"}
-                              </Button>
+                              isSuperAdmin ? (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 text-xs"
+                                  onClick={() =>
+                                    setConfirmDialog({
+                                      open: true,
+                                      type: "role",
+                                      userId: u.user_id,
+                                      userName:
+                                        u.display_name ?? u.username ?? "User",
+                                      value: u.roles.includes("admin")
+                                        ? "user"
+                                        : "admin",
+                                    })
+                                  }
+                                >
+                                  <Shield className="w-3 h-3 mr-1" />
+                                  {u.roles.includes("admin")
+                                    ? "Remove Admin"
+                                    : "Make Admin"}
+                                </Button>
+                              ) : (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span>
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className="h-7 text-xs opacity-50"
+                                          disabled
+                                        >
+                                          <Shield className="w-3 h-3 mr-1" />
+                                          Roles
+                                        </Button>
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="text-xs">Super-admin only</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )
                             )}
                           </div>
                         </TableCell>
@@ -392,6 +420,12 @@ const AdminPage = () => {
             </p>
           </CardContent>
         </Card>
+        {/* Audit Trail */}
+        <AdminAuditTrail />
+
+        {/* Active Lockouts (super-admin only) */}
+        {isSuperAdmin && <AdminLockouts />}
+
         {/* Activity Log */}
         <AdminActivityLog />
       </div>

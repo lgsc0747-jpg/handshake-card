@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_lockouts: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          ip_address: string | null
+          locked_until: string
+          reason: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          ip_address?: string | null
+          locked_until: string
+          reason?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          ip_address?: string | null
+          locked_until?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
+      admin_audit_log: {
+        Row: {
+          action: string
+          admin_user_id: string
+          created_at: string
+          details: Json | null
+          id: string
+          ip_address: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          admin_user_id: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          admin_user_id?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           color: string | null
@@ -137,6 +194,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      login_attempts: {
+        Row: {
+          attempted_at: string
+          email: string
+          id: string
+          ip_address: string | null
+          success: boolean
+          user_agent: string | null
+        }
+        Insert: {
+          attempted_at?: string
+          email: string
+          id?: string
+          ip_address?: string | null
+          success?: boolean
+          user_agent?: string | null
+        }
+        Update: {
+          attempted_at?: string
+          email?: string
+          id?: string
+          ip_address?: string | null
+          success?: boolean
+          user_agent?: string | null
+        }
+        Relationships: []
       }
       nfc_cards: {
         Row: {
@@ -624,6 +708,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_login_lockout: {
+        Args: { p_email: string; p_ip?: string }
+        Returns: Json
+      }
       check_username_available: {
         Args: { p_username: string }
         Returns: boolean
@@ -705,6 +793,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_super_admin: { Args: { _user_id: string }; Returns: boolean }
       insert_lead_capture: {
         Args: {
           p_metadata?: Json
@@ -725,7 +814,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "super_admin"
       card_status: "active" | "inactive"
       subscription_plan: "free" | "pro"
     }
@@ -855,7 +944,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "super_admin"],
       card_status: ["active", "inactive"],
       subscription_plan: ["free", "pro"],
     },
