@@ -41,6 +41,25 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Validate target_user_id is a real, existing user (prevents fake-event injection)
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    const { data: targetProfile, error: profileErr } = await supabase
+      .from("profiles")
+      .select("user_id")
+      .eq("user_id", target_user_id)
+      .maybeSingle();
+
+    if (profileErr || !targetProfile) {
+      return new Response(
+        JSON.stringify({ error: "Invalid target user" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Filter out bots
     const ua = metadata?.ua || "";
     const isBot = /bot|google|baidu|bing|msn|teoma|slurp|yandex|crawl|spider/i.test(ua);
