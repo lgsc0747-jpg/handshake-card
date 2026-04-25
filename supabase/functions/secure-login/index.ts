@@ -10,11 +10,15 @@ const MAX_FAILED_ATTEMPTS = 5;
 const ATTEMPT_WINDOW_MINUTES = 10;
 const LOCKOUT_MINUTES = 15;
 
+// Cloudflare always-pass test keys — accepted only on dev/preview hosts.
+const CF_TEST_SITE_KEY = "1x00000000000000000000AA";
+const CF_TEST_SECRET_KEY = "1x0000000000000000000000000000000AA";
+
 interface LoginBody {
   email: string;
   password: string;
   captcha_token: string;
-  intent: "user" | "admin";
+  hostname?: string; // client-supplied window.location.hostname for env detection
 }
 
 function jsonResponse(body: unknown, status = 200) {
@@ -30,10 +34,37 @@ function getClientIp(req: Request): string {
   return req.headers.get("x-real-ip") ?? "unknown";
 }
 
-async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
-  const secret = Deno.env.get("TURNSTILE_SECRET_KEY");
+function detectEnvironment(hostname: string | undefined): "dev" | "preview" | "prod" {
+  const h = (hostname ?? "").toLowerCase();
+  if (!h || h === "localhost" || h === "127.0.0.1" || h.startsWith("192.168.")) return "dev";
+  if (h.endsWith(".lovable.app") || h.endsWith(".lovableproject.com")) return "preview";
+  return "prod";
+}
+
+async function getTurnstileSecret(
+  adminClient: ReturnType<typeof createClient>,
+  env: "dev" | "preview" | "prod",
+): Promise<string> {
+  // Prefer DB-managed config; fall back to env-var TURNSTILE_SECRET_KEY for prod.
+  const { data } = await adminClient
+    .from("turnstile_config")
+    .select("secret_key, enabled")
+    .eq("environment", env)
+    .maybeSingle();
+
+  if (data && (data as any).enabled && (data as any).secret_key) {
+    return (data as any).secret_key as string;
+  }
+
+  // Dev/preview always fall back to the test secret if nothing in DB.
+  if (env !== "prod") return CF_TEST_SECRET_KEY;
+
+  return Deno.env.get("TURNSTILE_SECRET_KEY") ?? "";
+}
+
+async function verifyTurnstile(token: string, ip: string, secret: string): Promise<boolean> {
   if (!secret) {
-    console.error("TURNSTILE_SECRET_KEY not configured");
+    console.error("Turnstile secret missing for environment");
     return false;
   }
   try {
@@ -46,6 +77,9 @@ async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
       { method: "POST", body: formData },
     );
     const data = await res.json();
+    if (!data.success) {
+      console.warn("Turnstile failed:", data["error-codes"]);
+    }
     return Boolean(data.success);
   } catch (err) {
     console.error("Turnstile verify error:", err);
@@ -63,7 +97,7 @@ Deno.serve(async (req) => {
     const email = (body.email ?? "").trim().toLowerCase();
     const password = body.password ?? "";
     const captchaToken = body.captcha_token ?? "";
-    const intent: "user" | "admin" = body.intent === "admin" ? "admin" : "user";
+    const hostname = body.hostname;
 
     if (!email || !password || !captchaToken) {
       return jsonResponse({ error: "Missing required fields" }, 400);
@@ -77,13 +111,21 @@ Deno.serve(async (req) => {
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const adminClient = createClient(supabaseUrl, serviceKey);
 
-    // 1. Verify Turnstile token
-    const captchaOk = await verifyTurnstile(captchaToken, ip);
+    // 1. Resolve env + Turnstile secret
+    const env = detectEnvironment(hostname);
+    const secret = await getTurnstileSecret(adminClient, env);
+
+    // 2. Verify Turnstile token
+    const captchaOk = await verifyTurnstile(captchaToken, ip, secret);
     if (!captchaOk) {
-      return jsonResponse({ error: "CAPTCHA verification failed" }, 400);
+      return jsonResponse({
+        error: "Security check failed. If you're on a preview link, this hostname may need to be whitelisted in Cloudflare Turnstile.",
+        code: "captcha_failed",
+        environment: env,
+      }, 400);
     }
 
-    // 2. Check lockout (by email)
+    // 3. Check lockout
     const { data: lockoutData } = await adminClient.rpc("check_login_lockout", {
       p_email: email,
       p_ip: ip,
@@ -99,13 +141,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 3. Attempt sign in via anon client
+    // 4. Attempt sign in via anon client
     const authClient = createClient(supabaseUrl, anonKey);
     const { data: authData, error: authError } =
       await authClient.auth.signInWithPassword({ email, password });
 
     if (authError || !authData?.session) {
-      // Log failed attempt
       await adminClient.from("login_attempts").insert({
         email,
         ip_address: ip,
@@ -113,7 +154,6 @@ Deno.serve(async (req) => {
         success: false,
       });
 
-      // Count failures in window for both email and IP
       const since = new Date(
         Date.now() - ATTEMPT_WINDOW_MINUTES * 60 * 1000,
       ).toISOString();
@@ -172,29 +212,19 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 4. Success path
+    // 5. Success path — detect role for client-side routing
     const userId = authData.user!.id;
 
-    // If admin intent, verify role
-    if (intent === "admin") {
-      const { data: roleRow } = await adminClient
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", userId)
-        .in("role", ["admin", "super_admin"])
-        .maybeSingle();
+    const { data: roleRows } = await adminClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
 
-      if (!roleRow) {
-        // Sign out and reject
-        await authClient.auth.admin?.signOut?.(authData.session.access_token).catch(() => {});
-        return jsonResponse(
-          { error: "This account does not have admin privileges." },
-          403,
-        );
-      }
-    }
+    const roles = (roleRows ?? []).map((r: any) => r.role as string);
+    const isAdmin = roles.includes("admin") || roles.includes("super_admin");
+    const isSuperAdmin = roles.includes("super_admin");
 
-    // Record successful login + clear any lingering lockout
+    // Record successful login + clear lingering lockout
     await adminClient.from("login_attempts").insert({
       email,
       ip_address: ip,
@@ -211,6 +241,11 @@ Deno.serve(async (req) => {
         expires_in: authData.session.expires_in,
         token_type: authData.session.token_type,
         user: authData.user,
+      },
+      roles: {
+        is_admin: isAdmin,
+        is_super_admin: isSuperAdmin,
+        default_destination: isAdmin ? "choose" : "user",
       },
     });
   } catch (err) {
