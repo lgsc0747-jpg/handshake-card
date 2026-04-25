@@ -28,6 +28,7 @@ import TermsPage from "./pages/TermsPage.tsx";
 import PrivacyPage from "./pages/PrivacyPage.tsx";
 import PlansPage from "./pages/PlansPage.tsx";
 import AdminPage from "./pages/AdminPage.tsx";
+import TurnstileSettingsPage from "./pages/TurnstileSettingsPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { CookieConsentBanner } from "@/components/CookieConsentBanner";
 import "@fontsource/space-grotesk/400.css";
@@ -64,6 +65,7 @@ const App = () => (
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
             <Route path="/plans" element={<ProtectedRoute><PlansPage /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
+            <Route path="/admin/turnstile" element={<ProtectedRoute><TurnstileSettingsPage /></ProtectedRoute>} />
             <Route path="/p/:username" element={<PublicProfilePage />} />
             <Route path="/p/:username/:personaSlug" element={<PublicProfilePage />} />
             <Route path="/u/:code" element={<ShortUrlRedirect />} />
