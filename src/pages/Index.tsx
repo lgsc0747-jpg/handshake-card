@@ -16,6 +16,7 @@ import { LeadGenTracker } from "@/components/dashboard/LeadGenTracker";
 import { TapVelocityChart } from "@/components/dashboard/TapVelocityChart";
 import { TimeframeSelector } from "@/components/dashboard/TimeframeSelector";
 import { SortableChartCard, resetChartSizes } from "@/components/dashboard/SortableChartCard";
+import { ChartVisibilityManager } from "@/components/dashboard/ChartVisibilityManager";
 
 import { ChartPaletteProvider, ChartPaletteSelector } from "@/components/dashboard/ChartPaletteSelector";
 import { ChartTitleWithInfo } from "@/components/dashboard/ChartTitleWithInfo";
@@ -48,6 +49,7 @@ const TIMEFRAME_LABELS: Record<string, string> = {
 
 /* ─── Chart card keys per tab ─── */
 type EngagementCard = "aiInsights" | "analytics" | "funnel" | "linkCTR" | "ctaClicks" | "liveFeed";
+type PersonaCard = "personaPie" | "personaBar";
 type TechnicalCard = "deviceType" | "browser" | "os" | "tapVelocity" | "heatmap" | "connections";
 type SecurityCard = "securityMetrics" | "handshake" | "leadGen";
 
@@ -55,13 +57,45 @@ const DEFAULT_ENGAGEMENT: EngagementCard[] = ["aiInsights", "analytics", "funnel
 const DEFAULT_TECHNICAL: TechnicalCard[] = ["deviceType", "browser", "os", "tapVelocity", "heatmap", "connections"];
 const DEFAULT_SECURITY: SecurityCard[] = ["securityMetrics", "handshake", "leadGen"];
 
+const ENGAGEMENT_LABELS: Record<EngagementCard, string> = {
+  aiInsights: "AI Insights",
+  analytics: "Analytics Trend",
+  funnel: "Conversion Funnel",
+  linkCTR: "Link CTR",
+  ctaClicks: "CTA Clicks",
+  liveFeed: "Live Feed",
+};
+const PERSONA_LABELS: Record<PersonaCard, string> = {
+  personaPie: "Persona Distribution",
+  personaBar: "Persona Performance",
+};
+const TECHNICAL_LABELS: Record<TechnicalCard, string> = {
+  deviceType: "Device Type",
+  browser: "Browser",
+  os: "Operating System",
+  tapVelocity: "Tap Velocity",
+  heatmap: "Activity Heatmap",
+  connections: "Connection Sources",
+};
+const SECURITY_LABELS: Record<SecurityCard, string> = {
+  securityMetrics: "Security Metrics",
+  handshake: "Digital Handshake",
+  leadGen: "Lead Gen Tracker",
+};
+
 const LS_ENG = "nfc_dash_engagement_order";
 const LS_TECH = "nfc_dash_technical_order";
 const LS_SEC = "nfc_dash_security_order";
+const LS_VIS = "nfc_dash_chart_visibility";
 
 function loadArr<T extends string>(key: string, def: T[]): T[] {
   try { const r = localStorage.getItem(key); if (r) return JSON.parse(r); } catch {}
   return def;
+}
+
+function loadVisibility(): Record<string, boolean> {
+  try { const r = localStorage.getItem(LS_VIS); if (r) return JSON.parse(r); } catch {}
+  return {};
 }
 
 const Dashboard = () => {
@@ -75,10 +109,15 @@ const Dashboard = () => {
   const [engOrder, setEngOrder] = useState<EngagementCard[]>(() => loadArr(LS_ENG, DEFAULT_ENGAGEMENT));
   const [techOrder, setTechOrder] = useState<TechnicalCard[]>(() => loadArr(LS_TECH, DEFAULT_TECHNICAL));
   const [secOrder, setSecOrder] = useState<SecurityCard[]>(() => loadArr(LS_SEC, DEFAULT_SECURITY));
+  const [visibility, setVisibility] = useState<Record<string, boolean>>(loadVisibility);
 
   useEffect(() => { localStorage.setItem(LS_ENG, JSON.stringify(engOrder)); }, [engOrder]);
   useEffect(() => { localStorage.setItem(LS_TECH, JSON.stringify(techOrder)); }, [techOrder]);
   useEffect(() => { localStorage.setItem(LS_SEC, JSON.stringify(secOrder)); }, [secOrder]);
+  useEffect(() => { localStorage.setItem(LS_VIS, JSON.stringify(visibility)); }, [visibility]);
+
+  const isVisible = (key: string) => visibility[key] ?? true;
+  const toggleVisibility = (key: string, v: boolean) => setVisibility((prev) => ({ ...prev, [key]: v }));
 
   const pointerSensor = useSensor(PointerSensor, { activationConstraint: { distance: 5 } });
   const touchSensor = useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } });
@@ -133,9 +172,11 @@ const Dashboard = () => {
     setEngOrder(DEFAULT_ENGAGEMENT);
     setTechOrder(DEFAULT_TECHNICAL);
     setSecOrder(DEFAULT_SECURITY);
+    setVisibility({});
     localStorage.removeItem(LS_ENG);
     localStorage.removeItem(LS_TECH);
     localStorage.removeItem(LS_SEC);
+    localStorage.removeItem(LS_VIS);
     resetChartSizes();
     window.location.reload();
   };
@@ -277,6 +318,16 @@ const Dashboard = () => {
           <div className="flex items-center gap-1.5 flex-wrap">
             <TimeframeSelector value={timeframe} onChange={setTimeframe} />
             <ChartPaletteSelector />
+            <ChartVisibilityManager
+              visibility={visibility}
+              onChange={toggleVisibility}
+              sections={[
+                { title: "Engagement", options: DEFAULT_ENGAGEMENT.map((k) => ({ key: k, label: ENGAGEMENT_LABELS[k] })) },
+                { title: "Personas", options: (Object.keys(PERSONA_LABELS) as PersonaCard[]).map((k) => ({ key: k, label: PERSONA_LABELS[k] })) },
+                { title: "Technical", options: DEFAULT_TECHNICAL.map((k) => ({ key: k, label: TECHNICAL_LABELS[k] })) },
+                { title: "Security", options: DEFAULT_SECURITY.map((k) => ({ key: k, label: SECURITY_LABELS[k] })) },
+              ]}
+            />
             <Button variant="ghost" size="sm" className="text-[10px] text-muted-foreground" onClick={resetAll} title="Reset layout & sizes">
               Reset
             </Button>
@@ -298,9 +349,9 @@ const Dashboard = () => {
 
           <TabsContent value="engagement" className="space-y-3">
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={makeDragHandler(setEngOrder)}>
-              <SortableContext items={engOrder} strategy={rectSortingStrategy}>
+              <SortableContext items={engOrder.filter(isVisible)} strategy={rectSortingStrategy}>
                 <div className="flex flex-wrap gap-3">
-                  {engOrder.map(k => <div key={k}>{engCards[k]}</div>)}
+                  {engOrder.filter(isVisible).map(k => <div key={k}>{engCards[k]}</div>)}
                 </div>
               </SortableContext>
             </DndContext>
@@ -309,14 +360,14 @@ const Dashboard = () => {
           <TabsContent value="personas" className="space-y-3">
             {isPro ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                <PersonaPieChart />
-                <PersonaBarChart data={stats.personaPerformance} />
+                {isVisible("personaPie") && <PersonaPieChart />}
+                {isVisible("personaBar") && <PersonaBarChart data={stats.personaPerformance} />}
               </div>
             ) : (
               <UpgradeOverlay feature="Persona Analytics" description="Upgrade to Pro to see detailed persona performance breakdowns.">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                  <PersonaPieChart />
-                  <PersonaBarChart data={stats.personaPerformance} />
+                  {isVisible("personaPie") && <PersonaPieChart />}
+                  {isVisible("personaBar") && <PersonaBarChart data={stats.personaPerformance} />}
                 </div>
               </UpgradeOverlay>
             )}
@@ -325,18 +376,18 @@ const Dashboard = () => {
           <TabsContent value="technical" className="space-y-3">
             {isPro ? (
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={makeDragHandler(setTechOrder)}>
-                <SortableContext items={techOrder} strategy={rectSortingStrategy}>
+                <SortableContext items={techOrder.filter(isVisible)} strategy={rectSortingStrategy}>
                   <div className="flex flex-wrap gap-3">
-                    {techOrder.map(k => <div key={k}>{techCards[k]}</div>)}
+                    {techOrder.filter(isVisible).map(k => <div key={k}>{techCards[k]}</div>)}
                   </div>
                 </SortableContext>
               </DndContext>
             ) : (
               <UpgradeOverlay feature="Technical Analytics" description="Upgrade to Pro for device, tap velocity, and heatmap insights.">
                 <div className="flex flex-wrap gap-3">
-                  <div className="flex-1 min-w-[280px]"><DeviceDonutChart data={stats.deviceBreakdown} title="Device Type" /></div>
-                  <div className="flex-1 min-w-[280px]"><DeviceDonutChart data={stats.browserBreakdown} title="Browser" /></div>
-                  <div className="flex-1 min-w-[280px]"><DeviceDonutChart data={stats.osBreakdown} title="Operating System" /></div>
+                  {isVisible("deviceType") && <div className="flex-1 min-w-[280px]"><DeviceDonutChart data={stats.deviceBreakdown} title="Device Type" /></div>}
+                  {isVisible("browser") && <div className="flex-1 min-w-[280px]"><DeviceDonutChart data={stats.browserBreakdown} title="Browser" /></div>}
+                  {isVisible("os") && <div className="flex-1 min-w-[280px]"><DeviceDonutChart data={stats.osBreakdown} title="Operating System" /></div>}
                 </div>
               </UpgradeOverlay>
             )}
@@ -344,9 +395,9 @@ const Dashboard = () => {
 
           <TabsContent value="security" className="space-y-3">
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={makeDragHandler(setSecOrder)}>
-              <SortableContext items={secOrder} strategy={rectSortingStrategy}>
+              <SortableContext items={secOrder.filter(isVisible)} strategy={rectSortingStrategy}>
                 <div className="flex flex-wrap gap-3">
-                  {secOrder.map(k => <div key={k}>{secCards[k]}</div>)}
+                  {secOrder.filter(isVisible).map(k => <div key={k}>{secCards[k]}</div>)}
                 </div>
               </SortableContext>
             </DndContext>
