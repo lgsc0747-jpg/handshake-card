@@ -295,14 +295,18 @@ export function useNfcData() {
     hasLoadedOnce.current = true;
   }, [user, timeframe]);
 
+  // Keep latest fetchData in a ref so the realtime subscription is stable across renders.
+  const fetchRef = useRef(fetchData);
+  useEffect(() => { fetchRef.current = fetchData; }, [fetchData]);
+
   useEffect(() => {
     if (!user) return;
     const channel = supabase
-      .channel('dashboard-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'interaction_logs', filter: `user_id=eq.${user.id}` }, () => { fetchData(); })
+      .channel(`dashboard-realtime-${user.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'interaction_logs', filter: `user_id=eq.${user.id}` }, () => { fetchRef.current(); })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [user, fetchData]);
+  }, [user]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
