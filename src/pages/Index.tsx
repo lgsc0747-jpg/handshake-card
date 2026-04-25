@@ -349,9 +349,9 @@ const Dashboard = () => {
 
           <TabsContent value="engagement" className="space-y-3">
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={makeDragHandler(setEngOrder)}>
-              <SortableContext items={engOrder} strategy={rectSortingStrategy}>
+              <SortableContext items={engOrder.filter(isVisible)} strategy={rectSortingStrategy}>
                 <div className="flex flex-wrap gap-3">
-                  {engOrder.map(k => <div key={k}>{engCards[k]}</div>)}
+                  {engOrder.filter(isVisible).map(k => <div key={k}>{engCards[k]}</div>)}
                 </div>
               </SortableContext>
             </DndContext>
@@ -360,14 +360,14 @@ const Dashboard = () => {
           <TabsContent value="personas" className="space-y-3">
             {isPro ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                <PersonaPieChart />
-                <PersonaBarChart data={stats.personaPerformance} />
+                {isVisible("personaPie") && <PersonaPieChart />}
+                {isVisible("personaBar") && <PersonaBarChart data={stats.personaPerformance} />}
               </div>
             ) : (
               <UpgradeOverlay feature="Persona Analytics" description="Upgrade to Pro to see detailed persona performance breakdowns.">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                  <PersonaPieChart />
-                  <PersonaBarChart data={stats.personaPerformance} />
+                  {isVisible("personaPie") && <PersonaPieChart />}
+                  {isVisible("personaBar") && <PersonaBarChart data={stats.personaPerformance} />}
                 </div>
               </UpgradeOverlay>
             )}
@@ -376,18 +376,18 @@ const Dashboard = () => {
           <TabsContent value="technical" className="space-y-3">
             {isPro ? (
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={makeDragHandler(setTechOrder)}>
-                <SortableContext items={techOrder} strategy={rectSortingStrategy}>
+                <SortableContext items={techOrder.filter(isVisible)} strategy={rectSortingStrategy}>
                   <div className="flex flex-wrap gap-3">
-                    {techOrder.map(k => <div key={k}>{techCards[k]}</div>)}
+                    {techOrder.filter(isVisible).map(k => <div key={k}>{techCards[k]}</div>)}
                   </div>
                 </SortableContext>
               </DndContext>
             ) : (
               <UpgradeOverlay feature="Technical Analytics" description="Upgrade to Pro for device, tap velocity, and heatmap insights.">
                 <div className="flex flex-wrap gap-3">
-                  <div className="flex-1 min-w-[280px]"><DeviceDonutChart data={stats.deviceBreakdown} title="Device Type" /></div>
-                  <div className="flex-1 min-w-[280px]"><DeviceDonutChart data={stats.browserBreakdown} title="Browser" /></div>
-                  <div className="flex-1 min-w-[280px]"><DeviceDonutChart data={stats.osBreakdown} title="Operating System" /></div>
+                  {isVisible("deviceType") && <div className="flex-1 min-w-[280px]"><DeviceDonutChart data={stats.deviceBreakdown} title="Device Type" /></div>}
+                  {isVisible("browser") && <div className="flex-1 min-w-[280px]"><DeviceDonutChart data={stats.browserBreakdown} title="Browser" /></div>}
+                  {isVisible("os") && <div className="flex-1 min-w-[280px]"><DeviceDonutChart data={stats.osBreakdown} title="Operating System" /></div>}
                 </div>
               </UpgradeOverlay>
             )}
@@ -395,9 +395,9 @@ const Dashboard = () => {
 
           <TabsContent value="security" className="space-y-3">
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={makeDragHandler(setSecOrder)}>
-              <SortableContext items={secOrder} strategy={rectSortingStrategy}>
+              <SortableContext items={secOrder.filter(isVisible)} strategy={rectSortingStrategy}>
                 <div className="flex flex-wrap gap-3">
-                  {secOrder.map(k => <div key={k}>{secCards[k]}</div>)}
+                  {secOrder.filter(isVisible).map(k => <div key={k}>{secCards[k]}</div>)}
                 </div>
               </SortableContext>
             </DndContext>
