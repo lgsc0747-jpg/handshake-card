@@ -4,6 +4,7 @@ import { CreditCard, LayoutDashboard, List, User, Wifi, LogOut, Tag, Smartphone,
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useIsSuperAdmin } from "@/hooks/useIsSuperAdmin";
 import { useSubscription } from "@/hooks/useSubscription";
 import {
   DndContext, closestCenter, PointerSensor, TouchSensor,
