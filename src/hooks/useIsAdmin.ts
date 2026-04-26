@@ -14,14 +14,14 @@ export function useIsAdmin() {
       return;
     }
 
+    setLoading(true);
     supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", user.id)
-      .eq("role", "admin")
-      .maybeSingle()
+      .in("role", ["admin", "super_admin"])
       .then(({ data }) => {
-        setIsAdmin(!!data);
+        setIsAdmin((data?.length ?? 0) > 0);
         setLoading(false);
       });
   }, [user]);
