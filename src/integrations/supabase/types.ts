@@ -691,6 +691,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_preferences: {
+        Row: {
+          notifications: Json
+          prefs: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          notifications?: Json
+          prefs?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          notifications?: Json
+          prefs?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
