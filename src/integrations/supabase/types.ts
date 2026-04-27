@@ -228,6 +228,7 @@ export type Database = {
           current_category_id: string | null
           id: string
           label: string | null
+          persona_id: string | null
           serial_number: string
           status: Database["public"]["Enums"]["card_status"]
           updated_at: string
@@ -238,6 +239,7 @@ export type Database = {
           current_category_id?: string | null
           id?: string
           label?: string | null
+          persona_id?: string | null
           serial_number: string
           status?: Database["public"]["Enums"]["card_status"]
           updated_at?: string
@@ -248,6 +250,7 @@ export type Database = {
           current_category_id?: string | null
           id?: string
           label?: string | null
+          persona_id?: string | null
           serial_number?: string
           status?: Database["public"]["Enums"]["card_status"]
           updated_at?: string
@@ -259,6 +262,13 @@ export type Database = {
             columns: ["current_category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nfc_cards_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
             referencedColumns: ["id"]
           },
         ]
@@ -575,6 +585,7 @@ export type Database = {
       }
       short_links: {
         Row: {
+          card_id: string | null
           code: string
           created_at: string
           id: string
@@ -582,6 +593,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          card_id?: string | null
           code: string
           created_at?: string
           id?: string
@@ -589,6 +601,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          card_id?: string | null
           code?: string
           created_at?: string
           id?: string
@@ -596,6 +609,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "short_links_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "nfc_cards"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "short_links_persona_id_fkey"
             columns: ["persona_id"]

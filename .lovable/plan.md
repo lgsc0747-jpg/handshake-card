@@ -1,133 +1,190 @@
+## Overview
 
-## 🔍 Honest Findings First
+Four bundled changes:
 
-I dug into the codebase before planning — here's what's actually happening today:
-
-### 1. Notifications — UI exists, but nothing is wired up
-- The Settings page exposes 4 toggles (Email Leads, Email Taps, In-App Leads, In-App Taps) and saves them to `localStorage` under `notification_prefs`.
-- **Nothing reads these preferences.** No code anywhere consults `notifPrefs`. Toggling them is purely cosmetic.
-- **No email infrastructure exists.** No `send-transactional-email` function, no email templates, no domain configured. Zero emails have ever been sent.
-- **No in-app toast/notification fires** when a lead arrives or a card is tapped — even though Realtime is already subscribed in `useNfcData`.
-
-### 2. Cookie banner "keeps asking"
-- The banner logic itself is correct — once `localStorage["cookie-consent"]` is set, it never shows again **in that browser, on that origin**.
-- It re-appears in three real cases: (a) different domains (`id-preview…lovable.app` vs `handshake-card.lovable.app` vs Vercel) each have their own localStorage, (b) private/incognito windows, (c) when "Delete All Cookie Data" is clicked in Settings (it clears `cookie-consent`, retriggering the banner on next route).
-- It does **not** actually delete any cookies — it only manages the user's stated *preferences*. There's no cookie-clearing logic, no analytics gating that reads the prefs.
-
-### 3. Configurations don't persist across sessions/devices
-This is the root issue and it's correct: **everything is in `localStorage`**. None of these are stored server-side:
-- `admin_theme` / `admin_color_mode` (theme)
-- `nfc_dash_engagement_order`, `nfc_dash_technical_order`, `nfc_dash_security_order`, `nfc_dash_chart_visibility` (dashboard layout)
-- `nfc_widget_order`, `nfc_widget_visibility` (KPI widgets)
-- `nfc_dash_chart_palette`, `nfc_dash_custom_colors` (chart colors)
-- `nfc_dash_chart_sizes` (resized chart cards)
-- `notification_prefs`
-- `nfc_sidebar_order_*` (sidebar drag-order)
-
-→ New browser, new device, incognito, or cleared cache = everything resets to defaults.
-
-### 4. Dashboard look is genuinely cluttered
-- 4 tabs (Engagement / Personas / Technical / Security) each render 3–6 chart cards in a tight grid.
-- The KPI strip on top can show up to 13 widgets in a 4-column grid → wraps awkwardly at 1280px.
-- Heavy `glass-card`, animate-fade-in everywhere, dense 10–12px text, three tiny header buttons (Charts, Palette, Reset, Export, Timeframe, Live badge) cramming the same row.
+1. Personal profile layout — fix margins and stop rendering the page-builder tab nav on personal-mode personas.
+2. NFC card registration — new 3-step flow (tap to read → label → register), with Web NFC auto-detect and a manual fallback.
+3. Replace the Categories system on cards with Personas — many cards can share one persona, and many personas can coexist across distributed cards. Each tap resolves to its card's pinned persona and is recorded in interaction logs.
+4. Email signup verification — re-enable email confirmation and add a 6-digit PIN code step (via Lovable auth email templates so the email is branded, not the default Lovable template).
 
 ---
 
-## 🎯 The Plan
+## 1. Personal profile margins + remove tabs
 
-### Part A — Sync user settings to the cloud (the foundation)
+**File:** `src/pages/PublicProfilePage.tsx`
 
-Create a single `user_preferences` table keyed on `user_id` storing one JSONB blob. Add a tiny `usePreferences()` hook that:
-- Loads on login (with localStorage as instant cache to avoid flash).
-- Auto-saves with a 600 ms debounce on every change.
-- Migrates existing `localStorage` keys into the cloud on first load (no user action needed).
+- The `PublicPageNav` (pill-tab strip) currently renders whenever `hasPageBuilder && sitePages.length > 1`, even when `persona.page_mode === 'personal'`. Gate it on `persona?.page_mode === 'builder'` so personal mode never shows tabs.
+- Personal sections render inside `max-w-lg mx-auto px-4 py-8`, but the NFC card section is full-bleed `min-h-screen`. The chained sections after the card stack vertically with no top margin and the bottom branding sits flush against the last card. Fix:
+  - Add consistent vertical rhythm: `py-10 md:py-14` for non-card sections.
+  - Add safe-area-aware bottom padding on the outer container (`pb-[max(2rem,env(safe-area-inset-bottom))]`) so the floating Contact Me button does not overlap content on iOS.
+  - Center the hero section content with `pt-10` so it does not butt against the top edge when the tab nav is hidden.
 
-Migrate every key listed in §3 above to read/write through this hook. Result: **change theme on phone → reflected on laptop next login.**
+**File:** `src/components/page-builder/PublicPageNav.tsx` — no change; just stop calling it from personal mode.
 
-```sql
-create table public.user_preferences (
-  user_id uuid primary key references auth.users(id) on delete cascade,
-  prefs jsonb not null default '{}'::jsonb,
-  updated_at timestamptz not null default now()
-);
--- RLS: owner-only select/insert/update
+---
+
+## 2. NFC card registration redesign
+
+**File:** `src/pages/CardsPage.tsx` (overhaul the "Register Card" dialog)
+
+Replace the current single-step dialog with a 3-step wizard:
+
+```text
+Step 1  Read card     [📡 Hold card to phone]   ── auto-fills serial
+        └─ Manual fallback: "Type serial number" link
+Step 2  Name & label  Card name • Pick persona ▾
+Step 3  Confirm       [✓ Register card]
 ```
 
-### Part B — Real notifications (in-app + email)
+**Step 1 — Read card:**
 
-**B1 — In-app toasts (works immediately, no setup):**
-- Subscribe to `lead_captures` + `interaction_logs` realtime in a new `<NotificationListener />` mounted at the app root.
-- Fire a sonner toast when (a) a new lead arrives and `inAppLeads` is on, or (b) a tap happens and `inAppTaps` is on (throttled to 1/min so high-traffic days don't spam).
-- Add a bell icon in the header showing an unread count + a dropdown with the last 20 notifications, persisted in `user_preferences.notifications`.
+- Detect Web NFC support: `'NDEFReader' in window`.
+- If supported (Android Chrome): show a "Tap card now" panel with a pulsing animation. Call `new NDEFReader().scan()` → on `reading` event, extract `serialNumber` and advance to step 2.
+- If unsupported (iOS, desktop): show a clean fallback: "Your browser can't read NFC. Type the serial printed on the card." with an input field.
+- Errors (permission denied, scan aborted) surface a retry button and a link to manual entry.
 
-**B2 — Email notifications (requires email infra):**
-- Set up Lovable's built-in email infrastructure (domain → infra → transactional templates).
-- Create two React Email templates: `new-lead.tsx` and `tap-digest.tsx`.
-- Trigger via a small `notify-user` edge function that runs on a database trigger:
-  - Lead inserted → send `new-lead` immediately (if `emailLeads`).
-  - Taps → batch into a daily digest at 9am user-local time (if `emailTaps`) — avoids hammering the inbox per tap.
-- Each email includes a working unsubscribe link.
+**Step 2 — Name & label:**
 
-> **Note**: Email sending requires a verified email domain. I'll prompt you to set one up when we hit that step. In-app notifications work without it.
+- Inputs: card label (free text) + persona dropdown (lists all the user's personas, with their accent color dot).
+- The persona dropdown is required — no "active persona" option. This is the key behavioral change.
 
-### Part C — Cookie banner clarity
+**Step 3 — Register:**
 
-- Stop "Delete All Cookie Data" from instantly retriggering the banner — keep `essential` recorded as accepted so the banner stays dismissed (only re-prompts if the user explicitly clicks a new "Reset privacy choices" button).
-- Actually **honor** the analytics/functional toggles: gate localStorage writes for non-essential keys on `getCookiePrefs().functional`, and gate any future analytics calls on `.analytics`.
-- Add a one-line note in the banner: "Settings sync to your account once you're logged in" — explains why a new browser shows it again.
-- Move the cookie consent record into `user_preferences` once the user logs in, so it follows them across browsers.
+- Insert into `nfc_cards` with `serial_number`, `label`, and a new `persona_id` column.
+- On success, close wizard and toast "Card registered."
 
-### Part D — Dashboard visual refresh
+**Card list view (existing cards on the same page):**
 
-Goal: less clutter, better hierarchy, more breathing room. Concretely:
+- Replace the Category dropdown on each card with a Persona dropdown.
+- Show the assigned persona's accent color as a small dot + name on the card.
+- Keep the existing edit / delete / status switch.
 
-1. **Header redesign** — collapse the toolbar into a sticky two-row mini-header:
-   - Row 1: Page title + greeting + Live badge.
-   - Row 2: Timeframe + a single overflow `…` menu containing Charts, Palette, Export, Reset.
-2. **KPI strip** — switch from "13 widgets in a 4-col grid" to a horizontal scroll-snap rail on mobile and a 3-tier hierarchy on desktop (3 hero cards + smaller "more metrics" expandable panel). Reduces visual weight by ~60%.
-3. **Tabs → segmented pill nav** with icons (Engagement / Personas / Technical / Security), sticky under the header.
-4. **Cards** — reduce `glass-card` opacity, increase padding from `p-4` → `p-5`, raise body text from 12px → 13px, add real section dividers.
-5. **Spacing scale** — adopt consistent 8/16/24/32 spacing rhythm; remove the current mix of `gap-3`, `gap-4`, `space-y-6`, `space-y-4` happening in the same view.
-6. **Empty/zero states** — replace "0" / "—" stat cards with friendly hint copy ("No taps yet — share your link!").
-7. Keep the iOS aesthetic + drag-to-reorder + resize — only the chrome changes, not the underlying widgets.
+**File:** `src/pages/CategoriesPage.tsx`, `src/components/AppSidebar.tsx`
 
-### Part E — Acceptance checks
-
-After implementation I'll verify:
-- Toggle theme on one browser → log into a different browser → theme matches.
-- Submit a lead via public profile → toast appears in dashboard within 2s.
-- Settings page shows "Synced ✓" indicator after each change.
-- Cookie banner appears once per account (not per browser) once logged in.
-- Dashboard at 1280px no longer has wrapping/cramped header buttons.
+- Remove the Categories nav entry from `DEFAULT_NFC` and from `ICON_MAP`.
+- Keep `CategoriesPage.tsx` as a stub that redirects to `/cards`, OR delete the route in `App.tsx`. I'll delete the route and remove the file to keep the sidebar clean.
 
 ---
 
-## 📦 What I'll touch
+## 3. Card → Persona linking + interaction logs
 
-**New:**
-- `supabase/migrations/…_user_preferences.sql`
-- `src/hooks/usePreferences.ts`
-- `src/components/NotificationListener.tsx`
-- `src/components/NotificationBell.tsx`
-- `supabase/functions/notify-user/index.ts`
-- `supabase/functions/_shared/transactional-email-templates/new-lead.tsx`
-- `supabase/functions/_shared/transactional-email-templates/tap-digest.tsx`
+**Database migration:**
 
-**Refactored:**
-- `src/contexts/DashboardThemeContext.tsx` (cloud-synced)
-- `src/pages/Index.tsx` (cloud-synced + visual refresh)
-- `src/pages/SettingsPage.tsx` (cloud-synced + "Synced ✓" indicators)
-- `src/components/CookieConsentBanner.tsx` (cloud sync once logged in, real gating)
-- `src/components/AppSidebar.tsx`, `WidgetManager.tsx`, `SortableChartCard.tsx`, `ChartPaletteSelector.tsx` (read/write via `usePreferences`)
-- `src/components/DashboardLayout.tsx` (header redesign)
+```sql
+-- 1. Add persona link to nfc_cards
+alter table public.nfc_cards
+  add column persona_id uuid references public.personas(id) on delete set null;
 
-**Memory updates:**
-- New `mem://features/cloud-synced-preferences`
-- New `mem://features/notification-system`
-- Update `mem://features/settings-management`
+create index nfc_cards_persona_id_idx on public.nfc_cards(persona_id);
+
+-- 2. Backfill: any card with current_category_id stays as-is (column kept for now);
+--    new cards will use persona_id only. We'll deprecate current_category_id in code.
+```
+
+Note: we keep `categories` and `nfc_cards.current_category_id` columns in the DB to avoid breaking historical interaction logs, but remove all UI surface area.
+
+**Tap resolution flow (no schema change to short_links needed):**
+
+The Web-NFC-tap or QR-scan hits `/u/:code`, which calls `resolve-short-link`. Since cards can each pin a different persona, the short link must encode which card / persona to resolve to. Two options:
+
+- **Option A (chosen, simpler):** generate one short link per card. `short_links` already has `persona_id` — we just always set it on insert. The user no longer needs to manage a single account-wide short link.
+- The "NFC Manager" page becomes per-card: when you register a card, we auto-create a `short_links` row with that card's `persona_id` and surface the link + QR for that specific card.
+
+**Edge function:** `supabase/functions/resolve-short-link/index.ts`
+
+- Already reads `persona_id` off the short link — no change needed.
+- After resolving, also identify the `nfc_cards.id` for that short link (lookup by `persona_id` + `user_id`, or store `card_id` directly on `short_links` via a new column for accuracy):
+  ```sql
+  alter table public.short_links
+    add column card_id uuid references public.nfc_cards(id) on delete cascade;
+  create index short_links_card_id_idx on public.short_links(card_id);
+  ```
+- Return `card_id` in the resolve response so the client can pass it into `log-interaction`.
+
+**Edge function:** `supabase/functions/log-interaction/index.ts`
+
+- Accept an optional `card_id` and `card_serial` in the body.
+- Validate the card belongs to `target_user_id`.
+- Insert into `interaction_logs.card_id` and `card_serial` (columns already exist).
+
+**Client:**
+
+- `ShortUrlRedirect.tsx` passes the resolved `card_id` to the public profile page (via state or query param).
+- `PublicProfilePage.tsx` includes `card_id` in the initial `profile_view` log payload.
+
+This achieves the goal: each tap is recorded with the exact card used + the persona it served.
+
+**File:** `src/pages/NfcManagerPage.tsx`
+
+- Convert from "one link for the whole account" to "one section per registered card."
+- Each card section shows its persona, its short link, its QR, and its NDEF write guide.
+- The Page Mode toggle (Personal / Page Builder) moves to the persona-level (already set on personas table) — surface it in `PersonasPage.tsx` instead of here.
 
 ---
 
-## ❓ Two quick decisions before I build
+## 4. Email signup verification with 6-digit PIN
 
-If you have a preference, tell me — otherwise I'll go with the recommended defaults.
+**Goal:** Email confirmation comes through with branded copy ("Handshake," not "Lovable preview"). The user enters a 6-digit code on the signup page rather than clicking a magic link — this avoids the cross-origin Vercel/Lovable redirect issue.
+
+**Approach:** Use Supabase's built-in OTP signup flow + Lovable Auth Email Templates.
+
+**Setup orchestration (handled by the agent during implementation):**
+
+1. Check email domain status. If no domain is configured, show the email setup dialog.
+2. Once a domain exists, scaffold Lovable Auth Email Templates (`signup`, `recovery`, `magic-link`).
+3. Apply Handshake brand styling to the templates: slate/teal palette from `index.css`, white email body background, "Handshake" wordmark, SF Pro/Inter font stack.
+4. Update the signup template to display `{{ .Token }}` (the 6-digit OTP) prominently — **do not** include the magic link.
+5. Deploy `auth-email-hook`.
+
+**Supabase auth config:**
+
+- Disable auto-confirm so emails are required.
+- Keep the email signup OTP enabled (default).
+
+**File:** `src/pages/SignupPage.tsx`
+
+- After `supabase.auth.signUp` succeeds, do **not** show the "check your email for a link" toast. Instead push the user into a new `EmailVerifyStep` view (same page, `useState` step machine).
+- Show 6 OTP slots using the existing `InputOTP` component.
+- On 6 digits entered, call:
+  ```ts
+  await supabase.auth.verifyOtp({ email, token, type: 'signup' });
+  ```
+- On success: navigate to `/`. On failure: show error + "Resend code" button that calls `supabase.auth.resend({ type: 'signup', email })`.
+
+**File:** `src/pages/LoginPage.tsx` — no change. Login still uses password + Turnstile CAPTCHA per the previous secure-login flow. (User answer confirmed the PIN is for signup confirmation only.)
+
+---
+
+## Files touched
+
+**Database migrations:**
+- Add `nfc_cards.persona_id` column + index.
+- Add `short_links.card_id` column + index.
+
+**Frontend:**
+- `src/pages/PublicProfilePage.tsx` — gate tab nav on builder mode, fix section margins.
+- `src/pages/CardsPage.tsx` — full rewrite of registration dialog (3-step wizard), swap Category dropdown for Persona dropdown.
+- `src/pages/CategoriesPage.tsx` — delete file.
+- `src/pages/NfcManagerPage.tsx` — restructure to per-card sections.
+- `src/components/AppSidebar.tsx` — remove Categories nav item.
+- `src/App.tsx` — remove `/categories` route.
+- `src/pages/SignupPage.tsx` — add OTP verification step using `InputOTP`.
+- `src/pages/ShortUrlRedirect.tsx` — pass `card_id` through to public profile.
+
+**Edge functions:**
+- `supabase/functions/resolve-short-link/index.ts` — return `card_id`.
+- `supabase/functions/log-interaction/index.ts` — accept and store `card_id` / `card_serial`.
+- `supabase/functions/auth-email-hook/*` — scaffolded by Lovable, then branded.
+
+**Lib:**
+- New `src/lib/webNfc.ts` — wraps `NDEFReader` with feature detection + retries.
+
+---
+
+## Memory updates after implementation
+
+- Update `mem://features/nfc-state-management` — categories replaced by direct persona linking on each card.
+- Update `mem://features/categories-management` — mark as removed.
+- Update `mem://architecture/short-url-redirection` — short links now per-card with `card_id`.
+- New `mem://features/email-otp-verification` — signup uses 6-digit OTP via Lovable branded auth email templates.
+- New `mem://features/nfc-tap-registration` — Web NFC `NDEFReader` with manual fallback.
