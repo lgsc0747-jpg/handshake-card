@@ -713,7 +713,7 @@ const PublicProfilePage = () => {
       {googleFontUrl && <link rel="stylesheet" href={googleFontUrl} />}
       <div
         ref={containerRef}
-        className={cn("relative", hasPageTheme && PAGE_THEME_CLASS)}
+        className={cn("relative pb-[max(2rem,env(safe-area-inset-bottom))]", hasPageTheme && PAGE_THEME_CLASS)}
         style={{
           backgroundColor: hasPageTheme ? (pageThemeStyles as any)["--page-bg"] || landingBgColor : landingBgColor,
           fontFamily: hasPageTheme ? (pageThemeStyles as any)["--page-font"] || fontStack : fontStack,
@@ -721,8 +721,8 @@ const PublicProfilePage = () => {
           ...pageThemeStyles,
         }}
       >
-        {/* Multi-page navigation */}
-        {hasPageBuilder && sitePages.length > 1 && activePageId && (
+        {/* Multi-page navigation — only in Page Builder mode */}
+        {persona?.page_mode === 'builder' && hasPageBuilder && sitePages.length > 1 && activePageId && (
           <PublicPageNav
             pages={sitePages}
             activePageId={activePageId}
@@ -762,9 +762,10 @@ const PublicProfilePage = () => {
               return <div key={section.section_type}>{renderer()}</div>;
             }
 
+            const isHero = section.section_type === "hero";
             return (
               <section key={section.section_type} className="relative z-10" style={{ backgroundColor: landingBgColor }}>
-                <div className="max-w-lg mx-auto px-4 py-8">
+                <div className={cn("max-w-lg mx-auto px-5", isHero ? "pt-12 pb-10 md:pt-16 md:pb-14" : "py-10 md:py-14")}>
                   {renderer()}
                 </div>
               </section>
