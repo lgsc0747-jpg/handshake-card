@@ -300,12 +300,15 @@ const Dashboard = () => {
   return (
     <ChartPaletteProvider>
     <DashboardLayout>
-      <div className="space-y-4">
-        {/* Header — tighter on mobile */}
-        <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className="space-y-5">
+        {/* Header — gradient title + glass action bar */}
+        <div className="rounded-2xl glass-card border border-border/40 px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-lg sm:text-2xl font-display font-bold">Dashboard</h1>
-            <p className="text-[10px] sm:text-sm text-muted-foreground mt-0.5">
+            <h1 className="text-xl sm:text-3xl font-display font-bold bg-gradient-to-r from-primary via-primary to-primary/60 bg-clip-text text-transparent">
+              Dashboard
+            </h1>
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
               {TIMEFRAME_LABELS[timeframe]}
             </p>
           </div>
@@ -334,11 +337,11 @@ const Dashboard = () => {
 
         {/* Tabs */}
         <Tabs defaultValue="engagement" className="space-y-3">
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
-            <TabsTrigger value="engagement" className="text-[10px] sm:text-xs">Engagement</TabsTrigger>
-            <TabsTrigger value="personas" className="text-[10px] sm:text-xs">Personas</TabsTrigger>
-            <TabsTrigger value="technical" className="text-[10px] sm:text-xs">Technical</TabsTrigger>
-            <TabsTrigger value="security" className="text-[10px] sm:text-xs">Security</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid bg-muted/30 backdrop-blur-md border border-border/40 rounded-xl p-1">
+            <TabsTrigger value="engagement" className="text-[10px] sm:text-xs rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">Engagement</TabsTrigger>
+            <TabsTrigger value="personas" className="text-[10px] sm:text-xs rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">Personas</TabsTrigger>
+            <TabsTrigger value="technical" className="text-[10px] sm:text-xs rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">Technical</TabsTrigger>
+            <TabsTrigger value="security" className="text-[10px] sm:text-xs rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">Security</TabsTrigger>
           </TabsList>
 
           <TabsContent value="engagement" className="space-y-3">
