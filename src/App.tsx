@@ -32,6 +32,7 @@ import PlansPage from "./pages/PlansPage.tsx";
 import AdminPage from "./pages/AdminPage.tsx";
 import TurnstileSettingsPage from "./pages/TurnstileSettingsPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import UnsubscribePage from "./pages/UnsubscribePage.tsx";
 import { CookieConsentBanner } from "@/components/CookieConsentBanner";
 import "@fontsource/space-grotesk/400.css";
 import "@fontsource/space-grotesk/500.css";
@@ -75,6 +76,7 @@ const App = () => (
             <Route path="/u/:code" element={<ShortUrlRedirect />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/unsubscribe" element={<UnsubscribePage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           </DashboardThemeProvider>
