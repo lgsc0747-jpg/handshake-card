@@ -39,6 +39,20 @@ const ResetPasswordPage = () => {
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
+      // Stamp the rotation timestamp so the 90-day prompt resets cleanly
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: existing } = await supabase
+          .from("user_preferences")
+          .select("prefs")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        const prevPrefs = (existing?.prefs as Record<string, unknown> | null) ?? {};
+        await supabase.from("user_preferences").upsert(
+          { user_id: user.id, prefs: { ...prevPrefs, passwordChangedAt: new Date().toISOString(), passwordRotationSnoozedAt: undefined } as any },
+          { onConflict: "user_id" },
+        );
+      }
       toast({ title: "Password updated", description: "You can now sign in with your new password." });
       navigate("/");
     }
