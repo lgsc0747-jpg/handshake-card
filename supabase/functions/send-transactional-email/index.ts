@@ -60,6 +60,7 @@ Deno.serve(async (req) => {
   let idempotencyKey: string
   let messageId: string
   let templateData: Record<string, any> = {}
+  let ownerUserId: string | null = null
   try {
     const body = await req.json()
     templateName = body.templateName || body.template_name
@@ -69,6 +70,7 @@ Deno.serve(async (req) => {
     if (body.templateData && typeof body.templateData === 'object') {
       templateData = body.templateData
     }
+    if (typeof body.ownerUserId === 'string') ownerUserId = body.ownerUserId
   } catch {
     return new Response(
       JSON.stringify({ error: 'Invalid JSON in request body' }),
@@ -77,6 +79,32 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     )
+  }
+
+  // Resolve owner email + check notification preferences when ownerUserId is provided.
+  // Allows unauthenticated callers (e.g. visitors capturing a lead) to trigger
+  // an owner-bound notification without ever knowing the owner's email address.
+  if (ownerUserId) {
+    const tmpClient = createClient(supabaseUrl, supabaseServiceKey)
+    const { data: prefRow } = await tmpClient
+      .from('user_preferences')
+      .select('prefs')
+      .eq('user_id', ownerUserId)
+      .maybeSingle()
+    const prefs = (prefRow?.prefs ?? {}) as any
+    const optOut =
+      (templateName === 'new-lead' && prefs?.notifPrefs?.emailLeads === false) ||
+      (templateName === 'daily-tap-digest' && prefs?.notifPrefs?.emailTaps !== true)
+    if (optOut) {
+      return new Response(
+        JSON.stringify({ skipped: true, reason: 'owner_opted_out' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
+    if (!recipientEmail || recipientEmail === 'owner@auto') {
+      const { data: userResp } = await tmpClient.auth.admin.getUserById(ownerUserId)
+      if (userResp?.user?.email) recipientEmail = userResp.user.email
+    }
   }
 
   if (!templateName) {
