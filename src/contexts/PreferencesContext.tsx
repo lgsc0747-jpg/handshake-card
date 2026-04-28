@@ -73,6 +73,12 @@ export interface PrefsBlob {
 
   // Cookies
   cookiePrefs?: CookiePrefsBlob;
+
+  // Security
+  /** ISO timestamp of the last password change. Used for the 90-day rotation prompt. */
+  passwordChangedAt?: string;
+  /** ISO timestamp of when the user last dismissed the rotation prompt. 7-day snooze. */
+  passwordRotationSnoozedAt?: string;
 }
 
 const LS_CACHE_KEY = "user_prefs_cache_v1";
