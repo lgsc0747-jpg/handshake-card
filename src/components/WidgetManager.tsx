@@ -12,6 +12,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { StatCard } from "@/components/StatCard";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { usePreferences } from "@/contexts/PreferencesContext";
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger,
 } from "@/components/ui/sheet";
@@ -64,24 +65,7 @@ const DEFAULT_VISIBILITY: Record<WidgetKey, boolean> = {
   avgDwellTime: true, authSuccessRate: false,
 };
 
-const STORAGE_KEY_ORDER = "nfc_widget_order";
-const STORAGE_KEY_VIS = "nfc_widget_visibility";
-
-function loadOrder(): WidgetKey[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY_ORDER);
-    if (raw) return JSON.parse(raw);
-  } catch {}
-  return DEFAULT_ORDER;
-}
-
-function loadVisibility(): Record<WidgetKey, boolean> {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY_VIS);
-    if (raw) return JSON.parse(raw);
-  } catch {}
-  return DEFAULT_VISIBILITY;
-}
+// Legacy localStorage keys retained only for first-run migration in PreferencesContext.
 
 function SortableWidget({ id, title, value, icon }: {
   id: string; title: string; value: string; icon: React.ReactNode;
