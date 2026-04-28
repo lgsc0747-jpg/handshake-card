@@ -40,7 +40,7 @@ export function ContactMeModal({
     }
     setSubmitting(true);
 
-    const { error } = await (supabase.rpc as any)("insert_lead_capture", {
+    const { data: leadId, error } = await (supabase.rpc as any)("insert_lead_capture", {
       p_owner_user_id: ownerUserId,
       p_persona_id: personaId,
       p_visitor_name: contact.name || null,
@@ -50,6 +50,26 @@ export function ContactMeModal({
       p_visitor_message: contact.message || null,
       p_metadata: { ua: navigator.userAgent, source: "contact_me_button" },
     });
+
+    if (!error) {
+      supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "new-lead",
+          recipientEmail: "owner@auto",
+          ownerUserId,
+          idempotencyKey: `new-lead-${leadId ?? `${personaId}-${Date.now()}`}`,
+          templateData: {
+            personaLabel: ownerName,
+            visitorName: contact.name || null,
+            visitorEmail: contact.email,
+            visitorPhone: contact.phone || null,
+            visitorCompany: contact.company || null,
+            visitorMessage: contact.message || null,
+            dashboardUrl: `${window.location.origin}/leads`,
+          },
+        },
+      }).catch(() => {});
+    }
 
     if (error) {
       toast({ title: "Error", description: "Could not send your info. Try again.", variant: "destructive" });
