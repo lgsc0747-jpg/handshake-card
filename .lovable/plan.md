@@ -1,190 +1,247 @@
-## Overview
+# Framer-Style Page Builder — Phased Rebuild Plan
 
-Four bundled changes:
-
-1. Personal profile layout — fix margins and stop rendering the page-builder tab nav on personal-mode personas.
-2. NFC card registration — new 3-step flow (tap to read → label → register), with Web NFC auto-detect and a manual fallback.
-3. Replace the Categories system on cards with Personas — many cards can share one persona, and many personas can coexist across distributed cards. Each tap resolves to its card's pinned persona and is recorded in interaction logs.
-4. Email signup verification — re-enable email confirmation and add a 6-digit PIN code step (via Lovable auth email templates so the email is branded, not the default Lovable template).
+> Target: rebuild the Page Builder as a free-form Framer-like canvas while keeping
+> all data in the existing Supabase project. Estimated 4–6 weeks across 5 phases.
+> Ship behind a `prefs.flagFramerBuilder` feature flag so the legacy block-based
+> editor stays available during rollout.
 
 ---
 
-## 1. Personal profile margins + remove tabs
+## Phase 0 — Foundation (week 1)
 
-**File:** `src/pages/PublicProfilePage.tsx`
+**Goal:** new schema + minimal canvas shell, no editing tools yet.
 
-- The `PublicPageNav` (pill-tab strip) currently renders whenever `hasPageBuilder && sitePages.length > 1`, even when `persona.page_mode === 'personal'`. Gate it on `persona?.page_mode === 'builder'` so personal mode never shows tabs.
-- Personal sections render inside `max-w-lg mx-auto px-4 py-8`, but the NFC card section is full-bleed `min-h-screen`. The chained sections after the card stack vertically with no top margin and the bottom branding sits flush against the last card. Fix:
-  - Add consistent vertical rhythm: `py-10 md:py-14` for non-card sections.
-  - Add safe-area-aware bottom padding on the outer container (`pb-[max(2rem,env(safe-area-inset-bottom))]`) so the floating Contact Me button does not overlap content on iOS.
-  - Center the hero section content with `pt-10` so it does not butt against the top edge when the tab nav is hidden.
-
-**File:** `src/components/page-builder/PublicPageNav.tsx` — no change; just stop calling it from personal mode.
-
----
-
-## 2. NFC card registration redesign
-
-**File:** `src/pages/CardsPage.tsx` (overhaul the "Register Card" dialog)
-
-Replace the current single-step dialog with a 3-step wizard:
-
-```text
-Step 1  Read card     [📡 Hold card to phone]   ── auto-fills serial
-        └─ Manual fallback: "Type serial number" link
-Step 2  Name & label  Card name • Pick persona ▾
-Step 3  Confirm       [✓ Register card]
-```
-
-**Step 1 — Read card:**
-
-- Detect Web NFC support: `'NDEFReader' in window`.
-- If supported (Android Chrome): show a "Tap card now" panel with a pulsing animation. Call `new NDEFReader().scan()` → on `reading` event, extract `serialNumber` and advance to step 2.
-- If unsupported (iOS, desktop): show a clean fallback: "Your browser can't read NFC. Type the serial printed on the card." with an input field.
-- Errors (permission denied, scan aborted) surface a retry button and a link to manual entry.
-
-**Step 2 — Name & label:**
-
-- Inputs: card label (free text) + persona dropdown (lists all the user's personas, with their accent color dot).
-- The persona dropdown is required — no "active persona" option. This is the key behavioral change.
-
-**Step 3 — Register:**
-
-- Insert into `nfc_cards` with `serial_number`, `label`, and a new `persona_id` column.
-- On success, close wizard and toast "Card registered."
-
-**Card list view (existing cards on the same page):**
-
-- Replace the Category dropdown on each card with a Persona dropdown.
-- Show the assigned persona's accent color as a small dot + name on the card.
-- Keep the existing edit / delete / status switch.
-
-**File:** `src/pages/CategoriesPage.tsx`, `src/components/AppSidebar.tsx`
-
-- Remove the Categories nav entry from `DEFAULT_NFC` and from `ICON_MAP`.
-- Keep `CategoriesPage.tsx` as a stub that redirects to `/cards`, OR delete the route in `App.tsx`. I'll delete the route and remove the file to keep the sidebar clean.
-
----
-
-## 3. Card → Persona linking + interaction logs
-
-**Database migration:**
+### Database
 
 ```sql
--- 1. Add persona link to nfc_cards
-alter table public.nfc_cards
-  add column persona_id uuid references public.personas(id) on delete set null;
+-- Each "frame" is a free-form artboard (== a page in classic terms).
+create table public.canvas_frames (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null,
+  persona_id uuid not null,
+  name text not null default 'Untitled',
+  slug text not null default 'untitled',
+  is_homepage boolean not null default false,
+  is_visible boolean not null default true,
+  -- Canvas dimensions per breakpoint
+  breakpoints jsonb not null default
+    '{"desktop":{"w":1200,"h":2000},"tablet":{"w":768,"h":2000},"mobile":{"w":390,"h":2000}}',
+  -- Global frame styles (bg color, fonts loaded, scroll behavior)
+  styles jsonb not null default '{}',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
 
-create index nfc_cards_persona_id_idx on public.nfc_cards(persona_id);
+-- Each node = one positioned element on the canvas. Tree via parent_id.
+create table public.canvas_nodes (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null,
+  frame_id uuid not null references public.canvas_frames(id) on delete cascade,
+  parent_id uuid references public.canvas_nodes(id) on delete cascade,
+  -- Element type discriminator: text, image, shape, frame, button, video,
+  -- form, gallery, embed, persona-card, vcard-button, link, lottie, code
+  node_type text not null,
+  -- Free-form positioning per breakpoint:
+  --   { desktop: {x,y,w,h,rotate,opacity,zIndex,layout:'absolute'|'flex'},
+  --     tablet:  {...overrides...},
+  --     mobile:  {...overrides...} }
+  layout jsonb not null default '{}',
+  -- Visual styles per breakpoint (color, bg, blur, shadow, gradient, border)
+  styles jsonb not null default '{}',
+  -- Type-specific props (text content, image src, button href, etc.)
+  props jsonb not null default '{}',
+  -- Interaction states & animations: hover/press/scroll/intersect triggers
+  interactions jsonb not null default '[]',
+  sort_order integer not null default 0,
+  is_locked boolean not null default false,
+  is_visible boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
 
--- 2. Backfill: any card with current_category_id stays as-is (column kept for now);
---    new cards will use persona_id only. We'll deprecate current_category_id in code.
+create index canvas_nodes_frame_idx on public.canvas_nodes(frame_id, sort_order);
+create index canvas_nodes_parent_idx on public.canvas_nodes(parent_id);
+create index canvas_frames_persona_idx on public.canvas_frames(persona_id);
+
+-- RLS: owners full access; public read for visible frames/nodes of active personas
+alter table public.canvas_frames enable row level security;
+alter table public.canvas_nodes enable row level security;
+
+create policy "Owners manage frames" on public.canvas_frames
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create policy "Public read visible frames of active personas" on public.canvas_frames
+  for select using (is_visible and exists (
+    select 1 from public.personas p
+    where p.id = canvas_frames.persona_id and p.is_active = true and p.is_private = false
+  ));
+
+create policy "Owners manage nodes" on public.canvas_nodes
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create policy "Public read visible nodes" on public.canvas_nodes
+  for select using (is_visible and exists (
+    select 1 from public.canvas_frames f
+    where f.id = canvas_nodes.frame_id and f.is_visible
+  ));
+
+-- Reusable design tokens (per user) — mirrors Framer's "Tokens" panel
+create table public.canvas_tokens (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null,
+  token_type text not null,            -- 'color' | 'font' | 'spacing' | 'shadow' | 'radius'
+  name text not null,
+  value jsonb not null,
+  created_at timestamptz not null default now()
+);
+alter table public.canvas_tokens enable row level security;
+create policy "Owners manage tokens" on public.canvas_tokens for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Reusable components — saved node-trees the user can drop on any frame
+create table public.canvas_components (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null,
+  name text not null,
+  thumbnail_url text,
+  tree jsonb not null,                 -- serialized {root, children[]}
+  variants jsonb not null default '[]',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+alter table public.canvas_components enable row level security;
+create policy "Owners manage components" on public.canvas_components for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
 ```
 
-Note: we keep `categories` and `nfc_cards.current_category_id` columns in the DB to avoid breaking historical interaction logs, but remove all UI surface area.
+### Frontend
 
-**Tap resolution flow (no schema change to short_links needed):**
+- New route `/builder/:personaId/:frameId?` (separate from `/page-builder`).
+- `CanvasShell` — full-screen, three-column: left tree, center canvas, right inspector.
+- Pan/zoom via `react-zoom-pan-pinch` or hand-rolled wheel/touch handlers.
+- Renders nodes via a single `<NodeRenderer>` that reads `layout.absolute` and styles.
+- No editing yet — read-only.
 
-The Web-NFC-tap or QR-scan hits `/u/:code`, which calls `resolve-short-link`. Since cards can each pin a different persona, the short link must encode which card / persona to resolve to. Two options:
+### Feature flag
 
-- **Option A (chosen, simpler):** generate one short link per card. `short_links` already has `persona_id` — we just always set it on insert. The user no longer needs to manage a single account-wide short link.
-- The "NFC Manager" page becomes per-card: when you register a card, we auto-create a `short_links` row with that card's `persona_id` and surface the link + QR for that specific card.
-
-**Edge function:** `supabase/functions/resolve-short-link/index.ts`
-
-- Already reads `persona_id` off the short link — no change needed.
-- After resolving, also identify the `nfc_cards.id` for that short link (lookup by `persona_id` + `user_id`, or store `card_id` directly on `short_links` via a new column for accuracy):
-  ```sql
-  alter table public.short_links
-    add column card_id uuid references public.nfc_cards(id) on delete cascade;
-  create index short_links_card_id_idx on public.short_links(card_id);
-  ```
-- Return `card_id` in the resolve response so the client can pass it into `log-interaction`.
-
-**Edge function:** `supabase/functions/log-interaction/index.ts`
-
-- Accept an optional `card_id` and `card_serial` in the body.
-- Validate the card belongs to `target_user_id`.
-- Insert into `interaction_logs.card_id` and `card_serial` (columns already exist).
-
-**Client:**
-
-- `ShortUrlRedirect.tsx` passes the resolved `card_id` to the public profile page (via state or query param).
-- `PublicProfilePage.tsx` includes `card_id` in the initial `profile_view` log payload.
-
-This achieves the goal: each tap is recorded with the exact card used + the persona it served.
-
-**File:** `src/pages/NfcManagerPage.tsx`
-
-- Convert from "one link for the whole account" to "one section per registered card."
-- Each card section shows its persona, its short link, its QR, and its NDEF write guide.
-- The Page Mode toggle (Personal / Page Builder) moves to the persona-level (already set on personas table) — surface it in `PersonasPage.tsx` instead of here.
+- Add `prefs.flagFramerBuilder?: boolean` to `PrefsBlob`.
+- `/page-builder` redirects to `/builder/...` when flag is on, else loads legacy.
 
 ---
 
-## 4. Email signup verification with 6-digit PIN
+## Phase 1 — Selection, transform, drag-resize (week 2)
 
-**Goal:** Email confirmation comes through with branded copy ("Handshake," not "Lovable preview"). The user enters a 6-digit code on the signup page rather than clicking a magic link — this avoids the cross-origin Vercel/Lovable redirect issue.
+- Click-to-select with marching-ants outline.
+- 8-handle resize, rotation handle, snap-to-pixel/grid/peer guides.
+- Multi-select (shift-click, marquee).
+- Keyboard: arrows nudge 1px (10px with shift), backspace delete, ⌘D duplicate.
+- Drag-from-elsewhere onto canvas spawns a node at drop coords.
+- Live "smart guides" overlay drawing alignment lines like Figma.
 
-**Approach:** Use Supabase's built-in OTP signup flow + Lovable Auth Email Templates.
+State model:
+- Use `zustand` with `immer` for undo/redo. Snapshot per drag-end (not per pointermove).
+- 50-step history (matches existing builder).
 
-**Setup orchestration (handled by the agent during implementation):**
-
-1. Check email domain status. If no domain is configured, show the email setup dialog.
-2. Once a domain exists, scaffold Lovable Auth Email Templates (`signup`, `recovery`, `magic-link`).
-3. Apply Handshake brand styling to the templates: slate/teal palette from `index.css`, white email body background, "Handshake" wordmark, SF Pro/Inter font stack.
-4. Update the signup template to display `{{ .Token }}` (the 6-digit OTP) prominently — **do not** include the magic link.
-5. Deploy `auth-email-hook`.
-
-**Supabase auth config:**
-
-- Disable auto-confirm so emails are required.
-- Keep the email signup OTP enabled (default).
-
-**File:** `src/pages/SignupPage.tsx`
-
-- After `supabase.auth.signUp` succeeds, do **not** show the "check your email for a link" toast. Instead push the user into a new `EmailVerifyStep` view (same page, `useState` step machine).
-- Show 6 OTP slots using the existing `InputOTP` component.
-- On 6 digits entered, call:
-  ```ts
-  await supabase.auth.verifyOtp({ email, token, type: 'signup' });
-  ```
-- On success: navigate to `/`. On failure: show error + "Resend code" button that calls `supabase.auth.resend({ type: 'signup', email })`.
-
-**File:** `src/pages/LoginPage.tsx` — no change. Login still uses password + Turnstile CAPTCHA per the previous secure-login flow. (User answer confirmed the PIN is for signup confirmation only.)
+Persistence:
+- Debounced upserts to `canvas_nodes` (300ms after last change), batched per frame.
+- Optimistic UI; rollback on error toast.
 
 ---
 
-## Files touched
+## Phase 2 — Element library (week 3)
 
-**Database migrations:**
-- Add `nfc_cards.persona_id` column + index.
-- Add `short_links.card_id` column + index.
+Ship these node_types with full property panels:
 
-**Frontend:**
-- `src/pages/PublicProfilePage.tsx` — gate tab nav on builder mode, fix section margins.
-- `src/pages/CardsPage.tsx` — full rewrite of registration dialog (3-step wizard), swap Category dropdown for Persona dropdown.
-- `src/pages/CategoriesPage.tsx` — delete file.
-- `src/pages/NfcManagerPage.tsx` — restructure to per-card sections.
-- `src/components/AppSidebar.tsx` — remove Categories nav item.
-- `src/App.tsx` — remove `/categories` route.
-- `src/pages/SignupPage.tsx` — add OTP verification step using `InputOTP`.
-- `src/pages/ShortUrlRedirect.tsx` — pass `card_id` through to public profile.
+| Type | Inspector controls |
+|---|---|
+| `text` | font family, weight, size, line-height, color, alignment, gradient text, link |
+| `image` | src (uses existing `design-assets` bucket + cropper), object-fit, radius, filters |
+| `shape` | preset (rect/ellipse/triangle), fill (solid/gradient), border, shadow |
+| `frame` | container with `layout: 'absolute' \| 'flex' \| 'grid'`, padding, gap |
+| `button` | label, action (link / persona vcard / scroll-to / open modal), variants |
+| `video` | src (storage upload or YouTube/Vimeo embed), autoplay, controls, poster |
+| `form` | leverages existing `insert_lead_capture` RPC — drops a fully wired form |
+| `gallery` | multi-image carousel, layouts: grid / masonry / slider |
+| `embed` | iframe with allowlist (YouTube, Spotify, Calendly, Maps) |
+| `persona-card` | renders the live 3D card from `InteractiveCard3D` |
+| `vcard-button` | one-tap vCard download bound to current persona |
+| `code` | sanitized HTML/CSS only, no JS execution (prevents XSS) |
 
-**Edge functions:**
-- `supabase/functions/resolve-short-link/index.ts` — return `card_id`.
-- `supabase/functions/log-interaction/index.ts` — accept and store `card_id` / `card_serial`.
-- `supabase/functions/auth-email-hook/*` — scaffolded by Lovable, then branded.
-
-**Lib:**
-- New `src/lib/webNfc.ts` — wraps `NDEFReader` with feature detection + retries.
+Asset pipeline reuses the existing `ImageUploadField` + `ImageCropperModal`.
 
 ---
 
-## Memory updates after implementation
+## Phase 3 — Responsiveness & breakpoints (week 4)
 
-- Update `mem://features/nfc-state-management` — categories replaced by direct persona linking on each card.
-- Update `mem://features/categories-management` — mark as removed.
-- Update `mem://architecture/short-url-redirection` — short links now per-card with `card_id`.
-- New `mem://features/email-otp-verification` — signup uses 6-digit OTP via Lovable branded auth email templates.
-- New `mem://features/nfc-tap-registration` — Web NFC `NDEFReader` with manual fallback.
+- Three breakpoints (desktop / tablet / mobile), switchable in toolbar.
+- Per-breakpoint overrides stored in `layout.{tablet|mobile}` and `styles.{tablet|mobile}`.
+- Inheritance: smaller breakpoints inherit from desktop unless explicitly overridden.
+- "Override" badge in inspector when a property differs from desktop.
+- Per-breakpoint visibility toggles (hide on mobile, etc.).
+
+Public renderer:
+- `BuilderRuntime` resolves the active breakpoint via `window.matchMedia` and merges
+  layout/styles. Server-rendered fallback for SEO uses desktop layout.
+
+---
+
+## Phase 4 — Interactions, animations, components (week 5)
+
+Interactions (stored in `node.interactions`):
+- Triggers: `hover`, `press`, `appear`, `scroll-into-view`, `click`, `time-delay`.
+- Effects: opacity, transform (move/scale/rotate), color, navigate, scroll-to-frame.
+- Eased with framer-motion under the hood.
+
+Components:
+- "Save as component" right-click on any node → writes to `canvas_components.tree`.
+- Drop a component on any frame; instances stay linked. Edit master → all update.
+- Variants: name + override map (e.g. "primary"/"secondary" buttons).
+
+Tokens:
+- Color/font/shadow/spacing tokens from `canvas_tokens`.
+- Inspector color picker shows token swatches first; "create token from this color"
+  button promotes a one-off color to a reusable token.
+
+---
+
+## Phase 5 — Publish, SEO, runtime (week 6)
+
+Public rendering path (`PublicProfilePage` for `page_mode = 'builder'`):
+- Fetch `canvas_frames` + `canvas_nodes` (homepage first, then per-slug).
+- Render via shared `BuilderRuntime` component.
+- Generate `<title>`, `<meta description>`, `<link canonical>` from frame metadata.
+- Lazy-load images (existing `loading="lazy"`), preload above-the-fold hero image.
+- Hydrate interactions only after first paint (defer framer-motion).
+
+Edge function: `publish-frame` (optional, for caching):
+- On publish, snapshot tree to a `canvas_publishes` table (immutable history).
+- Public renderer reads from latest published snapshot, not draft.
+
+Migration from legacy:
+- One-shot script: read `site_pages` + `page_blocks`, generate equivalent
+  `canvas_frames` + `canvas_nodes` with sensible default positions.
+- Preserves user data; flag off → still loads legacy editor for un-migrated personas.
+
+---
+
+## Cross-cutting concerns
+
+- **Performance:** virtualize the node tree panel; throttle pan/zoom; offload heavy
+  rendering (large galleries) to `IntersectionObserver` lazy mounts.
+- **Mobile editor:** desktop-only initially. Mobile users see "Edit on desktop"
+  message. Future Phase 6 = touch-first editor.
+- **A11y:** focus trap inside inspector; published pages must include landmark
+  roles even when authored as free-form (auto-tag first frame as `<main>`).
+- **Cost guardrails:** debounce all writes; cap nodes/frame at 500; soft-warn at 300.
+- **Testing:** snapshot the runtime renderer per phase against fixture trees.
+
+---
+
+## Open decisions for the user
+
+1. Migration mode: auto-convert all personas at flag-on, or opt-in per persona?
+2. Free vs Pro gating: free-form canvas could be Handshake+ only.
+3. Custom code blocks: allow JS (`<script>` sandbox) or HTML/CSS only?
+4. Component marketplace: per-user only, or share components across all Handshake users?
+
+These will set scope for Phase 5.
