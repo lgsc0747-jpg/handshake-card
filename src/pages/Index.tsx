@@ -164,14 +164,13 @@ const Dashboard = () => {
     };
 
   const resetAll = () => {
-    setEngOrder(DEFAULT_ENGAGEMENT);
-    setTechOrder(DEFAULT_TECHNICAL);
-    setSecOrder(DEFAULT_SECURITY);
-    setVisibility({});
-    localStorage.removeItem(LS_ENG);
-    localStorage.removeItem(LS_TECH);
-    localStorage.removeItem(LS_SEC);
-    localStorage.removeItem(LS_VIS);
+    patchPrefs({
+      dashEngagementOrder: DEFAULT_ENGAGEMENT,
+      dashTechnicalOrder: DEFAULT_TECHNICAL,
+      dashSecurityOrder: DEFAULT_SECURITY,
+      dashChartVisibility: {},
+      dashChartSizes: {},
+    });
     resetChartSizes();
     window.location.reload();
   };
