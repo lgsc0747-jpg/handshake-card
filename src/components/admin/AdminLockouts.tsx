@@ -117,17 +117,17 @@ export function AdminLockouts() {
                     <TableCell className="text-right">
                       <Button
                         size="sm"
-                        variant="ghost"
-                        className="h-7 text-xs"
+                        variant="outline"
+                        className="h-7 text-xs border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10"
                         disabled={clearingEmail === l.email}
                         onClick={() => clear(l.email)}
                       >
                         {clearingEmail === l.email ? (
-                          <Loader2 className="w-3 h-3 animate-spin" />
+                          <Loader2 className="w-3 h-3 animate-spin mr-1" />
                         ) : (
                           <Trash2 className="w-3 h-3 mr-1" />
                         )}
-                        Clear
+                        Unlock
                       </Button>
                     </TableCell>
                   </TableRow>
