@@ -85,6 +85,8 @@ const NfcManagerPage = () => {
   const fullUrl = username ? `${origin}/p/${username}` : "";
   const shortUrl = shortCode ? `${origin}/u/${shortCode}` : "";
   const displayUrl = shortened ? shortUrl : fullUrl;
+  // QR-encoded URL gets ?src=qr so analytics can attribute scans separately from NFC taps and direct links.
+  const qrUrl = displayUrl ? `${displayUrl}${displayUrl.includes("?") ? "&" : "?"}src=qr` : "";
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(displayUrl);
