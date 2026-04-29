@@ -101,22 +101,8 @@ const PersonasPage = () => {
     }
   };
 
-  const handleSetActive = async (persona: Persona) => {
-    if (!user) return;
-    // Deactivate all, then activate this one
-    await supabase
-      .from("personas")
-      .update({ is_active: false })
-      .eq("user_id", user.id);
-    await supabase
-      .from("personas")
-      .update({ is_active: true })
-      .eq("id", persona.id);
-    setPersonas(
-      personas.map((p) => ({ ...p, is_active: p.id === persona.id }))
-    );
-    toast({ title: "Active persona updated", description: `"${persona.label}" is now live on your NFC card.` });
-  };
+  // "Set Active" was removed — every persona is now reachable simultaneously
+  // via direct slug URL or per-persona generated short links.
 
   const handleDelete = async (id: string) => {
     await supabase.from("personas").delete().eq("id", id);
@@ -236,10 +222,6 @@ const PersonasPage = () => {
               <Card
                 key={persona.id}
                 className="glass-card animate-fade-in group relative overflow-hidden"
-                style={{
-                  borderColor: persona.is_active ? persona.accent_color ?? undefined : undefined,
-                  borderWidth: persona.is_active ? 2 : undefined,
-                }}
               >
                 {/* Accent bar */}
                 <div
@@ -250,11 +232,6 @@ const PersonasPage = () => {
                   <div className="flex items-center justify-between">
                     <CardTitle className="font-display text-base">{persona.label}</CardTitle>
                     <div className="flex items-center gap-1">
-                      {persona.is_active && (
-                        <Badge className="text-[10px] gradient-primary text-primary-foreground border-0">
-                          Active
-                        </Badge>
-                      )}
                       {persona.is_private && (
                         <Badge variant="outline" className="text-[10px]">
                           <Lock className="w-3 h-3 mr-0.5" /> Private
@@ -270,11 +247,6 @@ const PersonasPage = () => {
                     <p className="text-xs font-mono text-primary mt-1">/p/{user?.user_metadata?.username || "you"}/{persona.slug}</p>
                   </div>
                   <div className="flex gap-2 flex-wrap">
-                    {!persona.is_active && (
-                      <Button size="sm" variant="outline" onClick={() => handleSetActive(persona)}>
-                        <Check className="w-3 h-3 mr-1" /> Set Active
-                      </Button>
-                    )}
                     <Button
                       size="sm"
                       variant="outline"

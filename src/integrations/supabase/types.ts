@@ -676,6 +676,8 @@ export type Database = {
           code: string
           created_at: string
           id: string
+          is_active: boolean
+          label: string | null
           persona_id: string | null
           user_id: string
         }
@@ -684,6 +686,8 @@ export type Database = {
           code: string
           created_at?: string
           id?: string
+          is_active?: boolean
+          label?: string | null
           persona_id?: string | null
           user_id: string
         }
@@ -692,6 +696,8 @@ export type Database = {
           code?: string
           created_at?: string
           id?: string
+          is_active?: boolean
+          label?: string | null
           persona_id?: string | null
           user_id?: string
         }
@@ -1058,6 +1064,15 @@ export type Database = {
           message: Json
           msg_id: number
           read_ct: number
+        }[]
+      }
+      short_link_stats: {
+        Args: { p_user_id: string }
+        Returns: {
+          code: string
+          last_tap_at: string
+          short_link_id: string
+          taps: number
         }[]
       }
       verify_persona_pin: {

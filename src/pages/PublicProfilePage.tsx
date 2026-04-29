@@ -389,19 +389,8 @@ const PublicProfilePage = () => {
       .eq("is_visible", true)
       .order("sort_order");
     setPageBlocks((blockData as PageBlock[]) ?? []);
-
-    // Track page navigation
-    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-    const page = sitePages.find(p => p.id === pageId);
-    fetch(`https://${projectId}.supabase.co/functions/v1/log-interaction`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        target_user_id: merged.user_id,
-        interaction_type: "page_view",
-        metadata: { page_slug: page?.slug, page_title: page?.title, ua: navigator.userAgent, persona_slug: persona?.slug },
-      }),
-    }).catch(() => {});
+    // Page navigation is intentionally NOT logged — the entry-method on the first
+    // profile_view is the only signal we surface in interaction logs.
   }, [merged.user_id, persona?.slug, sitePages]);
 
   const handleDownloadCV = () => {
@@ -456,9 +445,8 @@ const PublicProfilePage = () => {
     );
   }
 
-  if (persona && !persona.is_active) {
-    return <CardDisabledPage ownerName={merged.display_name || username || undefined} />;
-  }
+  // Note: persona is_active is no longer enforced — multiple personas can be live
+  // simultaneously via persona-specific short links / direct slug URLs.
 
   if (persona?.is_private && persona?.has_pin && !gateUnlocked) {
     return (
@@ -739,7 +727,7 @@ const PublicProfilePage = () => {
       {googleFontUrl && <link rel="stylesheet" href={googleFontUrl} />}
       <div
         ref={containerRef}
-        className={cn("relative pb-[max(2rem,env(safe-area-inset-bottom))]", hasPageTheme && PAGE_THEME_CLASS)}
+        className={cn("relative min-h-screen flex flex-col pb-[max(2rem,env(safe-area-inset-bottom))]", hasPageTheme && PAGE_THEME_CLASS)}
         style={{
           backgroundColor: hasPageTheme ? (pageThemeStyles as any)["--page-bg"] || landingBgColor : landingBgColor,
           fontFamily: hasPageTheme ? (pageThemeStyles as any)["--page-font"] || fontStack : fontStack,
@@ -760,10 +748,13 @@ const PublicProfilePage = () => {
 
         {/* Route based on page_mode: builder = page blocks, personal/default = legacy card fly-up */}
         {persona?.page_mode === 'builder' && hasPageBuilder ? (
-          <div style={{
-            color: hasPageTheme ? (pageThemeStyles as any)["--page-text"] || textColor : textColor,
-            ...(hasPageTheme ? pageThemeStyles : {}),
-          }}>
+          <div
+            className="flex-1 flex flex-col"
+            style={{
+              color: hasPageTheme ? (pageThemeStyles as any)["--page-text"] || textColor : textColor,
+              ...(hasPageTheme ? pageThemeStyles : {}),
+            }}
+          >
             {pageBlocks.map(block => (
               <BlockRenderer key={block.id} block={block} persona={persona} onTrackInteraction={(type, metadata) => {
                 const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
@@ -778,6 +769,8 @@ const PublicProfilePage = () => {
                 }).catch(() => {});
               }} />
             ))}
+            {/* Spacer keeps the live page filling the viewport even when blocks are short */}
+            <div className="flex-1" aria-hidden="true" />
           </div>
         ) : (
           visibleSections.map((section, idx) => {

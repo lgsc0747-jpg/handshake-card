@@ -35,7 +35,6 @@ interface NavItem {
 
 const DEFAULT_NFC: NavItem[] = [
   { title: "NFC Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "NFC Cards", url: "/cards", icon: CreditCard },
   { title: "NFC Manager", url: "/nfc-manager", icon: Smartphone },
   { title: "Card Studio", url: "/design-studio", icon: Palette },
   { title: "Page Builder", url: "/page-builder", icon: FileText },

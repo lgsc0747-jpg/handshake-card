@@ -26,14 +26,16 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Look up the short link -> user_id (and optional persona_id / card_id)
+    // Look up the short link -> user_id (and optional persona_id / card_id).
+    // Inactive links are treated as 404 so users can disable a card without
+    // deleting the underlying short URL.
     const { data: link, error: linkErr } = await supabase
       .from("short_links")
-      .select("user_id, persona_id, card_id")
+      .select("user_id, persona_id, card_id, is_active")
       .eq("code", code)
       .single();
 
-    if (linkErr || !link) {
+    if (linkErr || !link || link.is_active === false) {
       return new Response(
         JSON.stringify({ error: "Short link not found" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -54,7 +56,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    // If a persona is linked, get its slug
+    // If a persona is linked, get its slug. Otherwise fall back to the most
+    // recently created persona (is_active is no longer enforced — multiple
+    // personas can be live at the same time via short links).
     let personaSlug: string | null = null;
     if (link.persona_id) {
       const { data: persona } = await supabase
@@ -64,15 +68,14 @@ Deno.serve(async (req) => {
         .single();
       personaSlug = persona?.slug ?? null;
     } else {
-      // Fall back to the user's active persona
-      const { data: activePer } = await supabase
+      const { data: anyPersona } = await supabase
         .from("personas")
         .select("slug")
         .eq("user_id", link.user_id)
-        .eq("is_active", true)
+        .order("created_at", { ascending: false })
         .limit(1)
-        .single();
-      personaSlug = activePer?.slug ?? null;
+        .maybeSingle();
+      personaSlug = anyPersona?.slug ?? null;
     }
 
     // Look up serial for the linked card so the client can include it in
