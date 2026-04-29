@@ -246,6 +246,16 @@ const PublicProfilePage = () => {
         }
       } catch { /* ignore */ }
 
+      // Detect entry method via ?src= URL param (qr / nfc / link)
+      // — short-link redirect implies NFC even without explicit param.
+      let sourceMethod: "nfc" | "qr" | "link" | undefined;
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const raw = (params.get("src") ?? "").toLowerCase();
+        if (raw === "qr" || raw === "nfc" || raw === "link") sourceMethod = raw as any;
+      } catch { /* ignore */ }
+      if (!sourceMethod && tapOrigin.card_id) sourceMethod = "nfc";
+
       fetch(`https://${projectId}.supabase.co/functions/v1/log-interaction`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -256,6 +266,7 @@ const PublicProfilePage = () => {
           card_serial: tapOrigin.card_serial ?? null,
           metadata: {
             source: "public_landing",
+            source_method: sourceMethod ?? "link",
             ua: navigator.userAgent + (isBrave ? " Brave" : ""),
             persona_slug: personaSlug || null,
             page_path: window.location.pathname,

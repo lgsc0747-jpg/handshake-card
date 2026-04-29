@@ -134,6 +134,23 @@ Deno.serve(async (req) => {
     else if (interaction_type === "contact_form_submit") occasion = "Contact Form";
     else if (interaction_type === "page_view") occasion = `Page: ${metadata?.page_title || "unknown"}`;
 
+    // Tag the entry method on the *first* interaction in this visitor session
+    // (profile_view is always emitted first by PublicProfilePage). Possible values:
+    //   "nfc"  — visitor came in via /u/<short> short link (physical card tap)
+    //   "qr"   — URL had ?src=qr query param (scanned QR poster/sticker)
+    //   "link" — direct/shared URL with no tap origin or src param
+    if (interaction_type === "profile_view") {
+      const src = (metadata?.source_method as string | undefined)?.toLowerCase();
+      const hasTapOrigin = Boolean(card_id || card_serial);
+      let method: "nfc" | "qr" | "link" = "link";
+      if (src === "nfc" || hasTapOrigin) method = "nfc";
+      else if (src === "qr") method = "qr";
+
+      enrichedMeta.entry_method = method;
+      const label = method === "nfc" ? "NFC Tap" : method === "qr" ? "QR Scan" : "Direct Link";
+      occasion = `Entry: ${label}`;
+    }
+
     // (supabase client already created above for user validation)
 
 

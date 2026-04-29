@@ -347,6 +347,87 @@ Deno.serve(async (req) => {
       );
     }
 
+    // ACTION: send_password_reset — admin triggers a password reset email for a target user
+    if (action === "send_password_reset") {
+      const { target_user_id } = body;
+      if (!target_user_id) {
+        return new Response(JSON.stringify({ error: "Missing target_user_id" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      // Look up target email via auth admin API
+      const { data: targetUser, error: getErr } = await adminClient.auth.admin.getUserById(target_user_id);
+      if (getErr || !targetUser?.user?.email) {
+        return new Response(JSON.stringify({ error: "Target user not found" }), {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const targetEmail = targetUser.user.email;
+      const redirectTo = `${req.headers.get("origin") ?? ""}/reset-password`;
+      const { error: resetErr } = await adminClient.auth.resetPasswordForEmail(targetEmail, { redirectTo });
+      if (resetErr) throw resetErr;
+      await audit("send_password_reset", target_user_id, { email: targetEmail });
+      return new Response(JSON.stringify({ success: true, email: targetEmail }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ACTION: list_support_tickets — admins see all; users see their own (handled via RLS, but admins use this)
+    if (action === "list_support_tickets") {
+      const { status } = body;
+      let q = adminClient
+        .from("support_tickets")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (status && status !== "all") q = q.eq("status", status);
+      const { data: tickets, error: tErr } = await q;
+      if (tErr) throw tErr;
+
+      const ids = [...new Set((tickets ?? []).map((t: any) => t.user_id))];
+      const profilesMap: Record<string, any> = {};
+      if (ids.length) {
+        const { data: profs } = await adminClient
+          .from("profiles")
+          .select("user_id, display_name, username, email_public")
+          .in("user_id", ids);
+        for (const p of profs ?? []) profilesMap[p.user_id] = p;
+      }
+      const enriched = (tickets ?? []).map((t: any) => ({
+        ...t,
+        user: profilesMap[t.user_id] ?? null,
+      }));
+      return new Response(JSON.stringify({ tickets: enriched }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ACTION: update_support_ticket — admin updates status / notes
+    if (action === "update_support_ticket") {
+      const { ticket_id, status, admin_notes, priority } = body;
+      if (!ticket_id) {
+        return new Response(JSON.stringify({ error: "Missing ticket_id" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const patch: Record<string, unknown> = { assigned_admin_id: userId };
+      if (status) patch.status = status;
+      if (typeof admin_notes === "string") patch.admin_notes = admin_notes;
+      if (priority) patch.priority = priority;
+      const { error: upErr } = await adminClient
+        .from("support_tickets")
+        .update(patch)
+        .eq("id", ticket_id);
+      if (upErr) throw upErr;
+      await audit("update_support_ticket", null, { ticket_id, status, priority });
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify({ error: "Unknown action" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

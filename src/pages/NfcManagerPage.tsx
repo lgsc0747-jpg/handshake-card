@@ -85,6 +85,8 @@ const NfcManagerPage = () => {
   const fullUrl = username ? `${origin}/p/${username}` : "";
   const shortUrl = shortCode ? `${origin}/u/${shortCode}` : "";
   const displayUrl = shortened ? shortUrl : fullUrl;
+  // QR-encoded URL gets ?src=qr so analytics can attribute scans separately from NFC taps and direct links.
+  const qrUrl = displayUrl ? `${displayUrl}${displayUrl.includes("?") ? "&" : "?"}src=qr` : "";
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(displayUrl);
@@ -224,7 +226,7 @@ const NfcManagerPage = () => {
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-4">
             <div className="p-4 bg-white rounded-xl">
-              <QRCodeSVG id="nfc-manager-qr" value={displayUrl} size={180} level="H" includeMargin={false} />
+              <QRCodeSVG id="nfc-manager-qr" value={qrUrl || displayUrl} size={180} level="H" includeMargin={false} />
             </div>
             <p className="text-xs text-muted-foreground text-center max-w-xs">
               Download this QR code for physical printing on business cards, stickers, or badges.

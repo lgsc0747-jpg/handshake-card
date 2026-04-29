@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { AdminActivityLog } from "@/components/admin/AdminActivityLog";
 import { AdminAuditTrail } from "@/components/admin/AdminAuditTrail";
 import { AdminLockouts } from "@/components/admin/AdminLockouts";
+import { AdminSupportTickets } from "@/components/admin/AdminSupportTickets";
 import { useIsSuperAdmin } from "@/hooks/useIsSuperAdmin";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
@@ -43,6 +44,7 @@ import {
   Search,
   Users,
   ArrowUpDown,
+  KeyRound,
 } from "lucide-react";
 
 interface AdminUser {
@@ -139,6 +141,24 @@ const AdminPage = () => {
 
     setActionLoading(false);
     setConfirmDialog(null);
+  };
+
+  const sendPasswordReset = async (userId: string, name: string) => {
+    const { error, data } = await supabase.functions.invoke("admin-manage", {
+      body: { action: "send_password_reset", target_user_id: userId },
+    });
+    if (error || (data as any)?.error) {
+      toast({
+        title: "Failed",
+        description: (data as any)?.error ?? "Could not send reset email",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Reset email sent",
+        description: `Password reset link emailed to ${name}.`,
+      });
+    }
   };
 
   const filtered = users.filter((u) => {
@@ -339,7 +359,20 @@ const AdminPage = () => {
                           {new Date(u.created_at).toLocaleDateString()}
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex items-center gap-1 justify-end">
+                          <div className="flex items-center gap-1 justify-end flex-wrap">
+                            {/* Reset password (Active Directory style) */}
+                            {u.user_id !== user?.id && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 text-xs"
+                                title="Send password reset email"
+                                onClick={() => sendPasswordReset(u.user_id, u.display_name ?? u.username ?? "User")}
+                              >
+                                <KeyRound className="w-3 h-3 mr-1" />
+                                Reset Password
+                              </Button>
+                            )}
                             {/* Plan toggle */}
                             <Button
                               size="sm"
@@ -425,6 +458,9 @@ const AdminPage = () => {
 
         {/* Active Lockouts (super-admin only) */}
         {isSuperAdmin && <AdminLockouts />}
+
+        {/* Support Tickets — all admins can triage */}
+        <AdminSupportTickets />
 
         {/* Activity Log */}
         <AdminActivityLog />

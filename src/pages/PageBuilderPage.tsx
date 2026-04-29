@@ -717,11 +717,11 @@ function PageBuilderPage() {
             <div className="flex justify-center p-4 md:p-8 min-h-full">
               <div
                 className={cn(
-                  "relative transition-all duration-300 shadow-lg",
+                  "relative transition-all duration-300 shadow-lg flex flex-col",
                   PAGE_THEME_CLASS,
                   deviceMode === "mobile"
                     ? "w-[375px] min-h-[667px] border-[6px] border-muted-foreground/15 rounded-[2.5rem]"
-                    : "w-full max-w-5xl min-h-[600px] rounded-xl border border-border/60"
+                    : "w-full max-w-5xl min-h-[calc(100vh-8rem)] rounded-xl border border-border/60"
                 )}
                 style={{
                   ...getPageThemeStyles(pageThemeCtx.themeId),
@@ -730,7 +730,7 @@ function PageBuilderPage() {
                   fontFamily: "var(--page-font, inherit)",
                   borderRadius: deviceMode === "mobile" ? undefined : "var(--page-radius, 0.75rem)",
                 }}>
-                <div className="p-0">
+                <div className="p-0 flex-1 flex flex-col">
                   <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleSortEnd}>
                     <SortableContext items={blocks.filter(b => b.is_visible || editingBlockId === b.id).map(b => b.id)} strategy={verticalListSortingStrategy}>
                       {blocks.filter(b => b.is_visible || editingBlockId === b.id).map(block => (
@@ -742,11 +742,14 @@ function PageBuilderPage() {
                       ))}
                     </SortableContext>
                   </DndContext>
-                  {blocks.length === 0 && (
-                    <div className="flex flex-col items-center justify-center min-h-[300px] text-muted-foreground">
+                  {blocks.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center flex-1 min-h-[300px] text-muted-foreground">
                       <Plus className="w-8 h-8 mb-2" />
                       <p className="text-sm">Add your first block</p>
                     </div>
+                  ) : (
+                    /* Spacer fills remaining canvas height on desktop so the page never looks half-empty */
+                    <div className="flex-1" aria-hidden="true" />
                   )}
                 </div>
               </div>
