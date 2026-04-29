@@ -226,7 +226,7 @@ const NfcManagerPage = () => {
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-4">
             <div className="p-4 bg-white rounded-xl">
-              <QRCodeSVG id="nfc-manager-qr" value={displayUrl} size={180} level="H" includeMargin={false} />
+              <QRCodeSVG id="nfc-manager-qr" value={qrUrl || displayUrl} size={180} level="H" includeMargin={false} />
             </div>
             <p className="text-xs text-muted-foreground text-center max-w-xs">
               Download this QR code for physical printing on business cards, stickers, or badges.
