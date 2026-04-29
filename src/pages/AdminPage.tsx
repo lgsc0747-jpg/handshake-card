@@ -459,6 +459,9 @@ const AdminPage = () => {
         {/* Active Lockouts (super-admin only) */}
         {isSuperAdmin && <AdminLockouts />}
 
+        {/* Support Tickets — all admins can triage */}
+        <AdminSupportTickets />
+
         {/* Activity Log */}
         <AdminActivityLog />
       </div>
