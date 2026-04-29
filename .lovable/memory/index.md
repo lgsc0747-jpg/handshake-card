@@ -32,6 +32,8 @@
 - [Landing Page Hero](mem://style/landing-page-hero) — Fly-up spring animation, scroll-driven scaling, active persona glow
 - [Analytics Reporting](mem://features/analytics-reporting) — Context-aware CSV data export matching selected dashboard timeframe
 - [Role Based Access Control](mem://architecture/role-based-access-control) — RBAC via user_roles table, Admin tab login, admin-manage Edge Function
+- [Admin Active Directory](mem://features/admin-active-directory) — Per-user password reset, support ticket triage, lockout unlock, admin nav hidden in user view mode
+- [Interaction Method Tagging](mem://features/interaction-method-tagging) — First profile_view tagged as NFC Tap / QR Scan / Direct Link via tap_origin + ?src= param
 - [SaaS Tier System](mem://features/saas-tier-system) — Handshake (Free) vs Handshake+ (Pro) feature gating and upgrade prompts
 - [Security Analytics](mem://features/security-analytics) — Digital Handshake tracking: PIN success/fail rates and secure dwell time
 - [Engagement Metrics](mem://features/engagement-metrics) — Interaction Depth KPI, CTA/Video engagement charting
