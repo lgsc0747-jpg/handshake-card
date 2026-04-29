@@ -164,15 +164,21 @@ export function AppSidebar() {
   const touchSensor = useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } });
   const sensors = useSensors(pointerSensor, touchSensor);
 
-  const generalItems: NavItem[] = isAdmin
+  // When admin is currently viewing the user side (not on /admin/*),
+  // hide the Admin Panel + Turnstile Settings to keep the user view clean.
+  const generalItems: NavItem[] = isAdmin && onAdminRoute
     ? [
         ...DEFAULT_GENERAL,
+        { title: "Help & Support", url: "/help", icon: Contact },
         { title: "Admin Panel", url: "/admin", icon: ShieldCheck },
         ...(isSuperAdmin
           ? [{ title: "Turnstile Settings", url: "/admin/turnstile", icon: Sliders }]
           : []),
       ]
-    : DEFAULT_GENERAL;
+    : [
+        ...DEFAULT_GENERAL,
+        { title: "Help & Support", url: "/help", icon: Contact },
+      ];
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
