@@ -303,6 +303,42 @@ const PersonasPage = () => {
                 </p>
               </div>
 
+              {/* Public View Mode */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Public View</h3>
+                <p className="text-xs text-muted-foreground -mt-1">
+                  Choose what visitors see when they open this persona.
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  {([
+                    { id: "personal", label: "Card Studio", desc: "3D card fly-up + contact", icon: CreditCard },
+                    { id: "builder", label: "Page Builder", desc: "Custom blocks & multi-page", icon: LayoutTemplate },
+                  ] as const).map((opt) => {
+                    const active = (editingPersona.page_mode || "personal") === opt.id;
+                    const Icon = opt.icon;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => updateField("page_mode", opt.id)}
+                        className={`relative flex flex-col items-start gap-1 p-3 rounded-xl border text-left transition-all ${
+                          active
+                            ? "border-primary bg-primary/5 ring-1 ring-primary/30"
+                            : "border-border/60 hover:border-primary/40"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 w-full">
+                          <Icon className="w-4 h-4 text-primary" />
+                          <span className="text-sm font-semibold">{opt.label}</span>
+                          {active && <Check className="w-3.5 h-3.5 text-primary ml-auto" />}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">{opt.desc}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Security */}
               <div className="space-y-4">
                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
