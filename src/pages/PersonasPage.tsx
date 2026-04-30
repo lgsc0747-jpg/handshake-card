@@ -140,6 +140,7 @@ const PersonasPage = () => {
       show_location: editingPersona.show_location ?? true,
       is_private: editingPersona.is_private,
       require_contact_exchange: editingPersona.require_contact_exchange,
+      page_mode: editingPersona.page_mode || "personal",
     };
 
     // Only send pin_code if user entered a new raw PIN
