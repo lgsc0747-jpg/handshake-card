@@ -26,20 +26,21 @@ const ShortUrlRedirect = () => {
           return;
         }
 
-        // Stash the resolved card metadata so PublicProfilePage can attribute
-        // this view (and downstream interactions) to the specific card tapped.
+        // Stash the resolved short-link metadata so PublicProfilePage can
+        // attribute this view as an NFC tap — even when the short link has
+        // no card bound yet, arriving via /u/<code> still means a physical
+        // device tap (NFC chip or printed QR routed through the shortener).
         try {
-          if (data.card_id) {
-            sessionStorage.setItem(
-              "tap_origin",
-              JSON.stringify({
-                card_id: data.card_id,
-                card_serial: data.card_serial ?? null,
-                short_code: code,
-                ts: Date.now(),
-              })
-            );
-          }
+          sessionStorage.setItem(
+            "tap_origin",
+            JSON.stringify({
+              card_id: data.card_id ?? null,
+              card_serial: data.card_serial ?? null,
+              short_code: code,
+              source: "short_link",
+              ts: Date.now(),
+            })
+          );
         } catch {
           // sessionStorage may be unavailable — fail silently.
         }
