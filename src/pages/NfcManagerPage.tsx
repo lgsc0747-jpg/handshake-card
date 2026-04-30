@@ -76,8 +76,8 @@ const NfcManagerPage = () => {
 
   useEffect(() => { refresh(); }, [refresh]);
 
-  const handleCopy = async (code: string) => {
-    await navigator.clipboard.writeText(`${origin}/u/${code}`);
+  const handleCopy = async (code: string, fullUrl?: string) => {
+    await navigator.clipboard.writeText(fullUrl ?? `${origin}/u/${code}`);
     setCopiedCode(code);
     toast({ title: "Copied!", description: "Link copied to clipboard." });
     setTimeout(() => setCopiedCode(null), 1500);
