@@ -233,28 +233,33 @@ const PublicProfilePage = () => {
       const connectionType = conn?.effectiveType || conn?.type || "unknown";
       const isBrave = (nav.brave && typeof nav.brave.isBrave === "function") ? true : false;
 
-      // Read tap origin (set by ShortUrlRedirect) so we can attribute the view to a specific card
-      let tapOrigin: { card_id?: string; card_serial?: string | null } = {};
+      // Read tap origin (set by ShortUrlRedirect) so we can attribute the view to a specific card / short link
+      let tapOrigin: { card_id?: string | null; card_serial?: string | null; short_code?: string | null; source?: string } = {};
       try {
         const raw = sessionStorage.getItem("tap_origin");
         if (raw) {
           const parsed = JSON.parse(raw);
           if (parsed && Date.now() - (parsed.ts ?? 0) < 60_000) {
-            tapOrigin = { card_id: parsed.card_id, card_serial: parsed.card_serial };
+            tapOrigin = {
+              card_id: parsed.card_id ?? null,
+              card_serial: parsed.card_serial ?? null,
+              short_code: parsed.short_code ?? null,
+              source: parsed.source,
+            };
           }
           sessionStorage.removeItem("tap_origin");
         }
       } catch { /* ignore */ }
 
       // Detect entry method via ?src= URL param (qr / nfc / link)
-      // — short-link redirect implies NFC even without explicit param.
+      // — short-link redirect (any /u/<code> hit) implies NFC even without a bound card.
       let sourceMethod: "nfc" | "qr" | "link" | undefined;
       try {
         const params = new URLSearchParams(window.location.search);
         const raw = (params.get("src") ?? "").toLowerCase();
         if (raw === "qr" || raw === "nfc" || raw === "link") sourceMethod = raw as any;
       } catch { /* ignore */ }
-      if (!sourceMethod && tapOrigin.card_id) sourceMethod = "nfc";
+      if (!sourceMethod && (tapOrigin.card_id || tapOrigin.source === "short_link")) sourceMethod = "nfc";
 
       fetch(`https://${projectId}.supabase.co/functions/v1/log-interaction`, {
         method: "POST",
@@ -267,6 +272,7 @@ const PublicProfilePage = () => {
           metadata: {
             source: "public_landing",
             source_method: sourceMethod ?? "link",
+            short_code: tapOrigin.short_code ?? null,
             ua: navigator.userAgent + (isBrave ? " Brave" : ""),
             persona_slug: personaSlug || null,
             page_path: window.location.pathname,
