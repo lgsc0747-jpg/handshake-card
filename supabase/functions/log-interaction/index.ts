@@ -141,12 +141,17 @@ Deno.serve(async (req) => {
     //   "link" — direct/shared URL with no tap origin or src param
     if (interaction_type === "profile_view") {
       const src = (metadata?.source_method as string | undefined)?.toLowerCase();
-      const hasTapOrigin = Boolean(card_id || card_serial);
+      const hasShortCode = Boolean(metadata?.short_code);
+      const hasCardRef = Boolean(card_id || card_serial);
       let method: "nfc" | "qr" | "link" = "link";
-      if (src === "nfc" || hasTapOrigin) method = "nfc";
-      else if (src === "qr") method = "qr";
+      // QR explicit param wins for QR posters/stickers (?src=qr).
+      // Anything routed via /u/<short_code> is treated as NFC tap (physical
+      // card or device tap), even when no card is bound to the link yet.
+      if (src === "qr") method = "qr";
+      else if (src === "nfc" || hasCardRef || hasShortCode) method = "nfc";
 
       enrichedMeta.entry_method = method;
+      if (metadata?.short_code) enrichedMeta.short_code = metadata.short_code;
       const label = method === "nfc" ? "NFC Tap" : method === "qr" ? "QR Scan" : "Direct Link";
       occasion = `Entry: ${label}`;
     }
