@@ -215,122 +215,165 @@ const NfcManagerPage = () => {
           </div>
         )}
 
-        <Card className="glass-card animate-fade-in">
-          <CardHeader className="pb-3">
-            <CardTitle className="font-display text-sm flex items-center gap-2">
-              <Link2 className="w-4 h-4" /> Generated Links
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {links.length === 0 ? (
-              <div className="p-8 text-center text-sm text-muted-foreground">
-                No links yet. Generate one and write it to an NFC card.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Label</TableHead>
-                      <TableHead>Persona</TableHead>
-                      <TableHead>Short URL</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {links.map((l) => {
-                      const persona = personaById(l.persona_id);
-                      const url = `${origin}/u/${l.code}`;
-                      const editing = editingId === l.id;
-                      return (
-                        <TableRow key={l.id}>
+        <Accordion type="multiple" defaultValue={personas.map(p => p.id)} className="space-y-3">
+          {personas.map((p) => {
+            const personaLinks = links.filter(l => l.persona_id === p.id);
+            const directUrl = `${origin}/p/${username}/${p.slug}?src=link`;
+            const directCode = `direct-${p.slug}`;
+            const directDisplay = `/p/${username}/${p.slug}`;
+            return (
+              <AccordionItem
+                key={p.id}
+                value={p.id}
+                className="glass-card animate-fade-in border-0 rounded-2xl overflow-hidden"
+              >
+                <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/30">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: p.accent_color ?? "#14b8a6" }} />
+                    <div className="text-left min-w-0">
+                      <p className="text-sm font-display font-semibold truncate">{p.label}</p>
+                      <p className="text-[10px] text-muted-foreground font-mono truncate">/p/{username}/{p.slug}</p>
+                    </div>
+                    <Badge variant="secondary" className="ml-auto shrink-0 text-[10px]">
+                      {personaLinks.length} {personaLinks.length === 1 ? "link" : "links"}
+                    </Badge>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-2 pb-2 pt-0">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[120px]">Status</TableHead>
+                          <TableHead>Label</TableHead>
+                          <TableHead>URL</TableHead>
+                          <TableHead className="text-right w-[180px]">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {/* Direct Link row — synthetic, always present */}
+                        <TableRow className="bg-primary/5">
                           <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Switch checked={l.is_active} onCheckedChange={(v) => toggleActive(l, v)} />
-                              <Badge variant={l.is_active ? "default" : "secondary"} className="text-[10px]">
-                                {l.is_active ? "Active" : "Inactive"}
-                              </Badge>
-                            </div>
+                            <Badge variant="outline" className="text-[10px] gap-1">
+                              <Globe className="w-3 h-3" /> Direct
+                            </Badge>
                           </TableCell>
                           <TableCell>
-                            {editing ? (
-                              <Input value={editLabel} onChange={(e) => setEditLabel(e.target.value)} className="h-8 text-xs" placeholder="e.g. Conference card" />
-                            ) : (
-                              <span className="text-sm">{l.label || <span className="text-muted-foreground italic">Unnamed</span>}</span>
-                            )}
+                            <span className="text-sm font-medium">Direct link & QR</span>
+                            <p className="text-[10px] text-muted-foreground">Tagged as Direct Link in logs</p>
                           </TableCell>
                           <TableCell>
-                            {editing ? (
-                              <Select value={editPersonaId} onValueChange={setEditPersonaId}>
-                                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Pick a persona" /></SelectTrigger>
-                                <SelectContent>
-                                  {personas.map(p => (
-                                    <SelectItem key={p.id} value={p.id}>
-                                      <span className="flex items-center gap-2">
-                                        <span className="w-2 h-2 rounded-full" style={{ background: p.accent_color ?? "#14b8a6" }} />
-                                        {p.label}
-                                      </span>
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            ) : persona ? (
-                              <span className="flex items-center gap-2 text-sm">
-                                <span className="w-2 h-2 rounded-full" style={{ background: persona.accent_color ?? "#14b8a6" }} />
-                                {persona.label}
-                              </span>
-                            ) : (
-                              <span className="text-xs text-muted-foreground italic">Default</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <code className="text-xs font-mono text-muted-foreground">/u/{l.code}</code>
+                            <code className="text-xs font-mono text-muted-foreground">{directDisplay}</code>
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-1">
-                              {editing ? (
-                                <>
-                                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={saveEdit}>
-                                    <Check className="w-3.5 h-3.5 text-primary" />
-                                  </Button>
-                                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditingId(null)}>
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </Button>
-                                </>
-                              ) : (
-                                <>
-                                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleCopy(l.code)} title="Copy URL">
-                                    {copiedCode === l.code ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
-                                  </Button>
-                                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setQrCode(l.code)} title="QR code">
-                                    <Download className="w-3.5 h-3.5" />
-                                  </Button>
-                                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => window.open(url, "_blank")} title="Open">
-                                    <ExternalLink className="w-3.5 h-3.5" />
-                                  </Button>
-                                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => startEdit(l)} title="Edit">
-                                    <Pencil className="w-3.5 h-3.5" />
-                                  </Button>
-                                  <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setDeleteId(l.id)} title="Delete">
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </Button>
-                                </>
-                              )}
+                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleCopy(directCode, directUrl)} title="Copy URL">
+                                {copiedCode === directCode ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                              </Button>
+                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setQrPreview({ url: directUrl, code: directCode, label: `direct-${p.slug}` })} title="QR code">
+                                <Download className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => window.open(directUrl, "_blank")} title="Open">
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </Button>
                             </div>
                           </TableCell>
                         </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-            <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1.5">
-              <Info className="w-3 h-3" /> Each link points to a specific persona. Disable to revoke without deleting.
-            </p>
-          </CardContent>
-        </Card>
+
+                        {/* Short links for this persona */}
+                        {personaLinks.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-center py-6 text-xs text-muted-foreground">
+                              No NFC short links yet. <Button variant="link" className="h-auto p-0 text-xs" onClick={() => { setNewPersonaId(p.id); setShowCreate(true); }}>Generate one</Button>
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          personaLinks.map((l) => {
+                            const url = `${origin}/u/${l.code}`;
+                            const editing = editingId === l.id;
+                            return (
+                              <TableRow key={l.id}>
+                                <TableCell>
+                                  <div className="flex items-center gap-2">
+                                    <Switch checked={l.is_active} onCheckedChange={(v) => toggleActive(l, v)} />
+                                    <Badge variant={l.is_active ? "default" : "secondary"} className="text-[10px] gap-1">
+                                      <Wifi className="w-3 h-3" />{l.is_active ? "Active" : "Off"}
+                                    </Badge>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  {editing ? (
+                                    <Input value={editLabel} onChange={(e) => setEditLabel(e.target.value)} className="h-8 text-xs" placeholder="e.g. Conference card" />
+                                  ) : (
+                                    <span className="text-sm">{l.label || <span className="text-muted-foreground italic">Unnamed</span>}</span>
+                                  )}
+                                  {editing && (
+                                    <Select value={editPersonaId} onValueChange={setEditPersonaId}>
+                                      <SelectTrigger className="h-7 text-[10px] mt-1"><SelectValue placeholder="Move to persona" /></SelectTrigger>
+                                      <SelectContent>
+                                        {personas.map(pp => (
+                                          <SelectItem key={pp.id} value={pp.id}>
+                                            <span className="flex items-center gap-2">
+                                              <span className="w-2 h-2 rounded-full" style={{ background: pp.accent_color ?? "#14b8a6" }} />
+                                              {pp.label}
+                                            </span>
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  <code className="text-xs font-mono text-muted-foreground">/u/{l.code}</code>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <div className="flex items-center justify-end gap-1">
+                                    {editing ? (
+                                      <>
+                                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={saveEdit}>
+                                          <Check className="w-3.5 h-3.5 text-primary" />
+                                        </Button>
+                                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditingId(null)}>
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                        </Button>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleCopy(l.code)} title="Copy URL">
+                                          {copiedCode === l.code ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                                        </Button>
+                                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setQrPreview({ url: `${origin}/u/${l.code}?src=qr`, code: l.code, label: l.code })} title="QR code">
+                                          <Download className="w-3.5 h-3.5" />
+                                        </Button>
+                                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => window.open(url, "_blank")} title="Open">
+                                          <ExternalLink className="w-3.5 h-3.5" />
+                                        </Button>
+                                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => startEdit(l)} title="Edit">
+                                          <Pencil className="w-3.5 h-3.5" />
+                                        </Button>
+                                        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setDeleteId(l.id)} title="Delete">
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                        </Button>
+                                      </>
+                                    )}
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            );
+          })}
+        </Accordion>
+
+        <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+          <Info className="w-3 h-3" /> Direct links are tagged as <strong>Direct Link</strong>; QR scans as <strong>QR Scan</strong>; short links as <strong>NFC Tap</strong>.
+        </p>
       </div>
 
       {/* Create dialog */}
