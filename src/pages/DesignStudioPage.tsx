@@ -215,7 +215,7 @@ const DesignStudioPage = () => {
         </div>
 
         {/* Main Layout: Panel + Preview */}
-        <div className="flex flex-col lg:flex-row gap-0 rounded-2xl border border-border/60 bg-card/30 backdrop-blur-sm overflow-hidden" style={{ height: "calc(100vh - 180px)" }}>
+        <div className="flex flex-col lg:flex-row gap-0 rounded-2xl border border-border/60 bg-card/30 backdrop-blur-sm overflow-hidden" style={{ height: "calc(100vh - 140px)" }}>
           {/* Panel with Tabs */}
           <div className="flex-1 min-h-0 flex flex-col lg:max-w-md lg:border-r lg:border-border/40">
             {/* Tab Switcher */}
