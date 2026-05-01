@@ -114,24 +114,24 @@ const DesignStudioPage = () => {
           : presetCss !== "none" ? presetCss : undefined,
         backgroundSize: editing?.background_image_url ? "cover" : undefined,
         backgroundPosition: editing?.background_image_url ? "center" : undefined,
-        minHeight: "600px",
+        minHeight: "480px",
       }}
     >
-      {/* NFC Card Hero Section — full fly-up preview */}
-      <div className="relative flex flex-col items-center justify-center min-h-[480px] p-8">
+      {/* NFC Card Hero Section — compact preview */}
+      <div className="relative flex flex-col items-center justify-center min-h-[340px] p-4">
         <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(ellipse 60% 50% at 50% 50%, ${editing?.accent_color ?? "#0d9488"}15, transparent 70%)` }} />
 
         {/* Branding */}
-        <div className="absolute top-4 flex items-center gap-2">
-          <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: editing?.accent_color ?? "#0d9488" }}>
-            <span className="text-white text-[8px] font-bold">H</span>
+        <div className="absolute top-2 flex items-center gap-1.5">
+          <div className="w-4 h-4 rounded-md flex items-center justify-center" style={{ background: editing?.accent_color ?? "#0d9488" }}>
+            <span className="text-white text-[7px] font-bold">H</span>
           </div>
-          <span className="text-[9px] font-display font-semibold tracking-widest uppercase" style={{ color: `${editing?.text_color ?? "#fff"}99` }}>
+          <span className="text-[8px] font-display font-semibold tracking-widest uppercase" style={{ color: `${editing?.text_color ?? "#fff"}99` }}>
             Handshake
           </span>
         </div>
 
-        <div className="w-full max-w-xl">
+        <div className="w-full max-w-md">
           <InteractiveCard3D
             name={editing?.display_name ?? "Your Name"}
             headline={editing?.headline ?? undefined}
@@ -157,68 +157,32 @@ const DesignStudioPage = () => {
             borderRadius={editing?.border_radius ?? 24}
           />
         </div>
-
-        {/* Scroll indicator */}
-        <div className="absolute bottom-4 flex flex-col items-center gap-1" style={{ color: `${editing?.text_color ?? "#fff"}66` }}>
-          <span className="text-[8px] font-medium uppercase tracking-widest">Scroll</span>
-          <span className="text-xs">▾</span>
-        </div>
       </div>
 
-      {/* Info Section Preview */}
-      <div style={{ backgroundColor: editing?.landing_bg_color ?? "#0a0a0f" }} className="px-6 py-8 space-y-4">
-        {/* Hero info */}
+      {/* Info Section Preview — compact */}
+      <div style={{ backgroundColor: editing?.landing_bg_color ?? "#0a0a0f" }} className="px-4 py-5 space-y-3">
         {editing?.avatar_url && (
-          <div className="w-14 h-14 rounded-full mx-auto border-2 border-white/20 overflow-hidden">
+          <div className="w-12 h-12 rounded-full mx-auto border-2 border-white/20 overflow-hidden">
             <img src={editing.avatar_url} alt="" className="w-full h-full object-cover" />
           </div>
         )}
         <div className="text-center space-y-1">
-          <h2 className="text-lg font-display font-bold" style={{ color: editing?.text_color ?? "#fff" }}>
+          <h2 className="text-base font-display font-bold" style={{ color: editing?.text_color ?? "#fff" }}>
             {editing?.display_name || "Your Name"}
           </h2>
           {editing?.headline && (
-            <p className="text-xs" style={{ color: `${editing?.text_color ?? "#fff"}99` }}>{editing.headline}</p>
+            <p className="text-[11px]" style={{ color: `${editing?.text_color ?? "#fff"}99` }}>{editing.headline}</p>
           )}
           {editing?.bio && (
-            <div className="mt-3 p-3 rounded-xl bg-white/5 backdrop-blur-md border border-white/10">
-              <p className="text-xs leading-relaxed" style={{ color: `${editing?.text_color ?? "#fff"}dd` }}>{editing.bio}</p>
+            <div className="mt-2 p-2.5 rounded-xl bg-white/5 backdrop-blur-md border border-white/10">
+              <p className="text-[11px] leading-relaxed" style={{ color: `${editing?.text_color ?? "#fff"}dd` }}>{editing.bio}</p>
             </div>
           )}
         </div>
 
-        {/* Contact preview */}
-        <div className="rounded-xl divide-y divide-white/10 overflow-hidden bg-white/5 backdrop-blur-md border border-white/10">
-          {editing?.email_public && (
-            <div className="flex items-center gap-3 p-3 text-xs" style={{ color: editing?.text_color ?? "#fff" }}>
-              <span style={{ color: `${editing?.text_color ?? "#fff"}66` }}>✉</span>
-              {editing.email_public}
-            </div>
-          )}
-          {editing?.phone && (
-            <div className="flex items-center gap-3 p-3 text-xs" style={{ color: editing?.text_color ?? "#fff" }}>
-              <span style={{ color: `${editing?.text_color ?? "#fff"}66` }}>📞</span>
-              {editing.phone}
-            </div>
-          )}
-          {editing?.website && (
-            <div className="flex items-center gap-3 p-3 text-xs" style={{ color: editing?.text_color ?? "#fff" }}>
-              <span style={{ color: `${editing?.text_color ?? "#fff"}66` }}>🌐</span>
-              {editing.website}
-            </div>
-          )}
-        </div>
-
-        {/* Action buttons preview */}
-        <div className="space-y-2">
-          <div className="w-full h-10 rounded-xl flex items-center justify-center text-xs font-semibold text-white" style={{ backgroundColor: editing?.accent_color ?? "#0d9488" }}>
-            📇 Save Contact
-          </div>
-          {editing?.cv_url && (
-            <div className="w-full h-10 rounded-xl flex items-center justify-center text-xs border border-white/20" style={{ color: editing?.text_color ?? "#fff" }}>
-              📄 Download CV
-            </div>
-          )}
+        {/* Action button preview */}
+        <div className="w-full h-9 rounded-xl flex items-center justify-center text-[11px] font-semibold text-white" style={{ backgroundColor: editing?.accent_color ?? "#0d9488" }}>
+          📇 Save Contact
         </div>
       </div>
     </div>
