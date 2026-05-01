@@ -624,3 +624,28 @@
   /* Bigger comfortable tap targets for icon-only buttons */
   button[class*="h-7"], button[class*="h-8"] { min-height: 36px; }
 }
+
+/* ─── Page Builder Themed Preview ─────────────────────────────────────── */
+/* Applied to .page-themed wrapper inside the builder canvas + public render. */
+/* Allows theme tokens (--page-bg, --page-text, --page-accent, etc.) to flow */
+/* down to nested block placeholders, dashed borders, and muted text without */
+/* fighting the global dashboard tokens. */
+.page-themed {
+  background-color: var(--page-bg, transparent);
+  color: var(--page-text, inherit);
+  font-family: var(--page-font, inherit);
+}
+.page-themed .text-muted-foreground {
+  color: var(--page-text-muted, hsl(var(--muted-foreground))) !important;
+}
+.page-themed .bg-muted\/30 {
+  background-color: var(--page-accent-soft, hsl(var(--muted) / 0.3)) !important;
+}
+.page-themed .border-border,
+.page-themed .border-border\/40,
+.page-themed .border-border\/60 {
+  border-color: var(--page-border, hsl(var(--border))) !important;
+}
+.page-themed .border-dashed {
+  border-color: var(--page-border, hsl(var(--border))) !important;
+}
