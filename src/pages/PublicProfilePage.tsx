@@ -110,9 +110,10 @@ const PublicProfilePage = () => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const { scrollYProgress } = useScroll({ target: containerRef });
-  const cardScale = useTransform(scrollYProgress, [0, 0.3], [1, 0.85]);
-  const cardOpacity = useTransform(scrollYProgress, [0.2, 0.4], [1, 0.6]);
-  const chevronOpacity = useTransform(scrollYProgress, [0, 0.1], [1, 0]);
+  // Hold the card at full scale through most of the hero, only shrinking near the bottom
+  const cardScale = useTransform(scrollYProgress, [0.45, 0.85], [1, 0.85]);
+  const cardOpacity = useTransform(scrollYProgress, [0.55, 0.9], [1, 0.6]);
+  const chevronOpacity = useTransform(scrollYProgress, [0.1, 0.3], [1, 0]);
 
   // Track scroll for floating Contact Me CTA
   useEffect(() => {
