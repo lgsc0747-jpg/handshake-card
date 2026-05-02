@@ -294,6 +294,16 @@ function PageBuilderPage() {
     loadPages();
   }, [user, selectedPersonaId]);
 
+  // Live persona for themed preview rendering of nfc_card / contact / social blocks.
+  useEffect(() => {
+    if (!user || !selectedPersonaId) { setLivePersona(null); return; }
+    let cancelled = false;
+    supabase.from("personas").select("*").eq("id", selectedPersonaId).single().then(({ data }) => {
+      if (!cancelled) setLivePersona(data ?? null);
+    });
+    return () => { cancelled = true; };
+  }, [user, selectedPersonaId]);
+
   const loadPages = async () => {
     const { data } = await supabase
       .from("site_pages").select("*")
