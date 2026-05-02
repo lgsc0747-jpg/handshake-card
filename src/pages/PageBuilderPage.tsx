@@ -36,6 +36,10 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { NfcCardsPanel } from "@/components/page-builder/NfcCardsPanel";
+import { RecentInteractionsPanel } from "@/components/page-builder/RecentInteractionsPanel";
+import { Activity } from "lucide-react";
 
 const ICON_MAP: Record<string, any> = {
   Type, AlignLeft, Image, LayoutGrid, Play, Minus, SeparatorHorizontal,
@@ -158,10 +162,11 @@ function SortablePageTab({ page, isActive, onSelect, onRename, onDelete, canDele
   );
 }
 
-function SortablePreviewBlock({ block, editingBlockId, onSelect }: {
+function SortablePreviewBlock({ block, editingBlockId, onSelect, persona }: {
   block: PageBlock;
   editingBlockId: string | null;
   onSelect: () => void;
+  persona?: any;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: block.id });
   const style: React.CSSProperties = {
@@ -184,6 +189,7 @@ function SortablePreviewBlock({ block, editingBlockId, onSelect }: {
         block={block}
         isEditing={true}
         onClick={onSelect}
+        persona={persona}
       />
     </div>
   );
@@ -198,6 +204,7 @@ function PageBuilderPage() {
   const { isPro, loading: subLoading } = useSubscription();
   const [personas, setPersonas] = useState<{ id: string; label: string; slug: string }[]>([]);
   const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null);
+  const [livePersona, setLivePersona] = useState<any | null>(null);
   const [pages, setPages] = useState<SitePage[]>([]);
   const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
   const [blocks, setBlocks] = useState<PageBlock[]>([]);
@@ -285,6 +292,16 @@ function PageBuilderPage() {
   useEffect(() => {
     if (!user || !selectedPersonaId) return;
     loadPages();
+  }, [user, selectedPersonaId]);
+
+  // Live persona for themed preview rendering of nfc_card / contact / social blocks.
+  useEffect(() => {
+    if (!user || !selectedPersonaId) { setLivePersona(null); return; }
+    let cancelled = false;
+    supabase.from("personas").select("*").eq("id", selectedPersonaId).single().then(({ data }) => {
+      if (!cancelled) setLivePersona(data ?? null);
+    });
+    return () => { cancelled = true; };
   }, [user, selectedPersonaId]);
 
   const loadPages = async () => {
@@ -738,6 +755,7 @@ function PageBuilderPage() {
                           key={block.id} block={block}
                           editingBlockId={editingBlockId}
                           onSelect={() => setEditingBlockId(block.id)}
+                          persona={livePersona}
                         />
                       ))}
                     </SortableContext>
@@ -757,15 +775,43 @@ function PageBuilderPage() {
           </ScrollArea>
         </div>
 
-        {/* ═══ Right Panel — Block Editor ═══ */}
-        {editingBlock && !isMobile && (
-          <div className="w-72 shrink-0 border-l border-border/40 bg-card/30 overflow-y-auto p-3">
-            <BlockEditor
-              block={editingBlock}
-              onChange={updateBlock}
-              onDelete={() => deleteBlock(editingBlock.id)}
-              onClose={() => setEditingBlockId(null)}
-            />
+        {/* ═══ Right Panel — Tabbed: Block / NFC / Activity ═══ */}
+        {!isMobile && (
+          <div className="w-72 shrink-0 border-l border-border/40 bg-card/30 flex flex-col overflow-hidden">
+            <Tabs defaultValue="block" className="flex-1 flex flex-col">
+              <TabsList className="grid grid-cols-3 m-2 h-8 bg-muted/40">
+                <TabsTrigger value="block" className="text-[10px] gap-1 h-6">
+                  <PanelLeft className="w-3 h-3" /> Block
+                </TabsTrigger>
+                <TabsTrigger value="nfc" className="text-[10px] gap-1 h-6">
+                  <CreditCard className="w-3 h-3" /> Cards
+                </TabsTrigger>
+                <TabsTrigger value="activity" className="text-[10px] gap-1 h-6">
+                  <Activity className="w-3 h-3" /> Activity
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="block" className="flex-1 overflow-y-auto p-3 mt-0">
+                {editingBlock ? (
+                  <BlockEditor
+                    block={editingBlock}
+                    onChange={updateBlock}
+                    onDelete={() => deleteBlock(editingBlock.id)}
+                    onClose={() => setEditingBlockId(null)}
+                  />
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <PanelLeft className="w-6 h-6 mx-auto mb-2 opacity-40" />
+                    <p className="text-[11px]">Select a block on the canvas to edit it.</p>
+                  </div>
+                )}
+              </TabsContent>
+              <TabsContent value="nfc" className="flex-1 overflow-y-auto p-3 mt-0">
+                {user && <NfcCardsPanel userId={user.id} personaId={selectedPersonaId} />}
+              </TabsContent>
+              <TabsContent value="activity" className="flex-1 overflow-y-auto p-3 mt-0">
+                {user && <RecentInteractionsPanel userId={user.id} personaId={selectedPersonaId} />}
+              </TabsContent>
+            </Tabs>
           </div>
         )}
       </div>
