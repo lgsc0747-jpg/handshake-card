@@ -162,10 +162,11 @@ function SortablePageTab({ page, isActive, onSelect, onRename, onDelete, canDele
   );
 }
 
-function SortablePreviewBlock({ block, editingBlockId, onSelect }: {
+function SortablePreviewBlock({ block, editingBlockId, onSelect, persona }: {
   block: PageBlock;
   editingBlockId: string | null;
   onSelect: () => void;
+  persona?: any;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: block.id });
   const style: React.CSSProperties = {
@@ -188,6 +189,7 @@ function SortablePreviewBlock({ block, editingBlockId, onSelect }: {
         block={block}
         isEditing={true}
         onClick={onSelect}
+        persona={persona}
       />
     </div>
   );
