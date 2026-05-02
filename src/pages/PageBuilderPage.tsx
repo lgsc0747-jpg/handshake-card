@@ -36,6 +36,10 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { NfcCardsPanel } from "@/components/page-builder/NfcCardsPanel";
+import { RecentInteractionsPanel } from "@/components/page-builder/RecentInteractionsPanel";
+import { Activity } from "lucide-react";
 
 const ICON_MAP: Record<string, any> = {
   Type, AlignLeft, Image, LayoutGrid, Play, Minus, SeparatorHorizontal,
