@@ -490,6 +490,7 @@ export type Database = {
           show_availability: boolean | null
           show_location: boolean | null
           slug: string
+          social_order: Json
           tertiary_color: string | null
           text_alignment: string | null
           text_color: string | null
@@ -539,6 +540,7 @@ export type Database = {
           show_availability?: boolean | null
           show_location?: boolean | null
           slug: string
+          social_order?: Json
           tertiary_color?: string | null
           text_alignment?: string | null
           text_color?: string | null
@@ -588,6 +590,7 @@ export type Database = {
           show_availability?: boolean | null
           show_location?: boolean | null
           slug?: string
+          social_order?: Json
           tertiary_color?: string | null
           text_alignment?: string | null
           text_color?: string | null
