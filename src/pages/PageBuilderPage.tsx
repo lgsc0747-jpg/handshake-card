@@ -755,6 +755,7 @@ function PageBuilderPage() {
                           key={block.id} block={block}
                           editingBlockId={editingBlockId}
                           onSelect={() => setEditingBlockId(block.id)}
+                          persona={livePersona}
                         />
                       ))}
                     </SortableContext>
