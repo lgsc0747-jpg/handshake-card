@@ -217,6 +217,7 @@ function PageBuilderPage() {
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [addBlockOpen, setAddBlockOpen] = useState(false);
   const [templateOpen, setTemplateOpen] = useState(false);
+  const [diffOpen, setDiffOpen] = useState(false);
 
   // Confirmation dialogs
   const [confirmDeleteBlock, setConfirmDeleteBlock] = useState<string | null>(null);
