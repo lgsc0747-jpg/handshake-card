@@ -741,7 +741,7 @@ function PageBuilderPage() {
                   PAGE_THEME_CLASS,
                   deviceMode === "mobile"
                     ? "w-[375px] min-h-[667px] border-[6px] border-muted-foreground/15 rounded-[2.5rem]"
-                    : "w-full max-w-6xl min-h-[calc(100vh-7rem)] rounded-xl border border-border/60"
+                    : "w-full min-h-[calc(100vh-7rem)] rounded-xl border border-border/60",
                 )}
                 style={{
                   ...getPageThemeStyles(pageThemeCtx.themeId),
@@ -749,8 +749,10 @@ function PageBuilderPage() {
                   color: "var(--page-text, hsl(var(--foreground)))",
                   fontFamily: "var(--page-font, inherit)",
                   borderRadius: deviceMode === "mobile" ? undefined : "var(--page-radius, 0.75rem)",
-                }}>
-                <div className="p-0 flex-1 flex flex-col">
+                  maxWidth: deviceMode === "mobile" ? undefined : `${PAGE_CANVAS_MAX_W_PX + 32}px`,
+                }}
+              >
+                <PageCanvas surface="editor" mobileFrame={deviceMode === "mobile"} className="flex-1">
                   <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleSortEnd}>
                     <SortableContext items={blocks.filter(b => b.is_visible || editingBlockId === b.id).map(b => b.id)} strategy={verticalListSortingStrategy}>
                       {blocks.filter(b => b.is_visible || editingBlockId === b.id).map(block => (
@@ -769,10 +771,10 @@ function PageBuilderPage() {
                       <p className="text-sm">Add your first block</p>
                     </div>
                   ) : (
-                    /* Spacer fills remaining canvas height on desktop so the page never looks half-empty */
+                    /* Spacer keeps the canvas filling available height. */
                     <div className="flex-1" aria-hidden="true" />
                   )}
-                </div>
+                </PageCanvas>
               </div>
             </div>
           </ScrollArea>
