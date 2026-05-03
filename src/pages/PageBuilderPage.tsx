@@ -937,6 +937,18 @@ function PageBuilderPage() {
         description="All selected blocks will be permanently removed."
         onConfirm={bulkDeleteBlocks}
       />
+
+      {import.meta.env.DEV && profileUsername && selectedPersonaId && (() => {
+        const personaSlug = personas.find(p => p.id === selectedPersonaId)?.slug;
+        const liveUrl = `/p/${profileUsername}${personaSlug ? `/${personaSlug}` : ""}`;
+        return (
+          <PreviewDiffOverlay
+            open={diffOpen}
+            onClose={() => setDiffOpen(false)}
+            liveUrl={liveUrl}
+          />
+        );
+      })()}
     </div>
   );
 }
