@@ -279,6 +279,8 @@ function PageBuilderPage() {
     return () => window.removeEventListener("keydown", handler);
   }, [undo, redo]);
 
+  const [profileUsername, setProfileUsername] = useState<string | null>(null);
+
   useEffect(() => {
     if (!user) return;
     supabase.from("personas").select("id, label, slug").eq("user_id", user.id).order("created_at").then(({ data }) => {
@@ -289,6 +291,9 @@ function PageBuilderPage() {
         pageThemeCtx.setPersonaId(list[0].id);
       }
       setLoading(false);
+    });
+    supabase.from("profiles").select("username").eq("user_id", user.id).maybeSingle().then(({ data }) => {
+      if (data?.username) setProfileUsername(data.username);
     });
   }, [user]);
 
