@@ -39,7 +39,9 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { NfcCardsPanel } from "@/components/page-builder/NfcCardsPanel";
 import { RecentInteractionsPanel } from "@/components/page-builder/RecentInteractionsPanel";
-import { Activity } from "lucide-react";
+import { PageCanvas, PAGE_CANVAS_MAX_W_PX } from "@/components/page-builder/PageCanvas";
+import { PreviewDiffOverlay } from "@/components/page-builder/PreviewDiffOverlay";
+import { Activity, GitCompare } from "lucide-react";
 
 const ICON_MAP: Record<string, any> = {
   Type, AlignLeft, Image, LayoutGrid, Play, Minus, SeparatorHorizontal,
