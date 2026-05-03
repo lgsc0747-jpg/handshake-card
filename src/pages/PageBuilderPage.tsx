@@ -39,7 +39,9 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { NfcCardsPanel } from "@/components/page-builder/NfcCardsPanel";
 import { RecentInteractionsPanel } from "@/components/page-builder/RecentInteractionsPanel";
-import { Activity } from "lucide-react";
+import { PageCanvas, PAGE_CANVAS_MAX_W_PX } from "@/components/page-builder/PageCanvas";
+import { PreviewDiffOverlay } from "@/components/page-builder/PreviewDiffOverlay";
+import { Activity, GitCompare } from "lucide-react";
 
 const ICON_MAP: Record<string, any> = {
   Type, AlignLeft, Image, LayoutGrid, Play, Minus, SeparatorHorizontal,
@@ -177,7 +179,7 @@ function SortablePreviewBlock({ block, editingBlockId, onSelect, persona }: {
     position: "relative",
   };
   return (
-    <div ref={setNodeRef} style={style} className="group relative">
+    <div ref={setNodeRef} style={style} data-block-id={block.id} className="group relative">
       <div
         {...attributes}
         {...listeners}
@@ -215,6 +217,7 @@ function PageBuilderPage() {
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [addBlockOpen, setAddBlockOpen] = useState(false);
   const [templateOpen, setTemplateOpen] = useState(false);
+  const [diffOpen, setDiffOpen] = useState(false);
 
   // Confirmation dialogs
   const [confirmDeleteBlock, setConfirmDeleteBlock] = useState<string | null>(null);
@@ -276,6 +279,8 @@ function PageBuilderPage() {
     return () => window.removeEventListener("keydown", handler);
   }, [undo, redo]);
 
+  const [profileUsername, setProfileUsername] = useState<string | null>(null);
+
   useEffect(() => {
     if (!user) return;
     supabase.from("personas").select("id, label, slug").eq("user_id", user.id).order("created_at").then(({ data }) => {
@@ -286,6 +291,9 @@ function PageBuilderPage() {
         pageThemeCtx.setPersonaId(list[0].id);
       }
       setLoading(false);
+    });
+    supabase.from("profiles").select("username").eq("user_id", user.id).maybeSingle().then(({ data }) => {
+      if (data?.username) setProfileUsername(data.username);
     });
   }, [user]);
 
@@ -604,6 +612,17 @@ function PageBuilderPage() {
               <Smartphone className="w-3 h-3" />
             </Button>
           </div>
+          {import.meta.env.DEV && selectedPersonaId && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 w-7 p-0"
+              onClick={() => setDiffOpen(true)}
+              title="Compare editor vs live"
+            >
+              <GitCompare className="w-3.5 h-3.5" />
+            </Button>
+          )}
           <Button onClick={saveAll} disabled={saving} size="sm" className="gradient-primary text-primary-foreground rounded-lg h-7 text-xs px-3">
             {saving ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Save className="w-3 h-3 mr-1" />}
             Save
@@ -738,7 +757,7 @@ function PageBuilderPage() {
                   PAGE_THEME_CLASS,
                   deviceMode === "mobile"
                     ? "w-[375px] min-h-[667px] border-[6px] border-muted-foreground/15 rounded-[2.5rem]"
-                    : "w-full max-w-6xl min-h-[calc(100vh-7rem)] rounded-xl border border-border/60"
+                    : "w-full min-h-[calc(100vh-7rem)] rounded-xl border border-border/60",
                 )}
                 style={{
                   ...getPageThemeStyles(pageThemeCtx.themeId),
@@ -746,8 +765,10 @@ function PageBuilderPage() {
                   color: "var(--page-text, hsl(var(--foreground)))",
                   fontFamily: "var(--page-font, inherit)",
                   borderRadius: deviceMode === "mobile" ? undefined : "var(--page-radius, 0.75rem)",
-                }}>
-                <div className="p-0 flex-1 flex flex-col">
+                  maxWidth: deviceMode === "mobile" ? undefined : `${PAGE_CANVAS_MAX_W_PX + 32}px`,
+                }}
+              >
+                <PageCanvas surface="editor" mobileFrame={deviceMode === "mobile"} className="flex-1">
                   <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleSortEnd}>
                     <SortableContext items={blocks.filter(b => b.is_visible || editingBlockId === b.id).map(b => b.id)} strategy={verticalListSortingStrategy}>
                       {blocks.filter(b => b.is_visible || editingBlockId === b.id).map(block => (
@@ -766,10 +787,10 @@ function PageBuilderPage() {
                       <p className="text-sm">Add your first block</p>
                     </div>
                   ) : (
-                    /* Spacer fills remaining canvas height on desktop so the page never looks half-empty */
+                    /* Spacer keeps the canvas filling available height. */
                     <div className="flex-1" aria-hidden="true" />
                   )}
-                </div>
+                </PageCanvas>
               </div>
             </div>
           </ScrollArea>
@@ -916,6 +937,18 @@ function PageBuilderPage() {
         description="All selected blocks will be permanently removed."
         onConfirm={bulkDeleteBlocks}
       />
+
+      {import.meta.env.DEV && profileUsername && selectedPersonaId && (() => {
+        const personaSlug = personas.find(p => p.id === selectedPersonaId)?.slug;
+        const liveUrl = `/p/${profileUsername}${personaSlug ? `/${personaSlug}` : ""}`;
+        return (
+          <PreviewDiffOverlay
+            open={diffOpen}
+            onClose={() => setDiffOpen(false)}
+            liveUrl={liveUrl}
+          />
+        );
+      })()}
     </div>
   );
 }

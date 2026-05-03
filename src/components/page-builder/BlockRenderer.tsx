@@ -84,8 +84,11 @@ export function BlockRenderer({ block, isEditing, onClick, persona, onTrackInter
   const wrapperStyle: React.CSSProperties = {
     paddingTop: styles.paddingY ?? 24,
     paddingBottom: styles.paddingY ?? 24,
-    paddingLeft: styles.paddingX ?? 16,
-    paddingRight: styles.paddingX ?? 16,
+    // Horizontal padding intentionally 0 by default so PageCanvas controls the
+    // gutter consistently between editor and live render. Per-block override
+    // is still respected when authors set styles.paddingX.
+    paddingLeft: styles.paddingX ?? 0,
+    paddingRight: styles.paddingX ?? 0,
     backgroundColor: styles.bgTransparencyEnabled && styles.bgColor
       ? (() => {
           const opacity = (styles.bgOpacity ?? 100) / 100;

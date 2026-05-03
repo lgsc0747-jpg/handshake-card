@@ -128,6 +128,13 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
+  /*
+   * Dashboard layout owns its own scroll container (main[overflow-y-auto]).
+   * Public profile and auth pages rely on the natural document scroll.
+   * We do NOT lock body overflow globally — that would break /p/:username and
+   * any standalone landing pages on mobile Safari.
+   */
+
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Space Grotesk', system-ui, sans-serif;
     @apply tracking-tight;

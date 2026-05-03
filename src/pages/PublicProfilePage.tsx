@@ -9,6 +9,7 @@ import { CardDisabledPage } from "@/components/CardDisabledPage";
 
 import { BlockRenderer } from "@/components/page-builder/BlockRenderer";
 import { PublicPageNav } from "@/components/page-builder/PublicPageNav";
+import { PageCanvas } from "@/components/page-builder/PageCanvas";
 
 import type { PageBlock } from "@/components/page-builder/types";
 import { downloadVCard } from "@/lib/vcard";
@@ -755,30 +756,32 @@ const PublicProfilePage = () => {
 
         {/* Route based on page_mode: builder = page blocks, personal/default = legacy card fly-up */}
         {persona?.page_mode === 'builder' && hasPageBuilder ? (
-          <div
-            className="flex-1 flex flex-col w-full max-w-6xl mx-auto"
+          <PageCanvas
+            surface="live"
+            className="flex-1"
             style={{
               color: hasPageTheme ? (pageThemeStyles as any)["--page-text"] || textColor : textColor,
               ...(hasPageTheme ? pageThemeStyles : {}),
             }}
           >
             {pageBlocks.map(block => (
-              <BlockRenderer key={block.id} block={block} persona={persona} onTrackInteraction={(type, metadata) => {
-                const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-                fetch(`https://${projectId}.supabase.co/functions/v1/log-interaction`, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    target_user_id: merged.user_id,
-                    interaction_type: type,
-                    metadata: { ...metadata, ua: navigator.userAgent, persona_slug: persona?.slug },
-                  }),
-                }).catch(() => {});
-              }} />
+              <div key={block.id} data-block-id={block.id}>
+                <BlockRenderer block={block} persona={persona} onTrackInteraction={(type, metadata) => {
+                  const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+                  fetch(`https://${projectId}.supabase.co/functions/v1/log-interaction`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      target_user_id: merged.user_id,
+                      interaction_type: type,
+                      metadata: { ...metadata, ua: navigator.userAgent, persona_slug: persona?.slug },
+                    }),
+                  }).catch(() => {});
+                }} />
+              </div>
             ))}
-            {/* Spacer keeps the live page filling the viewport even when blocks are short */}
             <div className="flex-1" aria-hidden="true" />
-          </div>
+          </PageCanvas>
         ) : (
           visibleSections.map((section, idx) => {
             const renderer = sectionRenderers[section.section_type];
