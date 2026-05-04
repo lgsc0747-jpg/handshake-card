@@ -18,7 +18,11 @@ function jsonResponse(body: unknown, status = 200) {
 function detectEnvironment(hostname: string | undefined): "dev" | "preview" | "prod" {
   const h = (hostname ?? "").toLowerCase();
   if (!h || h === "localhost" || h === "127.0.0.1" || h.startsWith("192.168.")) return "dev";
-  if (h.endsWith(".lovable.app") || h.endsWith(".lovableproject.com")) return "preview";
+  if (
+    h.endsWith(".lovable.app") ||
+    h.endsWith(".lovableproject.com") ||
+    h.endsWith(".vercel.app")
+  ) return "preview";
   return "prod";
 }
 
