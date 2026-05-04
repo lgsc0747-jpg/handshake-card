@@ -10,7 +10,11 @@ export type TurnstileEnv = "dev" | "preview" | "prod";
 export function detectEnvironment(hostname?: string): TurnstileEnv {
   const h = (hostname ?? (typeof window !== "undefined" ? window.location.hostname : "")).toLowerCase();
   if (!h || h === "localhost" || h === "127.0.0.1" || h.startsWith("192.168.")) return "dev";
-  if (h.endsWith(".lovable.app") || h.endsWith(".lovableproject.com")) return "preview";
+  if (
+    h.endsWith(".lovable.app") ||
+    h.endsWith(".lovableproject.com") ||
+    h.endsWith(".vercel.app")
+  ) return "preview";
   return "prod";
 }
 
