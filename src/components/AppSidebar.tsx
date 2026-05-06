@@ -36,14 +36,12 @@ interface NavItem {
 const DEFAULT_NFC: NavItem[] = [
   { title: "NFC Dashboard", url: "/", icon: LayoutDashboard },
   { title: "NFC Manager", url: "/nfc-manager", icon: Smartphone },
-  { title: "Card Studio", url: "/design-studio", icon: Palette },
-  { title: "Page Builder", url: "/page-builder", icon: FileText },
   { title: "Interaction Logs", url: "/logs", icon: List },
 ];
 
 
 const DEFAULT_GENERAL: NavItem[] = [
-  { title: "Personas", url: "/personas", icon: Users },
+  { title: "Funnel", url: "/funnel", icon: Sparkles },
   { title: "Leads", url: "/leads", icon: Mail },
   { title: "Settings", url: "/settings", icon: Settings },
   { title: "Plans", url: "/plans", icon: Crown },
@@ -51,7 +49,7 @@ const DEFAULT_GENERAL: NavItem[] = [
 
 const ICON_MAP: Record<string, any> = {
   LayoutDashboard, CreditCard, Smartphone, Palette, FileText, List,
-  Users, Mail, Settings, Crown, ShieldCheck, Contact,
+  Users, Mail, Settings, Crown, ShieldCheck, Contact, Sparkles,
 };
 
 function reorderFromStorage(key: string, defaults: NavItem[]): NavItem[] {
