@@ -76,7 +76,7 @@ function SortableNavItem({ item, collapsed }: { item: NavItem; collapsed: boolea
   };
   return (
     <SidebarMenuItem ref={setNodeRef} style={style} className="group/item">
-      <SidebarMenuButton asChild>
+      <SidebarMenuButton asChild className="rounded-xl">
         <div className="flex items-center w-full">
           <div {...attributes} {...listeners} className="touch-none cursor-grab mr-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
             <GripVertical className="w-3 h-3 text-muted-foreground hover:text-primary transition-colors" />
@@ -84,8 +84,8 @@ function SortableNavItem({ item, collapsed }: { item: NavItem; collapsed: boolea
           <NavLink
             to={item.url}
             end={item.url === "/"}
-            className="hover:bg-sidebar-accent/60 transition-colors flex-1 flex items-center"
-            activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+            className="flex-1 flex items-center rounded-xl px-2.5 py-1.5 text-sm transition-all hover:bg-sidebar-accent/40 hover:backdrop-blur-md"
+            activeClassName="bg-sidebar-accent/70 backdrop-blur-md border border-border/40 text-sidebar-accent-foreground font-medium shadow-[var(--shadow-card)]"
           >
             <item.icon className="mr-2 h-4 w-4" />
             {!collapsed && <span>{item.title}</span>}

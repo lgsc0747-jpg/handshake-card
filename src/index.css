@@ -142,16 +142,52 @@
 }
 
 @layer utilities {
-  .glass-card {
-    @apply bg-card/80 backdrop-blur-sm border border-border/60 shadow-[var(--shadow-card)];
-  }
-
+  .glass-card,
   .ios-card {
-    @apply bg-card/80 backdrop-blur-md border border-white/10 shadow-[var(--shadow-elevated)] rounded-[1.5rem];
+    @apply bg-card/70 backdrop-blur-xl border border-border/40 shadow-[var(--shadow-elevated)] rounded-2xl;
   }
 
   .glass-elevated {
-    @apply bg-card/90 backdrop-blur-md border border-border/50 shadow-[var(--shadow-elevated)];
+    @apply bg-card/80 backdrop-blur-xl border border-border/40 shadow-[var(--shadow-elevated)] rounded-2xl;
+  }
+
+  /* ── Apple-grade Recharts polish ── */
+  .recharts-cartesian-grid line {
+    stroke: hsl(var(--border));
+    stroke-opacity: 0.35;
+  }
+  .recharts-cartesian-axis-line,
+  .recharts-cartesian-axis-tick-line {
+    stroke: transparent;
+  }
+  .recharts-text {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.01em;
+    fill: hsl(var(--muted-foreground));
+  }
+  .recharts-tooltip-wrapper {
+    outline: none !important;
+  }
+  .recharts-default-tooltip {
+    background: hsl(var(--card) / 0.92) !important;
+    backdrop-filter: blur(16px);
+    border: 1px solid hsl(var(--border) / 0.6) !important;
+    border-radius: 12px !important;
+    box-shadow: var(--shadow-elevated) !important;
+    padding: 10px 12px !important;
+  }
+  .recharts-tooltip-label {
+    color: hsl(var(--foreground)) !important;
+    font-weight: 600 !important;
+    margin-bottom: 4px !important;
+  }
+  .recharts-legend-item-text {
+    color: hsl(var(--muted-foreground)) !important;
+    font-size: 11px !important;
+  }
+  .recharts-active-dot {
+    filter: drop-shadow(0 0 6px hsl(var(--primary) / 0.5));
   }
 
   .gradient-primary {
