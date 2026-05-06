@@ -7,15 +7,24 @@ export default {
   theme: {
     container: {
       center: true,
-      padding: "2rem",
+      padding: "1.5rem",
       screens: {
         "2xl": "1400px",
       },
     },
+    screens: {
+      xs: "480px",
+      sm: "640px",
+      md: "768px",
+      lg: "1024px",
+      xl: "1280px",
+      "2xl": "1400px",
+    },
     extend: {
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
-        display: ["Space Grotesk", "system-ui", "sans-serif"],
+        sans: ["-apple-system", "BlinkMacSystemFont", "SF Pro Text", "Inter", "system-ui", "sans-serif"],
+        display: ["-apple-system", "BlinkMacSystemFont", "SF Pro Display", "Inter", "Space Grotesk", "system-ui", "sans-serif"],
+        mono: ["SF Mono", "ui-monospace", "Menlo", "monospace"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -78,9 +87,21 @@ export default {
         },
       },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        sm: "var(--radius-sm)",
+        md: "var(--radius-md)",
+        lg: "var(--radius-lg)",
+        xl: "var(--radius-xl)",
+        "2xl": "var(--radius-2xl)",
+      },
+      transitionTimingFunction: {
+        ios: "cubic-bezier(0.32, 0.72, 0, 1)",
+        spring: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+        quart: "cubic-bezier(0.25, 1, 0.5, 1)",
+      },
+      transitionDuration: {
+        "180": "180ms",
+        "240": "240ms",
+        "420": "420ms",
       },
       keyframes: {
         "accordion-down": {
