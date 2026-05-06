@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import { CreditCard, LayoutDashboard, List, User, Wifi, LogOut, Smartphone, Users, Mail, Palette, Settings, Crown, ShieldCheck, FileText, GripVertical, RotateCcw, Contact, Sliders } from "lucide-react";
+import { CreditCard, LayoutDashboard, List, User, Wifi, LogOut, Smartphone, Users, Mail, Palette, Settings, Crown, ShieldCheck, FileText, GripVertical, RotateCcw, Contact, Sliders, Sparkles } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
