@@ -1,112 +1,104 @@
-import { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Users, Palette, FileText, Sparkles } from "lucide-react";
-import { springIOS, fadeUp } from "@/lib/motion";
-import PersonasPage from "@/pages/PersonasPage";
-import DesignStudioPage from "@/pages/DesignStudioPage";
-import PageBuilderPage from "@/pages/PageBuilderPage";
+import { Card, CardContent } from "@/components/ui/card";
+import { Page, PageHeader, PageSection, PageGrid } from "@/components/layout/Page";
+import { Users, Palette, FileText, ArrowRight, Sparkles } from "lucide-react";
+import { springIOS, fadeUp, staggerChildren } from "@/lib/motion";
 
-type FunnelTab = "personas" | "card" | "page";
-
-const TABS: { id: FunnelTab; label: string; icon: any; hint: string }[] = [
-  { id: "personas", label: "Personas", icon: Users, hint: "Identities" },
-  { id: "card", label: "Card Studio", icon: Palette, hint: "Visual" },
-  { id: "page", label: "Page Builder", icon: FileText, hint: "Content" },
+const TILES = [
+  {
+    id: "personas",
+    to: "/personas",
+    label: "Personas",
+    desc: "Manage identities, PINs, privacy and active state.",
+    icon: Users,
+    accent: "from-sky-500/30 to-sky-500/0",
+  },
+  {
+    id: "card",
+    to: "/design-studio",
+    label: "Card Studio",
+    desc: "Design the 3D business card and visual theme.",
+    icon: Palette,
+    accent: "from-fuchsia-500/30 to-fuchsia-500/0",
+  },
+  {
+    id: "page",
+    to: "/page-builder",
+    label: "Page Builder",
+    desc: "Compose the public landing page block by block.",
+    icon: FileText,
+    accent: "from-emerald-500/30 to-emerald-500/0",
+  },
 ];
 
 const FunnelPage = () => {
-  const [tab, setTab] = useState<FunnelTab>(() => {
-    const hash = window.location.hash.replace("#", "");
-    return (TABS.find((t) => t.id === hash)?.id ?? "personas") as FunnelTab;
-  });
-
-  const onChange = (value: string) => {
-    setTab(value as FunnelTab);
-    window.history.replaceState(null, "", `#${value}`);
-  };
-
-  const Header = useMemo(
-    () => (
-      <motion.div
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={springIOS}
-        className="sticky top-0 z-30 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 backdrop-blur-xl bg-background/70 border-b border-border/40"
-      >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 max-w-7xl mx-auto">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-[var(--shadow-card)]">
-              <Sparkles className="w-4 h-4 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-title-2 leading-tight">Funnel</h1>
-              <p className="text-xs text-muted-foreground">
-                Personas, card design and pages — one canvas
-              </p>
-            </div>
-          </div>
-
-          <Tabs value={tab} onValueChange={onChange}>
-            <TabsList className="rounded-2xl bg-muted/40 backdrop-blur-md p-1 h-auto">
-              {TABS.map((t) => {
-                const Icon = t.icon;
-                const active = tab === t.id;
-                return (
-                  <TabsTrigger
-                    key={t.id}
-                    value={t.id}
-                    className="relative rounded-xl px-3 sm:px-4 py-1.5 text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
-                  >
-                    <Icon className="w-3.5 h-3.5 mr-2 opacity-80" />
-                    <span className="hidden xs:inline">{t.label}</span>
-                    <span className="xs:hidden">{t.hint}</span>
-                  </TabsTrigger>
-                );
-              })}
-            </TabsList>
-          </Tabs>
-        </div>
-      </motion.div>
-    ),
-    [tab]
-  );
+  const navigate = useNavigate();
 
   return (
     <DashboardLayout>
-      {Header}
-      <div className="max-w-7xl mx-auto">
-        <AnimatePresence mode="wait">
+      <Page>
+        <PageHeader
+          title={
+            <span className="inline-flex items-center gap-2">
+              <span className="w-9 h-9 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-[var(--shadow-card)]">
+                <Sparkles className="w-4 h-4 text-primary-foreground" />
+              </span>
+              Funnel
+            </span>
+          }
+          description="Personas, card design and pages — one place to shape every step a visitor takes."
+        />
+
+        <PageSection title="Workspaces">
           <motion.div
-            key={tab}
-            variants={fadeUp}
+            variants={staggerChildren}
             initial="hidden"
             animate="show"
-            exit={{ opacity: 0, y: -4, transition: { duration: 0.15 } }}
+            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
           >
-            {tab === "personas" && <EmbeddedPage><PersonasPage /></EmbeddedPage>}
-            {tab === "card" && <EmbeddedPage><DesignStudioPage /></EmbeddedPage>}
-            {tab === "page" && <EmbeddedPage><PageBuilderPage /></EmbeddedPage>}
+            {TILES.map((t) => {
+              const Icon = t.icon;
+              return (
+                <motion.button
+                  key={t.id}
+                  variants={fadeUp}
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.985 }}
+                  transition={springIOS}
+                  onClick={() => navigate(t.to)}
+                  className="text-left group"
+                >
+                  <Card className="relative overflow-hidden h-full border-border/60 hover:border-primary/40 transition-colors">
+                    <div
+                      className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${t.accent} opacity-60 group-hover:opacity-100 transition-opacity`}
+                    />
+                    <CardContent className="relative p-5 sm:p-6 flex flex-col h-full gap-4">
+                      <div className="flex items-center justify-between">
+                        <span className="w-10 h-10 rounded-2xl bg-background/70 backdrop-blur-md border border-border/60 flex items-center justify-center">
+                          <Icon className="w-4 h-4" />
+                        </span>
+                        <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-base font-semibold tracking-tight">
+                          {t.label}
+                        </div>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          {t.desc}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.button>
+              );
+            })}
           </motion.div>
-        </AnimatePresence>
-      </div>
+        </PageSection>
+      </Page>
     </DashboardLayout>
   );
 };
-
-/**
- * The embedded sub-pages already render their own DashboardLayout.
- * We strip the outer chrome by isolating them in a contained wrapper,
- * relying on CSS to hide nested layout duplicates.
- */
-function EmbeddedPage({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="funnel-embedded">
-      {children}
-    </div>
-  );
-}
 
 export default FunnelPage;
