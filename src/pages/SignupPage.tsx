@@ -87,6 +87,33 @@ const SignupPage = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignup} className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm text-muted-foreground">Account type</label>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  { id: "personal", label: "Personal", desc: "1 user, full personal toolkit", icon: User },
+                  { id: "agency", label: "Agency", desc: "Multiple members, shared workspace", icon: Building2 },
+                ] as const).map((opt) => {
+                  const Icon = opt.icon;
+                  const active = accountType === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => setAccountType(opt.id)}
+                      className={`text-left rounded-2xl border p-3 transition-all ${
+                        active ? "border-primary bg-primary/5 shadow-sm" : "border-border/60 hover:border-primary/40"
+                      }`}
+                    >
+                      <Icon className="w-4 h-4 mb-1.5" />
+                      <div className="text-sm font-semibold">{opt.label}</div>
+                      <div className="text-[11px] text-muted-foreground leading-snug">{opt.desc}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="space-y-1.5">
               <label className="text-sm text-muted-foreground">Full Name</label>
               <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Alex Smith" required />
