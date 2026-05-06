@@ -53,18 +53,23 @@ const SignupPage = () => {
       return;
     }
 
-    const { error } = await supabase.auth.signUp({
+    const { data: signUpData, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: window.location.origin,
-        data: { full_name: fullName, username },
+        data: { full_name: fullName, username, account_type: accountType },
       },
     });
 
     if (error) {
       toast({ title: "Signup failed", description: error.message, variant: "destructive" });
     } else {
+      // Persist account_type on the profile (created by handle_new_user trigger).
+      const newUserId = signUpData.user?.id;
+      if (newUserId && accountType === "agency") {
+        await supabase.from("profiles").update({ account_type: "agency" }).eq("user_id", newUserId);
+      }
       toast({ title: "Check your email", description: "We sent a verification link to confirm your account." });
     }
     setLoading(false);
