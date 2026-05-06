@@ -21,6 +21,7 @@ import DesignStudioPage from "./pages/DesignStudioPage.tsx";
 import PageBuilderPage from "./pages/PageBuilderPage.tsx";
 import FunnelPage from "./pages/FunnelPage.tsx";
 import PersonaAnalyticsPage from "./pages/PersonaAnalyticsPage.tsx";
+import AgencyPage from "./pages/AgencyPage.tsx";
 
 import SettingsPage from "./pages/SettingsPage.tsx";
 import PublicProfilePage from "./pages/PublicProfilePage.tsx";
