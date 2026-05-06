@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Wifi, UserPlus, Eye, EyeOff } from "lucide-react";
+import { Wifi, UserPlus, Eye, EyeOff, User, Building2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const SignupPage = () => {
@@ -18,6 +18,7 @@ const SignupPage = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [accountType, setAccountType] = useState<"personal" | "agency">("personal");
   const { toast } = useToast();
 
   const handleSignup = async (e: React.FormEvent) => {
