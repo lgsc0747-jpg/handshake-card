@@ -268,6 +268,11 @@ const PersonasPage = () => {
                     >
                       <Edit3 className="w-3 h-3 mr-1" /> Edit
                     </Button>
+                    <Button size="sm" variant="outline" asChild>
+                      <Link to={`/personas/${persona.slug}/analytics`}>
+                        <Eye className="w-3 h-3 mr-1" /> Analytics
+                      </Link>
+                    </Button>
                     <Button
                       size="sm"
                       variant="ghost"
