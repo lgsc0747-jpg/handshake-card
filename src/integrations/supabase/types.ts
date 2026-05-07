@@ -237,10 +237,12 @@ export type Database = {
       }
       lead_captures: {
         Row: {
+          communications: Json
           created_at: string
           id: string
           metadata: Json | null
           next_action_at: string | null
+          notes: string | null
           owner_user_id: string
           persona_id: string
           stage: string
@@ -252,10 +254,12 @@ export type Database = {
           visitor_phone: string | null
         }
         Insert: {
+          communications?: Json
           created_at?: string
           id?: string
           metadata?: Json | null
           next_action_at?: string | null
+          notes?: string | null
           owner_user_id: string
           persona_id: string
           stage?: string
@@ -267,10 +271,12 @@ export type Database = {
           visitor_phone?: string | null
         }
         Update: {
+          communications?: Json
           created_at?: string
           id?: string
           metadata?: Json | null
           next_action_at?: string | null
+          notes?: string | null
           owner_user_id?: string
           persona_id?: string
           stage?: string
