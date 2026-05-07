@@ -280,6 +280,14 @@ const AgencyPage = () => {
             </PageSection>
 
             {activeOrg && (
+              <Tabs defaultValue="members" className="space-y-3">
+                <TabsList className="rounded-sm">
+                  <TabsTrigger value="members" className="rounded-sm text-xs">Members & permissions</TabsTrigger>
+                  <TabsTrigger value="messages" className="rounded-sm text-xs">
+                    <MessageSquare className="w-3.5 h-3.5 mr-1.5" />Messages
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="members">
               <PageSection
                 title="Members & permissions"
                 description="Owners and admins have all permissions implicitly. Toggle per-feature access for managers and members."
