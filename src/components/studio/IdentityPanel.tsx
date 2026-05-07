@@ -6,6 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import { ImageUploadField } from "@/components/DesignStudio/ImageUploadField";
 import { AvatarPositioner, DEFAULT_AVATAR_POSITION } from "@/components/DesignStudio/AvatarPositioner";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
+import { AIAssistButton } from "@/components/AIAssistButton";
 import type { StudioPanelProps } from "./CardDesignPanel";
 import { FileText, GripVertical } from "lucide-react";
 import {
