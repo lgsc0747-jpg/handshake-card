@@ -471,6 +471,21 @@ const PublicProfilePage = () => {
     );
   }
 
+  if (rateLimited) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 px-4 text-center">
+        <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
+          <Wifi className="w-6 h-6 text-muted-foreground" />
+        </div>
+        <h1 className="text-xl font-display font-bold">Slow down</h1>
+        <p className="text-muted-foreground max-w-sm text-sm">
+          Too many profile lookups from your network. Please try again in a few minutes,
+          or tap a card to open the profile directly.
+        </p>
+      </div>
+    );
+  }
+
   if (notFound || !profile) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 px-4">
