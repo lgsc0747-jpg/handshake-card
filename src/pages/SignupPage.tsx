@@ -70,6 +70,10 @@ const SignupPage = () => {
       if (newUserId && accountType === "agency") {
         await supabase.from("profiles").update({ account_type: "agency" }).eq("user_id", newUserId);
       }
+      // Fire-and-forget welcome email (best effort)
+      supabase.functions.invoke("send-welcome-email", {
+        body: { display_name: fullName },
+      }).catch(() => {});
       toast({ title: "Check your email", description: "We sent a verification link to confirm your account." });
     }
     setLoading(false);
