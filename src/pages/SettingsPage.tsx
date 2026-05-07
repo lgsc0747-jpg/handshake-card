@@ -118,12 +118,12 @@ const SettingsPage = () => {
         </div>
 
         <Tabs defaultValue="account" className="space-y-4">
-          <TabsList className="grid grid-cols-2 sm:grid-cols-5 w-full sm:w-auto rounded-sm bg-muted/40 p-1">
-            <TabsTrigger value="account" className="rounded-sm text-xs">Account</TabsTrigger>
-            <TabsTrigger value="appearance" className="rounded-sm text-xs">Appearance</TabsTrigger>
-            <TabsTrigger value="notifications" className="rounded-sm text-xs">Notifications</TabsTrigger>
-            <TabsTrigger value="privacy" className="rounded-sm text-xs">Privacy</TabsTrigger>
-            <TabsTrigger value="danger" className="rounded-sm text-xs">Danger</TabsTrigger>
+          <TabsList className="grid grid-cols-3 sm:grid-cols-5 w-full sm:w-auto rounded-sm bg-muted/40 p-1 h-auto">
+            <TabsTrigger value="account" className="rounded-sm text-xs py-1.5">Account</TabsTrigger>
+            <TabsTrigger value="appearance" className="rounded-sm text-xs py-1.5">Appearance</TabsTrigger>
+            <TabsTrigger value="notifications" className="rounded-sm text-xs py-1.5">Notify</TabsTrigger>
+            <TabsTrigger value="privacy" className="rounded-sm text-xs py-1.5">Privacy</TabsTrigger>
+            <TabsTrigger value="danger" className="rounded-sm text-xs py-1.5">Danger</TabsTrigger>
           </TabsList>
 
           {/* ─── Account ─── */}

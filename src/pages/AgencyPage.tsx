@@ -281,8 +281,8 @@ const AgencyPage = () => {
 
             {activeOrg && (
               <Tabs defaultValue="members" className="space-y-3">
-                <TabsList className="rounded-sm">
-                  <TabsTrigger value="members" className="rounded-sm text-xs">Members & permissions</TabsTrigger>
+                <TabsList className="rounded-sm w-full sm:w-auto grid grid-cols-2 sm:flex">
+                  <TabsTrigger value="members" className="rounded-sm text-xs">Members</TabsTrigger>
                   <TabsTrigger value="messages" className="rounded-sm text-xs">
                     <MessageSquare className="w-3.5 h-3.5 mr-1.5" />Messages
                   </TabsTrigger>
@@ -293,11 +293,70 @@ const AgencyPage = () => {
                 description="Owners and admins have all permissions implicitly. Toggle per-feature access for managers and members."
                 actions={
                   <Button size="sm" onClick={() => setInviteOpen(true)}>
-                    <UserPlus className="w-4 h-4 mr-1.5" />Invite member
+                    <UserPlus className="w-4 h-4 mr-1.5" />
+                    <span className="hidden xs:inline">Invite member</span>
+                    <span className="xs:hidden">Invite</span>
                   </Button>
                 }
               >
-                <Card>
+                {members.length === 0 && (
+                  <Card><CardContent className="p-6 text-center text-muted-foreground text-xs">No members yet.</CardContent></Card>
+                )}
+
+                {/* Mobile / tablet — stacked cards */}
+                <div className="lg:hidden space-y-2">
+                  {members.map((m) => {
+                    const isPrivileged = m.role === "owner" || m.role === "admin";
+                    return (
+                      <Card key={m.membership_id}>
+                        <CardContent className="p-3 space-y-3">
+                          <div className="flex items-center gap-2.5">
+                            <Avatar className="w-8 h-8 shrink-0">
+                              {m.avatar_url && <AvatarImage src={m.avatar_url} />}
+                              <AvatarFallback className="text-[10px]">{initials(m)}</AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium truncate">
+                                {m.display_name || m.username || "—"}
+                                {m.user_id === user?.id && <span className="text-muted-foreground font-normal"> (you)</span>}
+                              </p>
+                              {m.username && <p className="text-[11px] text-muted-foreground truncate">@{m.username}</p>}
+                            </div>
+                            <Badge variant={isPrivileged ? "default" : "secondary"} className="rounded-full text-[10px] shrink-0">
+                              {m.role}
+                            </Badge>
+                          </div>
+                          {isPrivileged ? (
+                            <p className="text-[11px] text-muted-foreground inline-flex items-center gap-1.5">
+                              <ShieldCheck className="w-3.5 h-3.5 text-primary" /> Full access to all resources
+                            </p>
+                          ) : (
+                            <div className="space-y-2">
+                              {RESOURCES.map((r) => (
+                                <div key={r} className="flex flex-wrap items-center gap-x-3 gap-y-1.5 py-1.5 border-t border-border/40">
+                                  <span className="text-[11px] uppercase tracking-wide text-muted-foreground capitalize w-20 shrink-0">{r}</span>
+                                  {PERMS.map((p) => (
+                                    <label key={p} className="inline-flex items-center gap-1.5 text-xs cursor-pointer min-h-[32px]">
+                                      <Checkbox
+                                        checked={hasPerm(m.user_id, r, p)}
+                                        onCheckedChange={() => togglePerm(m.user_id, r, p)}
+                                        aria-label={`${r} ${p}`}
+                                      />
+                                      <span>{p}</span>
+                                    </label>
+                                  ))}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+
+                {/* Desktop — full matrix */}
+                <Card className="hidden lg:block">
                   <CardContent className="p-0 overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead className="bg-muted/40">
@@ -319,9 +378,6 @@ const AgencyPage = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {members.length === 0 && (
-                          <tr><td colSpan={2 + RESOURCES.length * PERMS.length} className="p-6 text-center text-muted-foreground text-xs">No members yet.</td></tr>
-                        )}
                         {members.map((m) => {
                           const isPrivileged = m.role === "owner" || m.role === "admin";
                           return (

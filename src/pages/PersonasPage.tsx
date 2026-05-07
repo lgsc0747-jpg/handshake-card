@@ -225,39 +225,42 @@ const PersonasPage = () => {
             {personas.map((persona) => (
               <div
                 key={persona.id}
-                className="flex items-center gap-4 px-4 py-3 hover:bg-accent/20 transition-colors group"
+                className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-3 sm:px-4 py-3 hover:bg-accent/20 transition-colors group"
               >
-                <span
-                  className="w-1.5 h-10 shrink-0"
-                  style={{ background: persona.accent_color ?? "hsl(var(--primary))" }}
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-semibold truncate">{persona.label}</span>
-                    <Badge variant="outline" className="rounded-sm text-[10px]">
-                      {persona.page_mode === "builder" ? (
-                        <><LayoutTemplate className="w-3 h-3 mr-1" />Page</>
-                      ) : (
-                        <><CreditCard className="w-3 h-3 mr-1" />Card</>
-                      )}
-                    </Badge>
-                    {persona.is_private && (
+                <div className="flex items-start gap-3 min-w-0 flex-1">
+                  <span
+                    className="w-1 sm:w-1.5 h-10 shrink-0 rounded-sm"
+                    style={{ background: persona.accent_color ?? "hsl(var(--primary))" }}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-semibold truncate">{persona.label}</span>
                       <Badge variant="outline" className="rounded-sm text-[10px]">
-                        <Lock className="w-3 h-3 mr-1" />Private
+                        {persona.page_mode === "builder" ? (
+                          <><LayoutTemplate className="w-3 h-3 mr-1" />Page</>
+                        ) : (
+                          <><CreditCard className="w-3 h-3 mr-1" />Card</>
+                        )}
                       </Badge>
-                    )}
-                  </div>
-                  <div className="text-xs text-muted-foreground truncate mt-0.5">
-                    {persona.display_name || "Unnamed"} · {persona.headline || "No headline"}
-                  </div>
-                  <div className="text-[11px] font-mono text-muted-foreground truncate mt-0.5">
-                    /p/{user?.user_metadata?.username || "you"}/{persona.slug}
+                      {persona.is_private && (
+                        <Badge variant="outline" className="rounded-sm text-[10px]">
+                          <Lock className="w-3 h-3 mr-1" />Private
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="text-xs text-muted-foreground truncate mt-0.5">
+                      {persona.display_name || "Unnamed"} · {persona.headline || "No headline"}
+                    </div>
+                    <div className="text-[11px] font-mono text-muted-foreground truncate mt-0.5">
+                      /p/{user?.user_metadata?.username || "you"}/{persona.slug}
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center gap-1 flex-wrap sm:flex-nowrap shrink-0 sm:justify-end">
                   <Button size="sm" variant="ghost" className="rounded-sm" asChild>
                     <Link to={`/personas/${persona.slug}/analytics`}>
-                      <Eye className="w-3.5 h-3.5 mr-1" /> Analytics
+                      <Eye className="w-3.5 h-3.5 sm:mr-1" />
+                      <span className="hidden sm:inline">Analytics</span>
                     </Link>
                   </Button>
                   {personas.length > 1 && (
@@ -268,7 +271,8 @@ const PersonasPage = () => {
                       onClick={() => setCopySource(persona)}
                       title="Copy design to other personas"
                     >
-                      <Copy className="w-3.5 h-3.5 mr-1" /> Copy design
+                      <Copy className="w-3.5 h-3.5 sm:mr-1" />
+                      <span className="hidden sm:inline">Copy design</span>
                     </Button>
                   )}
                   <Button
@@ -281,7 +285,8 @@ const PersonasPage = () => {
                       setShowEditor(true);
                     }}
                   >
-                    <Edit3 className="w-3.5 h-3.5 mr-1" /> Edit
+                    <Edit3 className="w-3.5 h-3.5 sm:mr-1" />
+                    <span className="hidden sm:inline">Edit</span>
                   </Button>
                   <Button
                     size="sm"
@@ -300,7 +305,7 @@ const PersonasPage = () => {
 
       {/* Editor Dialog */}
       <Dialog open={showEditor} onOpenChange={setShowEditor}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl w-[calc(100vw-1rem)] sm:w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="font-display">Edit Persona</DialogTitle>
           </DialogHeader>
