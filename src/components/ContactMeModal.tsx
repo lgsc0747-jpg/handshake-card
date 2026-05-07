@@ -51,24 +51,8 @@ export function ContactMeModal({
       p_metadata: { ua: navigator.userAgent, source: "contact_me_button" },
     });
 
-    if (!error) {
-      supabase.functions.invoke("send-transactional-email", {
-        body: {
-          templateName: "new-lead",
-          recipientEmail: "owner@auto",
-          ownerUserId,
-          idempotencyKey: `new-lead-${leadId ?? `${personaId}-${Date.now()}`}`,
-          templateData: {
-            personaLabel: ownerName,
-            visitorName: contact.name || null,
-            visitorEmail: contact.email,
-            visitorPhone: contact.phone || null,
-            visitorCompany: contact.company || null,
-            visitorMessage: contact.message || null,
-            dashboardUrl: `${window.location.origin}/leads`,
-          },
-        },
-      }).catch(() => {});
+    if (!error && leadId) {
+      supabase.functions.invoke("notify-new-lead", { body: { lead_id: leadId } }).catch(() => {});
     }
 
     if (error) {
