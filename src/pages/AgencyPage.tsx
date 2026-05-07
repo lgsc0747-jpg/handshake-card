@@ -111,9 +111,29 @@ const AgencyPage = () => {
   }, []);
 
   useEffect(() => {
-    if (!activeOrg) { setMembers([]); setPerms([]); return; }
+    if (!activeOrg) { setMembers([]); setPerms([]); setMessages([]); return; }
     loadMembersAndPerms(activeOrg.id);
-  }, [activeOrg, loadMembersAndPerms]);
+    loadMessages(activeOrg.id);
+  }, [activeOrg, loadMembersAndPerms, loadMessages]);
+
+  const sendMessage = async () => {
+    if (!activeOrg || !composeBody.trim()) return;
+    setSending(true);
+    const { error } = await supabase.functions.invoke("send-agency-message", {
+      body: {
+        organization_id: activeOrg.id,
+        recipient_user_id: composeRecipient === "all" ? null : composeRecipient,
+        subject: composeSubject.trim() || null,
+        body: composeBody.trim(),
+      },
+    });
+    setSending(false);
+    if (error) return toast({ title: "Send failed", description: error.message, variant: "destructive" });
+    toast({ title: "Message sent", description: "Members will receive an email notification." });
+    setComposeBody(""); setComposeSubject(""); setComposeRecipient("all");
+    loadMessages(activeOrg.id);
+  };
+
 
   const upgradeToAgency = async () => {
     if (!user) return;
