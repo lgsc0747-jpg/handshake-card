@@ -240,8 +240,11 @@ export type Database = {
           created_at: string
           id: string
           metadata: Json | null
+          next_action_at: string | null
           owner_user_id: string
           persona_id: string
+          stage: string
+          tags: string[]
           visitor_company: string | null
           visitor_email: string
           visitor_message: string | null
@@ -252,8 +255,11 @@ export type Database = {
           created_at?: string
           id?: string
           metadata?: Json | null
+          next_action_at?: string | null
           owner_user_id: string
           persona_id: string
+          stage?: string
+          tags?: string[]
           visitor_company?: string | null
           visitor_email: string
           visitor_message?: string | null
@@ -264,8 +270,11 @@ export type Database = {
           created_at?: string
           id?: string
           metadata?: Json | null
+          next_action_at?: string | null
           owner_user_id?: string
           persona_id?: string
+          stage?: string
+          tags?: string[]
           visitor_company?: string | null
           visitor_email?: string
           visitor_message?: string | null
