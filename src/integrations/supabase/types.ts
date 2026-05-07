@@ -1241,7 +1241,6 @@ export type Database = {
         Args: { p_persona_id: string; p_pin: string }
         Returns: boolean
       }
-      whoami: { Args: never; Returns: string }
     }
     Enums: {
       app_role: "admin" | "user" | "super_admin"
