@@ -190,13 +190,16 @@ const DesignStudioPage = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-4">
-        {/* Top Bar */}
-        <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="space-y-3">
+        {/* Top Bar — Brutalist */}
+        <div className="flex items-center justify-between flex-wrap gap-3 border-b border-border pb-3">
           <div className="flex items-center gap-3">
-            <h1 className="text-xl font-display font-bold">Card Studio</h1>
+            <div>
+              <p className="text-eyebrow text-muted-foreground">Workspace</p>
+              <h1 className="text-title-1 font-display">Card Studio</h1>
+            </div>
             <Select value={selectedId ?? ""} onValueChange={setSelectedId}>
-              <SelectTrigger className="w-44 rounded-xl h-9 text-xs">
+              <SelectTrigger className="w-44 rounded-sm h-9 text-xs">
                 <SelectValue placeholder="Select persona" />
               </SelectTrigger>
               <SelectContent>
@@ -206,8 +209,8 @@ const DesignStudioPage = () => {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-center gap-4">
-            <Button onClick={handleSave} disabled={saving} size="sm" className="gradient-primary text-primary-foreground rounded-xl h-9">
+          <div className="flex items-center gap-2">
+            <Button onClick={handleSave} disabled={saving} size="sm" className="rounded-sm h-9">
               {saving ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Save className="w-3.5 h-3.5 mr-1.5" />}
               Save
             </Button>
@@ -215,20 +218,20 @@ const DesignStudioPage = () => {
         </div>
 
         {/* Main Layout: Panel + Preview */}
-        <div className="flex flex-col lg:flex-row gap-0 rounded-2xl border border-border/60 bg-card/30 backdrop-blur-sm overflow-hidden" style={{ height: "calc(100vh - 140px)" }}>
+        <div className="flex flex-col lg:flex-row gap-0 rounded-sm border border-border bg-card overflow-hidden" style={{ height: "calc(100vh - 160px)" }}>
           {/* Panel with Tabs */}
-          <div className="flex-1 min-h-0 flex flex-col lg:max-w-md lg:border-r lg:border-border/40">
+          <div className="flex-1 min-h-0 flex flex-col lg:max-w-md lg:border-r lg:border-border">
             {/* Tab Switcher */}
-            <div className="flex border-b border-border/40 shrink-0">
+            <div className="flex border-b border-border shrink-0 bg-muted/30">
               {TABS.map((tab) => {
                 const Icon = tab.icon;
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-medium transition-colors ${
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-eyebrow transition-colors ${
                       activeTab === tab.id
-                        ? "text-primary border-b-2 border-primary"
+                        ? "text-foreground bg-background border-b-2 border-accent"
                         : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
