@@ -71,6 +71,47 @@ export type Database = {
         }
         Relationships: []
       }
+      agency_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          organization_id: string
+          read_at: string | null
+          recipient_user_id: string | null
+          sender_user_id: string
+          subject: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          organization_id: string
+          read_at?: string | null
+          recipient_user_id?: string | null
+          sender_user_id: string
+          subject?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          organization_id?: string
+          read_at?: string | null
+          recipient_user_id?: string | null
+          sender_user_id?: string
+          subject?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_messages_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           color: string | null
@@ -719,6 +760,30 @@ export type Database = {
         }
         Relationships: []
       }
+      profile_view_attempts: {
+        Row: {
+          created_at: string
+          id: number
+          source_method: string | null
+          target_user_id: string
+          visitor_ip: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          source_method?: string | null
+          target_user_id: string
+          visitor_ip: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          source_method?: string | null
+          target_user_id?: string
+          visitor_ip?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           account_type: string
@@ -1073,6 +1138,10 @@ export type Database = {
         Args: { p_username: string }
         Returns: boolean
       }
+      count_distinct_profiles_by_ip: {
+        Args: { _ip: string; _minutes?: number }
+        Returns: number
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -1227,6 +1296,19 @@ export type Database = {
           msg_id: number
           read_ct: number
         }[]
+      }
+      record_profile_view_attempt: {
+        Args: { _ip: string; _source?: string; _target: string }
+        Returns: undefined
+      }
+      send_agency_message: {
+        Args: {
+          _body: string
+          _org_id: string
+          _recipient: string
+          _subject: string
+        }
+        Returns: string
       }
       short_link_stats: {
         Args: { p_user_id: string }
