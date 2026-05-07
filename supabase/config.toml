@@ -1,7 +1,9 @@
 project_id = "nagusztrqnacvkjaommv"
 
-[functions.notify-new-lead]
-verify_jwt = false
-
-[functions.ai-persona-assist]
-verify_jwt = false
+[functions]
+  [functions.ai-persona-assist]
+    verify_jwt = false
+  [functions.auth-email-hook]
+    verify_jwt = false
+  [functions.notify-new-lead]
+    verify_jwt = false

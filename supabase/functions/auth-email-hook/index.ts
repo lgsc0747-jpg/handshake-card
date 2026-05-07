@@ -39,7 +39,7 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 const SITE_NAME = "handshake-card"
 const SENDER_DOMAIN = "notify.handshake-nfc.online"
 const ROOT_DOMAIN = "handshake-nfc.online"
-const FROM_DOMAIN = "handshake-nfc.online" // Domain shown in From address (may be root or sender subdomain)
+const FROM_DOMAIN = "notify.handshake-nfc.online" // Domain shown in From address (may be root or sender subdomain)
 
 // Sample data for preview mode ONLY (not used in actual email sending).
 // URLs are baked in at scaffold time from the project's real data.
@@ -70,6 +70,7 @@ const SAMPLE_DATA: Record<string, object> = {
   },
   email_change: {
     siteName: SITE_NAME,
+    oldEmail: SAMPLE_EMAIL,
     email: SAMPLE_EMAIL,
     newEmail: SAMPLE_EMAIL,
     confirmationUrl: SAMPLE_PROJECT_URL,
@@ -225,6 +226,7 @@ async function handleWebhook(req: Request): Promise<Response> {
     confirmationUrl: payload.data.url,
     token: payload.data.token,
     email: payload.data.email,
+    oldEmail: payload.data.old_email,
     newEmail: payload.data.new_email,
   }
 
