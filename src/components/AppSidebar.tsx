@@ -85,8 +85,8 @@ function SortableNavItem({ item, collapsed }: { item: NavItem; collapsed: boolea
           <NavLink
             to={item.url}
             end={item.url === "/"}
-            className="relative flex-1 flex items-center gap-2.5 rounded-md pl-2 pr-3 py-1.5 text-[13px] text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
-            activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-0.5 before:bg-primary before:rounded-r"
+            className="relative flex-1 flex items-center gap-2.5 rounded-sm pl-2 pr-3 py-1.5 text-[13px] text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+            activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-semibold before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-[2px] before:bg-accent"
           >
             <item.icon className="h-4 w-4 shrink-0 opacity-80" strokeWidth={1.75} />
             {!collapsed && <span className="truncate">{item.title}</span>}
@@ -173,16 +173,16 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
       {/* Brand */}
       <div className={cn("flex items-center gap-2 h-12 border-b border-sidebar-border", collapsed ? "justify-center px-2" : "px-4")}>
-        <div className="w-6 h-6 rounded-md bg-foreground text-background flex items-center justify-center shrink-0">
-          <span className="text-[11px] font-bold tracking-tight">H</span>
+        <div className="w-6 h-6 rounded-sm bg-foreground text-background flex items-center justify-center shrink-0">
+          <span className="font-mono text-[11px] font-bold tracking-tight">H</span>
         </div>
         {!collapsed && (
           <div className="flex items-center gap-1.5 min-w-0">
-            <span className="font-display text-[13px] font-semibold tracking-tight text-foreground truncate">
+            <span className="font-display text-[13px] font-bold tracking-tight text-foreground truncate">
               Handshake
             </span>
             {isPro && (
-              <span className="text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-primary uppercase">
+              <span className="font-mono text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded-sm bg-accent text-accent-foreground uppercase">
                 Pro
               </span>
             )}

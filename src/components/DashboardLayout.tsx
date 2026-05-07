@@ -67,7 +67,7 @@ function CommandHint() {
   return (
     <button
       onClick={open}
-      className="hidden sm:flex items-center gap-2 h-7 px-2.5 rounded-md border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-[12px]"
+      className="hidden sm:flex items-center gap-2 h-7 px-2.5 rounded-sm border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-[12px]"
     >
       <Search className="w-3 h-3" />
       <span>Search…</span>
