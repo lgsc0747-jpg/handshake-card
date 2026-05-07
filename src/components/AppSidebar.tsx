@@ -43,6 +43,7 @@ const DEFAULT_NFC: NavItem[] = [
 const DEFAULT_GENERAL: NavItem[] = [
   { title: "Funnel", url: "/funnel", icon: Sparkles },
   { title: "Leads", url: "/leads", icon: Mail },
+  { title: "Agency", url: "/agency", icon: Building2 },
   { title: "Settings", url: "/settings", icon: Settings },
   { title: "Plans", url: "/plans", icon: Crown },
 ];
