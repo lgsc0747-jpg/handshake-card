@@ -15,8 +15,9 @@ import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Plus, Trash2, Check, Edit3, Shield, Lock, Users, Loader2, Eye,
-  CreditCard, LayoutTemplate,
+  CreditCard, LayoutTemplate, Copy,
 } from "lucide-react";
+import { CopyDesignDialog } from "@/components/personas/CopyDesignDialog";
 
 interface Persona {
   id: string;
@@ -57,6 +58,7 @@ const PersonasPage = () => {
   const [showEditor, setShowEditor] = useState(false);
   const [saving, setSaving] = useState(false);
   const [newPinInput, setNewPinInput] = useState("");
+  const [copySource, setCopySource] = useState<Persona | null>(null);
 
   const fetchPersonas = async () => {
     if (!user) return;
@@ -258,6 +260,17 @@ const PersonasPage = () => {
                       <Eye className="w-3.5 h-3.5 mr-1" /> Analytics
                     </Link>
                   </Button>
+                  {personas.length > 1 && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="rounded-sm"
+                      onClick={() => setCopySource(persona)}
+                      title="Copy design to other personas"
+                    >
+                      <Copy className="w-3.5 h-3.5 mr-1" /> Copy design
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     variant="ghost"
@@ -401,6 +414,14 @@ const PersonasPage = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      <CopyDesignDialog
+        open={!!copySource}
+        onOpenChange={(v) => !v && setCopySource(null)}
+        source={copySource}
+        targets={personas.filter((p) => p.id !== copySource?.id).map((p) => ({ id: p.id, label: p.label }))}
+        onDone={fetchPersonas}
+      />
     </DashboardLayout>
   );
 };
