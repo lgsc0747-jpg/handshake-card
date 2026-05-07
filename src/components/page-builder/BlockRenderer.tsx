@@ -587,7 +587,7 @@ function ContactFormBlock({ content, isEditing, persona, onTrackInteraction }: {
     if (!email || !persona?.id || !persona?.user_id) return;
     setSubmitting(true);
     try {
-      const { error } = await (supabase.rpc as any)("insert_lead_capture", {
+      const { data: leadId, error } = await (supabase.rpc as any)("insert_lead_capture", {
         p_owner_user_id: persona.user_id,
         p_persona_id: persona.id,
         p_visitor_name: name || null,
@@ -598,6 +598,9 @@ function ContactFormBlock({ content, isEditing, persona, onTrackInteraction }: {
         p_metadata: { source: "contact_form", ua: navigator.userAgent },
       });
       if (error) throw error;
+      if (leadId) {
+        supabase.functions.invoke("notify-new-lead", { body: { lead_id: leadId } }).catch(() => {});
+      }
       setSubmitted(true);
       toast.success("Message sent successfully!");
       onTrackInteraction?.("contact_form_submit", { visitor_email: email });

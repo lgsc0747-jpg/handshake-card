@@ -96,23 +96,9 @@ export function SecurityGate({
     } else {
       trackSecurityAttempt("success");
       // Fire-and-forget owner notification
-      supabase.functions.invoke("send-transactional-email", {
-        body: {
-          templateName: "new-lead",
-          recipientEmail: "owner@auto", // resolved server-side via owner_user_id below
-          ownerUserId,
-          idempotencyKey: `new-lead-${leadId ?? `${personaId}-${Date.now()}`}`,
-          templateData: {
-            personaLabel: ownerName,
-            visitorName: contact.name || null,
-            visitorEmail: contact.email,
-            visitorPhone: contact.phone || null,
-            visitorCompany: contact.company || null,
-            visitorMessage: contact.message || null,
-            dashboardUrl: `${window.location.origin}/leads`,
-          },
-        },
-      }).catch(() => {});
+      if (leadId) {
+        supabase.functions.invoke("notify-new-lead", { body: { lead_id: leadId } }).catch(() => {});
+      }
       toast({ title: "Access granted!", description: `${ownerName} will see your contact info.` });
       onUnlocked();
     }
