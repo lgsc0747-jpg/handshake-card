@@ -787,12 +787,16 @@ function PageBuilderPage() {
           </ScrollArea>
         </div>
 
-        {/* ═══ Right Panel — Block properties ═══ */}
+        {/* ═══ Right Panel — Inspector (Framer style) ═══ */}
         {!isMobile && (
-          <div className="w-72 shrink-0 border-l border-border/40 bg-card/30 flex flex-col overflow-hidden">
-            <div className="px-3 py-2 border-b border-border/40 flex items-center gap-2 shrink-0">
-              <PanelLeft className="w-3.5 h-3.5 text-primary" />
-              <span className="text-xs font-semibold">Block Settings</span>
+          <div className="w-72 shrink-0 border-l border-border/60 bg-card flex flex-col overflow-hidden">
+            <div className="px-3 py-2 border-b border-border/60 flex items-center justify-between shrink-0">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/70">Inspector</span>
+              {editingBlock && (
+                <span className="text-[10px] text-muted-foreground font-mono">
+                  {BLOCK_TYPES.find(b => b.id === editingBlock.block_type)?.label}
+                </span>
+              )}
             </div>
             <ScrollArea className="flex-1">
               <div className="p-3">
@@ -804,9 +808,11 @@ function PageBuilderPage() {
                     onClose={() => setEditingBlockId(null)}
                   />
                 ) : (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <PanelLeft className="w-6 h-6 mx-auto mb-2 opacity-40" />
-                    <p className="text-[11px]">Select a block on the canvas to edit it.</p>
+                  <div className="text-center py-16 text-muted-foreground">
+                    <div className="w-8 h-8 mx-auto mb-2 rounded-md border border-dashed border-border flex items-center justify-center">
+                      <PanelLeft className="w-3.5 h-3.5 opacity-50" />
+                    </div>
+                    <p className="text-[11px]">Select a layer to edit its properties</p>
                   </div>
                 )}
               </div>
@@ -814,6 +820,17 @@ function PageBuilderPage() {
           </div>
         )}
       </div>
+
+      {/* Floating Insert Pill (Framer-style) */}
+      {!isMobile && (
+        <button
+          onClick={() => setAddBlockOpen(true)}
+          className="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 px-4 py-2 rounded-full bg-foreground text-background shadow-2xl hover:scale-[1.03] transition-transform text-[11px] font-semibold"
+        >
+          <Plus className="w-3.5 h-3.5" /> Insert block
+        </button>
+      )}
+
 
       {/* ═══ Mobile Bottom Bar ═══ */}
       {isMobile && (
