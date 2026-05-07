@@ -195,95 +195,91 @@ const PersonasPage = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-end justify-between gap-3 flex-wrap">
           <div>
-            <h1 className="text-2xl font-display font-bold">Persona Vault</h1>
+            <div className="text-eyebrow text-muted-foreground">Identity</div>
+            <h1 className="text-display font-semibold tracking-tight">Persona Vault</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Manage unlimited identities for your NFC card
+              Manage unlimited identities. Each persona is a standalone funnel with its own URL, design, and analytics.
             </p>
           </div>
-          <Button onClick={handleCreate} className="gradient-primary text-primary-foreground">
-            <Plus className="w-4 h-4 mr-1.5" /> New Persona
+          <Button onClick={handleCreate} className="rounded-sm">
+            <Plus className="w-4 h-4 mr-1.5" /> New persona
           </Button>
         </div>
 
         {personas.length === 0 ? (
-          <Card className="glass-card">
-            <CardContent className="p-12 text-center">
-              <Users className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground">
-                Create your first persona to get started. Each persona can have its own identity, socials, and visual style.
-              </p>
-              <Button onClick={handleCreate} className="mt-4 gradient-primary text-primary-foreground">
-                <Plus className="w-4 h-4 mr-1.5" /> Create Persona
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="border border-border bg-card p-12 text-center">
+            <Users className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+            <p className="text-muted-foreground">
+              Create your first persona to get started.
+            </p>
+            <Button onClick={handleCreate} className="mt-4 rounded-sm">
+              <Plus className="w-4 h-4 mr-1.5" /> Create persona
+            </Button>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div className="border border-border bg-card divide-y divide-border">
             {personas.map((persona) => (
-              <Card
+              <div
                 key={persona.id}
-                className="glass-card animate-fade-in group relative overflow-hidden"
+                className="flex items-center gap-4 px-4 py-3 hover:bg-accent/20 transition-colors group"
               >
-                {/* Accent bar */}
-                <div
-                  className="h-1 w-full"
+                <span
+                  className="w-1.5 h-10 shrink-0"
                   style={{ background: persona.accent_color ?? "hsl(var(--primary))" }}
                 />
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="font-display text-base">{persona.label}</CardTitle>
-                    <div className="flex items-center gap-1">
-                      <Badge variant="secondary" className="text-[10px]">
-                        {persona.page_mode === "builder" ? (
-                          <><LayoutTemplate className="w-3 h-3 mr-0.5" /> Page</>
-                        ) : (
-                          <><CreditCard className="w-3 h-3 mr-0.5" /> Card</>
-                        )}
-                      </Badge>
-                      {persona.is_private && (
-                        <Badge variant="outline" className="text-[10px]">
-                          <Lock className="w-3 h-3 mr-0.5" /> Private
-                        </Badge>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-semibold truncate">{persona.label}</span>
+                    <Badge variant="outline" className="rounded-sm text-[10px]">
+                      {persona.page_mode === "builder" ? (
+                        <><LayoutTemplate className="w-3 h-3 mr-1" />Page</>
+                      ) : (
+                        <><CreditCard className="w-3 h-3 mr-1" />Card</>
                       )}
-                    </div>
+                    </Badge>
+                    {persona.is_private && (
+                      <Badge variant="outline" className="rounded-sm text-[10px]">
+                        <Lock className="w-3 h-3 mr-1" />Private
+                      </Badge>
+                    )}
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="text-sm text-muted-foreground">
-                    <p className="font-medium text-foreground">{persona.display_name || "Unnamed"}</p>
-                    <p className="text-xs truncate">{persona.headline || "No headline"}</p>
-                    <p className="text-xs font-mono text-primary mt-1">/p/{user?.user_metadata?.username || "you"}/{persona.slug}</p>
+                  <div className="text-xs text-muted-foreground truncate mt-0.5">
+                    {persona.display_name || "Unnamed"} · {persona.headline || "No headline"}
                   </div>
-                  <div className="flex gap-2 flex-wrap">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setEditingPersona({ ...persona });
-                        setNewPinInput("");
-                        setShowEditor(true);
-                      }}
-                    >
-                      <Edit3 className="w-3 h-3 mr-1" /> Edit
-                    </Button>
-                    <Button size="sm" variant="outline" asChild>
-                      <Link to={`/personas/${persona.slug}/analytics`}>
-                        <Eye className="w-3 h-3 mr-1" /> Analytics
-                      </Link>
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => handleDelete(persona.id)}
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
+                  <div className="text-[11px] font-mono text-muted-foreground truncate mt-0.5">
+                    /p/{user?.user_metadata?.username || "you"}/{persona.slug}
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button size="sm" variant="ghost" className="rounded-sm" asChild>
+                    <Link to={`/personas/${persona.slug}/analytics`}>
+                      <Eye className="w-3.5 h-3.5 mr-1" /> Analytics
+                    </Link>
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="rounded-sm"
+                    onClick={() => {
+                      setEditingPersona({ ...persona });
+                      setNewPinInput("");
+                      setShowEditor(true);
+                    }}
+                  >
+                    <Edit3 className="w-3.5 h-3.5 mr-1" /> Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="rounded-sm text-destructive hover:text-destructive"
+                    onClick={() => handleDelete(persona.id)}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              </div>
             ))}
           </div>
         )}

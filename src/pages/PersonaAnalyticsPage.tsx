@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion, Reorder } from "framer-motion";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { Page, PageHeader, PageSection, PageGrid } from "@/components/layout/Page";
+import { Page, PageHeader, PageSection } from "@/components/layout/Page";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,12 +11,19 @@ import { Label } from "@/components/ui/label";
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger,
 } from "@/components/ui/sheet";
-import { ArrowLeft, Settings2, GripVertical, Eye, MousePointerClick, Download, Mail, Filter, Share2, Sparkles } from "lucide-react";
+import {
+  ArrowLeft, Settings2, GripVertical, Eye, MousePointerClick,
+  Download, Mail, Filter, Share2, Sparkles, Smartphone, Globe2,
+  Users2, Clock, TrendingUp,
+} from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { springIOS, fadeUp, staggerChildren } from "@/lib/motion";
 import { Chart } from "@/components/charts/Chart";
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from "recharts";
+import {
+  Area, AreaChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis,
+  Bar, BarChart, Cell, PieChart, Pie,
+} from "recharts";
 import { ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
 type FunnelKey =
@@ -50,10 +57,21 @@ interface LogRow {
   metadata: any;
 }
 
+interface LeadRow {
+  id: string;
+  visitor_name: string | null;
+  visitor_email: string;
+  stage: string;
+  created_at: string;
+}
+
+const PIE_COLORS = ["hsl(var(--primary))", "hsl(var(--accent))", "hsl(var(--muted-foreground))", "hsl(var(--success))"];
+
 const PersonaAnalyticsPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
   const [logs, setLogs] = useState<LogRow[]>([]);
+  const [leads, setLeads] = useState<LeadRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [personaLabel, setPersonaLabel] = useState<string>(slug ?? "");
   const [stages, setStages] = useState<FunnelKey[]>(() => {
@@ -74,8 +92,15 @@ const PersonaAnalyticsPage = () => {
     let active = true;
     (async () => {
       setLoading(true);
-      const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-      const [logsRes, pRes] = await Promise.all([
+      const since = new Date(Date.now() - 30 * 86400000).toISOString();
+      const pRes = await supabase
+        .from("personas")
+        .select("id,label")
+        .eq("user_id", user.id)
+        .eq("slug", slug)
+        .maybeSingle();
+      const personaId = pRes.data?.id;
+      const [logsRes, leadsRes] = await Promise.all([
         supabase
           .from("interaction_logs")
           .select("id, interaction_type, entity_id, created_at, metadata")
@@ -83,19 +108,27 @@ const PersonaAnalyticsPage = () => {
           .gte("created_at", since)
           .order("created_at", { ascending: false })
           .limit(2000),
-        supabase.from("personas").select("label").eq("user_id", user.id).eq("slug", slug).maybeSingle(),
+        personaId
+          ? supabase
+              .from("lead_captures")
+              .select("id, visitor_name, visitor_email, stage, created_at")
+              .eq("owner_user_id", user.id)
+              .eq("persona_id", personaId)
+              .gte("created_at", since)
+              .order("created_at", { ascending: false })
+              .limit(50)
+          : Promise.resolve({ data: [] as LeadRow[] }),
       ]);
       if (!active) return;
       const filtered = (logsRes.data ?? []).filter(
         (l: any) => (l.metadata?.persona_slug ?? null) === slug || l.metadata?.persona_slug == null,
       );
       setLogs(filtered as LogRow[]);
+      setLeads((leadsRes.data ?? []) as LeadRow[]);
       if (pRes.data?.label) setPersonaLabel(pRes.data.label);
       setLoading(false);
     })();
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, [user, slug]);
 
   const counts = useMemo(() => {
@@ -117,11 +150,37 @@ const PersonaAnalyticsPage = () => {
       const k = l.created_at.slice(0, 10);
       if (k in days) days[k]++;
     }
-    return Object.entries(days).map(([d, taps]) => ({
-      label: d.slice(5),
-      taps,
-    }));
+    return Object.entries(days).map(([d, taps]) => ({ label: d.slice(5), taps }));
   }, [logs]);
+
+  const devices = useMemo(() => {
+    const d: Record<string, number> = { Mobile: 0, Desktop: 0, Tablet: 0 };
+    for (const l of logs) {
+      const dev = l.metadata?.device_type as string | undefined;
+      if (dev === "tablet") d.Tablet++;
+      else if (dev === "desktop") d.Desktop++;
+      else d.Mobile++;
+    }
+    return Object.entries(d).map(([name, value]) => ({ name, value }));
+  }, [logs]);
+
+  const sources = useMemo(() => {
+    const s: Record<string, number> = {};
+    for (const l of logs) {
+      const src = (l.metadata?.source as string | undefined) ?? "direct";
+      s[src] = (s[src] ?? 0) + 1;
+    }
+    return Object.entries(s)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6)
+      .map(([name, value]) => ({ name, value }));
+  }, [logs]);
+
+  const totalEvents = logs.length;
+  const uniqueDays = new Set(logs.map((l) => l.created_at.slice(0, 10))).size;
+  const dailyAvg = uniqueDays > 0 ? Math.round(totalEvents / 30) : 0;
+  const profileViews = counts["profile_view"] ?? 0;
+  const conv = profileViews > 0 ? Math.round((leads.length / profileViews) * 100) : 0;
 
   const funnelSteps = stages.map((k) => ({
     key: k,
@@ -130,19 +189,30 @@ const PersonaAnalyticsPage = () => {
   }));
   const maxFunnel = Math.max(...funnelSteps.map((s) => s.value), 1);
 
+  const KPI = ({ icon: Icon, label, value, hint }: any) => (
+    <div className="border border-border bg-card p-4">
+      <div className="flex items-center gap-2 text-eyebrow text-muted-foreground">
+        <Icon className="w-3.5 h-3.5" />
+        {label}
+      </div>
+      <div className="text-2xl font-semibold tracking-tight tabular-nums mt-1">{value}</div>
+      {hint && <div className="text-xs text-muted-foreground mt-0.5">{hint}</div>}
+    </div>
+  );
+
   return (
     <DashboardLayout>
       <Page>
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" asChild className="rounded-xl">
-              <Link to="/personas"><ArrowLeft className="w-4 h-4 mr-1.5" />Personas</Link>
+            <Button variant="ghost" size="sm" asChild className="rounded-sm">
+              <Link to="/funnel"><ArrowLeft className="w-4 h-4 mr-1.5" />Funnel</Link>
             </Button>
-            <Badge variant="outline" className="rounded-full">/p/.../{slug}</Badge>
+            <Badge variant="outline" className="rounded-sm font-mono text-[10px]">/p/.../{slug}</Badge>
           </div>
           <Sheet open={configOpen} onOpenChange={setConfigOpen}>
             <SheetTrigger asChild>
-              <Button variant="outline" size="sm" className="rounded-xl">
+              <Button variant="outline" size="sm" className="rounded-sm">
                 <Settings2 className="w-4 h-4 mr-2" />Configure funnel
               </Button>
             </SheetTrigger>
@@ -151,7 +221,7 @@ const PersonaAnalyticsPage = () => {
                 <SheetTitle>Funnel stages</SheetTitle>
               </SheetHeader>
               <p className="text-sm text-muted-foreground mt-2">
-                Drag to reorder. Toggle stages on or off to fit your conversion story.
+                Drag to reorder. Toggle stages on or off.
               </p>
               <div className="mt-4 space-y-4">
                 <Reorder.Group axis="y" values={stages} onReorder={setStages} className="space-y-2">
@@ -162,13 +232,13 @@ const PersonaAnalyticsPage = () => {
                       <Reorder.Item
                         key={k}
                         value={k}
-                        className="ios-row flex items-center gap-2 px-3 py-2 cursor-grab active:cursor-grabbing"
+                        className="border border-border bg-card flex items-center gap-2 px-3 py-2 cursor-grab active:cursor-grabbing"
                       >
                         <GripVertical className="w-4 h-4 text-muted-foreground" />
                         <Icon className="w-4 h-4" />
                         <span className="text-sm font-medium flex-1">{meta.label}</span>
                         <Switch
-                          checked={true}
+                          checked
                           onCheckedChange={() => setStages(stages.filter((x) => x !== k))}
                         />
                       </Reorder.Item>
@@ -176,15 +246,15 @@ const PersonaAnalyticsPage = () => {
                   })}
                 </Reorder.Group>
 
-                <div className="pt-2 border-t border-border/50 space-y-2">
-                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Available stages</Label>
+                <div className="pt-2 border-t border-border space-y-2">
+                  <Label className="text-eyebrow text-muted-foreground">Available stages</Label>
                   {ALL_STAGES.filter((s) => !stages.includes(s.key)).map((s) => {
                     const Icon = s.icon;
                     return (
                       <button
                         key={s.key}
                         onClick={() => setStages([...stages, s.key])}
-                        className="ios-row w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-accent/40 transition-colors"
+                        className="border border-border bg-card w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-accent/30 transition-colors"
                       >
                         <Icon className="w-4 h-4" />
                         <span className="text-sm flex-1">{s.label}</span>
@@ -199,19 +269,21 @@ const PersonaAnalyticsPage = () => {
         </div>
 
         <PageHeader
-          title={
-            <span className="inline-flex items-center gap-2">
-              <span className="w-9 h-9 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-[var(--shadow-card)]">
-                <Filter className="w-4 h-4 text-primary-foreground" />
-              </span>
-              {personaLabel || slug}
-            </span>
-          }
-          description="Per-persona conversion analytics over the last 30 days. Reorder stages to match how you think about your funnel."
+          title={personaLabel || slug}
+          description="30-day analytics for this persona. KPIs, funnel, audience, and recent leads — all in one place."
         />
 
+        <PageSection title="KPIs">
+          <div className="grid gap-px bg-border border border-border sm:grid-cols-2 lg:grid-cols-4">
+            <KPI icon={Eye} label="Profile views" value={profileViews.toLocaleString()} hint="Last 30 days" />
+            <KPI icon={MousePointerClick} label="Total events" value={totalEvents.toLocaleString()} hint={`~${dailyAvg}/day`} />
+            <KPI icon={Users2} label="Leads captured" value={leads.length.toLocaleString()} hint={`${conv}% conv. rate`} />
+            <KPI icon={Clock} label="Active days" value={uniqueDays.toLocaleString()} hint="Days w/ events" />
+          </div>
+        </PageSection>
+
         <PageSection title="Activity">
-          <Card>
+          <Card className="rounded-sm">
             <CardContent className="p-4 sm:p-6">
               <Chart height="md" config={{ taps: { label: "Events", color: "hsl(var(--primary))" } }}>
                 <AreaChart data={series} margin={{ left: 8, right: 8, top: 8 }}>
@@ -225,21 +297,62 @@ const PersonaAnalyticsPage = () => {
                   <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={11} interval={4} />
                   <YAxis hide />
                   <ChartTooltip content={<ChartTooltipContent />} />
-                  <Area
-                    type="monotone"
-                    dataKey="taps"
-                    stroke="hsl(var(--primary))"
-                    strokeWidth={2}
-                    fill="url(#taps)"
-                  />
+                  <Area type="monotone" dataKey="taps" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#taps)" />
                 </AreaChart>
               </Chart>
             </CardContent>
           </Card>
         </PageSection>
 
+        <div className="grid gap-4 lg:grid-cols-2">
+          <PageSection title="Devices">
+            <Card className="rounded-sm">
+              <CardContent className="p-4 sm:p-6">
+                <Chart height="sm" config={{}}>
+                  <PieChart>
+                    <Pie data={devices} dataKey="value" nameKey="name" innerRadius={48} outerRadius={80} paddingAngle={2}>
+                      {devices.map((_, i) => (
+                        <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                  </PieChart>
+                </Chart>
+                <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+                  {devices.map((d, i) => (
+                    <div key={d.name} className="flex items-center gap-1.5">
+                      <span className="w-2 h-2" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                      <span className="text-muted-foreground">{d.name}</span>
+                      <span className="ml-auto tabular-nums">{d.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </PageSection>
+
+          <PageSection title="Sources">
+            <Card className="rounded-sm">
+              <CardContent className="p-4 sm:p-6">
+                <Chart height="sm" config={{ value: { label: "Hits", color: "hsl(var(--accent))" } }}>
+                  <BarChart data={sources} layout="vertical" margin={{ left: 8, right: 8 }}>
+                    <CartesianGrid horizontal={false} stroke="hsl(var(--border) / 0.4)" />
+                    <XAxis type="number" hide />
+                    <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} width={80} fontSize={11} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar dataKey="value" fill="hsl(var(--accent))" radius={0} />
+                  </BarChart>
+                </Chart>
+                {sources.length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center py-4">No source data yet.</p>
+                )}
+              </CardContent>
+            </Card>
+          </PageSection>
+        </div>
+
         <PageSection title="Configurable funnel" description="Drop-off between each step is shown as a percentage.">
-          <Card>
+          <Card className="rounded-sm">
             <CardContent className="p-5 sm:p-6 space-y-3">
               <motion.div variants={staggerChildren()} initial="initial" animate="animate" className="space-y-3">
                 {funnelSteps.map((step, i) => {
@@ -255,18 +368,16 @@ const PersonaAnalyticsPage = () => {
                         <div className="flex items-center gap-2">
                           <span className="font-semibold tabular-nums">{step.value.toLocaleString()}</span>
                           {rate !== null && (
-                            <Badge variant="secondary" className="rounded-full text-[10px]">
-                              {rate}%
-                            </Badge>
+                            <Badge variant="secondary" className="rounded-sm text-[10px]">{rate}%</Badge>
                           )}
                         </div>
                       </div>
-                      <div className="h-7 w-full rounded-xl bg-muted/40 overflow-hidden">
+                      <div className="h-7 w-full bg-muted/40 overflow-hidden">
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${widthPct}%` }}
                           transition={{ ...springIOS, delay: i * 0.05 }}
-                          className="h-full rounded-xl bg-gradient-to-r from-primary to-primary/70"
+                          className="h-full bg-primary"
                         />
                       </div>
                     </motion.div>
@@ -280,6 +391,30 @@ const PersonaAnalyticsPage = () => {
               </motion.div>
             </CardContent>
           </Card>
+        </PageSection>
+
+        <PageSection title="Recent leads" description="Most recent 50 leads captured for this persona.">
+          <div className="border border-border bg-card">
+            {leads.length === 0 && (
+              <div className="p-4 text-sm text-muted-foreground">No leads yet.</div>
+            )}
+            {leads.map((l) => (
+              <Link
+                to="/leads"
+                key={l.id}
+                className="grid grid-cols-12 px-4 py-2.5 items-center border-b border-border last:border-b-0 hover:bg-accent/30 transition-colors"
+              >
+                <div className="col-span-5 text-sm truncate">{l.visitor_name || "Anonymous"}</div>
+                <div className="col-span-4 text-xs font-mono text-muted-foreground truncate">{l.visitor_email}</div>
+                <div className="col-span-2">
+                  <Badge variant="outline" className="rounded-sm text-[10px] capitalize">{l.stage}</Badge>
+                </div>
+                <div className="col-span-1 text-right text-[10px] text-muted-foreground tabular-nums">
+                  {new Date(l.created_at).toLocaleDateString()}
+                </div>
+              </Link>
+            ))}
+          </div>
         </PageSection>
 
         {loading && <p className="text-xs text-muted-foreground">Loading…</p>}
