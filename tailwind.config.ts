@@ -22,9 +22,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["-apple-system", "BlinkMacSystemFont", "SF Pro Text", "Inter", "system-ui", "sans-serif"],
-        display: ["-apple-system", "BlinkMacSystemFont", "SF Pro Display", "Inter", "Space Grotesk", "system-ui", "sans-serif"],
-        mono: ["SF Mono", "ui-monospace", "Menlo", "monospace"],
+        sans: ["Inter", "-apple-system", "BlinkMacSystemFont", "SF Pro Text", "system-ui", "sans-serif"],
+        display: ["Inter", "-apple-system", "BlinkMacSystemFont", "SF Pro Display", "system-ui", "sans-serif"],
+        mono: ["JetBrains Mono", "SF Mono", "ui-monospace", "Menlo", "monospace"],
       },
       colors: {
         border: "hsl(var(--border))",
