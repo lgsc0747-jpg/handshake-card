@@ -544,18 +544,20 @@ function PageBuilderPage() {
 
   return (
     <div className="fixed inset-0 flex flex-col bg-background z-50">
-      {/* ═══ Top Toolbar ═══ */}
-      <header className="h-12 flex items-center gap-2 px-3 border-b border-border bg-card/80 backdrop-blur-sm shrink-0">
-        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => navigate("/")} title="Back to Dashboard">
-          <ArrowLeft className="w-4 h-4" />
+      {/* ═══ Top Toolbar — Framer style ═══ */}
+      <header className="h-11 flex items-center gap-1.5 px-2.5 border-b border-border/60 bg-card shrink-0">
+        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 rounded-md" onClick={() => navigate("/")} title="Back">
+          <ArrowLeft className="w-3.5 h-3.5" />
         </Button>
-        <div className="w-px h-5 bg-border" />
-        <div className="flex items-center gap-1.5">
-          <Wifi className="w-3.5 h-3.5 text-primary" />
-          <span className="text-xs font-display font-bold hidden sm:inline">Page Builder</span>
+        <div className="flex items-center gap-1.5 px-1">
+          <div className="w-5 h-5 rounded-md bg-foreground/90 flex items-center justify-center">
+            <Wifi className="w-2.5 h-2.5 text-background" />
+          </div>
+          <span className="text-[11px] font-semibold tracking-tight hidden sm:inline">Builder</span>
         </div>
+        <div className="w-px h-4 bg-border mx-0.5" />
         <Select value={selectedPersonaId ?? ""} onValueChange={(v) => { setSelectedPersonaId(v); pageThemeCtx.setPersonaId(v); }}>
-          <SelectTrigger className="w-28 sm:w-36 rounded-lg h-7 text-xs">
+          <SelectTrigger className="w-28 sm:w-36 rounded-md h-7 text-[11px] border-border/60 bg-transparent">
             <SelectValue placeholder="Persona" />
           </SelectTrigger>
           <SelectContent>
@@ -565,7 +567,6 @@ function PageBuilderPage() {
 
         <div className="flex-1" />
 
-        {/* Page tabs - center */}
         <div className="hidden md:flex items-center gap-1 overflow-x-auto max-w-[40%]">
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handlePageSortEnd}>
             <SortableContext items={pages.map(p => p.id)} strategy={verticalListSortingStrategy}>
@@ -584,48 +585,41 @@ function PageBuilderPage() {
               </div>
             </SortableContext>
           </DndContext>
-          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={addPage} title="Add page">
+          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-md" onClick={addPage} title="Add page">
             <FilePlus className="w-3 h-3" />
           </Button>
-          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setTemplateOpen(true)} title="Templates">
+          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-md" onClick={() => setTemplateOpen(true)} title="Templates">
             <BookTemplate className="w-3 h-3" />
           </Button>
         </div>
 
         <div className="flex-1" />
 
-        {/* Right controls */}
-        <div className="flex items-center gap-1">
-          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={undo} title="Undo">
+        <div className="flex items-center gap-0.5">
+          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 rounded-md" onClick={undo} title="Undo">
             <Undo2 className="w-3.5 h-3.5" />
           </Button>
-          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={redo} title="Redo">
+          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 rounded-md" onClick={redo} title="Redo">
             <Redo2 className="w-3.5 h-3.5" />
           </Button>
           <PBThemeSwitcher />
-          <div className="w-px h-5 bg-border mx-1 hidden sm:block" />
-          <div className="hidden sm:flex items-center gap-0.5 bg-muted/50 rounded-lg p-0.5">
-            <Button size="sm" variant={deviceMode === "desktop" ? "default" : "ghost"} className="h-6 w-6 p-0" onClick={() => setDeviceMode("desktop")}>
+          <div className="w-px h-4 bg-border mx-1 hidden sm:block" />
+          <div className="hidden sm:flex items-center gap-0.5 bg-muted/40 rounded-md p-0.5">
+            <Button size="sm" variant={deviceMode === "desktop" ? "default" : "ghost"} className="h-6 w-6 p-0 rounded-sm" onClick={() => setDeviceMode("desktop")}>
               <Monitor className="w-3 h-3" />
             </Button>
-            <Button size="sm" variant={deviceMode === "mobile" ? "default" : "ghost"} className="h-6 w-6 p-0" onClick={() => setDeviceMode("mobile")}>
+            <Button size="sm" variant={deviceMode === "mobile" ? "default" : "ghost"} className="h-6 w-6 p-0 rounded-sm" onClick={() => setDeviceMode("mobile")}>
               <Smartphone className="w-3 h-3" />
             </Button>
           </div>
           {import.meta.env.DEV && selectedPersonaId && (
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-7 w-7 p-0"
-              onClick={() => setDiffOpen(true)}
-              title="Compare editor vs live"
-            >
+            <Button size="sm" variant="ghost" className="h-7 w-7 p-0 rounded-md" onClick={() => setDiffOpen(true)} title="Compare">
               <GitCompare className="w-3.5 h-3.5" />
             </Button>
           )}
-          <Button onClick={saveAll} disabled={saving} size="sm" className="gradient-primary text-primary-foreground rounded-lg h-7 text-xs px-3">
+          <Button onClick={saveAll} disabled={saving} size="sm" className="rounded-md h-7 text-[11px] px-3 ml-1 bg-foreground text-background hover:bg-foreground/90">
             {saving ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Save className="w-3 h-3 mr-1" />}
-            Save
+            Publish
           </Button>
         </div>
       </header>
@@ -657,41 +651,39 @@ function PageBuilderPage() {
 
       {/* ═══ Main Area ═══ */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Sidebar — Block list */}
+        {/* Left Sidebar — Layers (Framer style) */}
         {sidebarOpen && !isMobile && (
-          <div className="w-56 shrink-0 border-r border-border/40 bg-card/30 flex flex-col overflow-hidden">
-            <div className="p-2 border-b border-border/40">
-              <div className="flex items-center gap-2">
-                <Input
-                  value={selectedPage?.title ?? ""}
-                  onChange={(e) => selectedPage && updatePageTitle(selectedPage.id, e.target.value)}
-                  className="h-6 text-[11px] font-semibold"
-                />
-                {pages.length > 1 && (
-                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive shrink-0" onClick={() => selectedPage && setConfirmDeletePage(selectedPage.id)}>
-                    <Trash2 className="w-3 h-3" />
-                  </Button>
-                )}
-              </div>
+          <div className="w-60 shrink-0 border-r border-border/60 bg-card flex flex-col overflow-hidden">
+            <div className="px-3 py-2 border-b border-border/60 flex items-center gap-2 shrink-0">
+              <Input
+                value={selectedPage?.title ?? ""}
+                onChange={(e) => selectedPage && updatePageTitle(selectedPage.id, e.target.value)}
+                className="h-6 text-[11px] font-semibold border-0 bg-transparent px-1 focus-visible:ring-0"
+              />
+              {pages.length > 1 && (
+                <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive shrink-0 rounded-md" onClick={() => selectedPage && setConfirmDeletePage(selectedPage.id)}>
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              )}
             </div>
 
             <ScrollArea className="flex-1">
-              <div className="p-2 space-y-1">
-                <div className="flex items-center justify-between px-1 py-1">
-                  <p className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/60">Blocks</p>
+              <div className="p-1.5 space-y-0.5">
+                <div className="flex items-center justify-between px-2 py-1.5">
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/70">Layers</p>
                   <div className="flex items-center gap-0.5">
-                    <Button variant="ghost" size="sm" className="h-5 px-1 text-[9px]" onClick={() => { setBulkMode(!bulkMode); setSelectedBlockIds(new Set()); }}>
-                      {bulkMode ? "Cancel" : "Select"}
+                    <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[9px] rounded-sm" onClick={() => { setBulkMode(!bulkMode); setSelectedBlockIds(new Set()); }}>
+                      {bulkMode ? "Done" : "Select"}
                     </Button>
                     {bulkMode && selectedBlockIds.size > 0 && (
                       <>
-                        <Button variant="ghost" size="sm" className="h-5 px-1 text-[9px]" onClick={() => bulkToggleVisibility(true)} title="Show">
+                        <Button variant="ghost" size="sm" className="h-5 w-5 p-0 rounded-sm" onClick={() => bulkToggleVisibility(true)} title="Show">
                           <Eye className="w-3 h-3" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="h-5 px-1 text-[9px]" onClick={() => bulkToggleVisibility(false)} title="Hide">
+                        <Button variant="ghost" size="sm" className="h-5 w-5 p-0 rounded-sm" onClick={() => bulkToggleVisibility(false)} title="Hide">
                           <EyeOff className="w-3 h-3" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="h-5 px-1 text-[9px] text-destructive" onClick={() => setConfirmBulkDelete(true)} title="Delete">
+                        <Button variant="ghost" size="sm" className="h-5 w-5 p-0 rounded-sm text-destructive" onClick={() => setConfirmBulkDelete(true)} title="Delete">
                           <Trash2 className="w-3 h-3" />
                         </Button>
                       </>
@@ -709,7 +701,7 @@ function PageBuilderPage() {
                             <Checkbox
                               checked={selectedBlockIds.has(block.id)}
                               onCheckedChange={() => toggleBulkSelect(block.id)}
-                              className="w-3 h-3"
+                              className="w-3 h-3 ml-1"
                             />
                           )}
                           <div className="flex-1">
@@ -729,19 +721,18 @@ function PageBuilderPage() {
               </div>
             </ScrollArea>
 
-            <div className="p-2 border-t border-border/40">
-              <Button variant="outline" size="sm" className="w-full text-[10px] h-7 rounded-lg" onClick={() => setAddBlockOpen(true)}>
-                <Plus className="w-3 h-3 mr-1" /> Add Block
+            <div className="p-2 border-t border-border/60">
+              <Button variant="outline" size="sm" className="w-full text-[10px] h-7 rounded-md border-border/60" onClick={() => setAddBlockOpen(true)}>
+                <Plus className="w-3 h-3 mr-1" /> Insert
               </Button>
             </div>
           </div>
         )}
 
-        {/* Toggle sidebar */}
         {!isMobile && (
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="flex items-center justify-center w-5 bg-card/30 hover:bg-muted/50 border-r border-border/40 transition-colors shrink-0"
+            className="flex items-center justify-center w-4 bg-card hover:bg-muted/40 border-r border-border/60 transition-colors shrink-0"
           >
             {sidebarOpen ? <PanelLeftClose className="w-3 h-3 text-muted-foreground" /> : <PanelLeft className="w-3 h-3 text-muted-foreground" />}
           </button>
@@ -796,12 +787,16 @@ function PageBuilderPage() {
           </ScrollArea>
         </div>
 
-        {/* ═══ Right Panel — Block properties ═══ */}
+        {/* ═══ Right Panel — Inspector (Framer style) ═══ */}
         {!isMobile && (
-          <div className="w-72 shrink-0 border-l border-border/40 bg-card/30 flex flex-col overflow-hidden">
-            <div className="px-3 py-2 border-b border-border/40 flex items-center gap-2 shrink-0">
-              <PanelLeft className="w-3.5 h-3.5 text-primary" />
-              <span className="text-xs font-semibold">Block Settings</span>
+          <div className="w-72 shrink-0 border-l border-border/60 bg-card flex flex-col overflow-hidden">
+            <div className="px-3 py-2 border-b border-border/60 flex items-center justify-between shrink-0">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/70">Inspector</span>
+              {editingBlock && (
+                <span className="text-[10px] text-muted-foreground font-mono">
+                  {BLOCK_TYPES.find(b => b.id === editingBlock.block_type)?.label}
+                </span>
+              )}
             </div>
             <ScrollArea className="flex-1">
               <div className="p-3">
@@ -813,9 +808,11 @@ function PageBuilderPage() {
                     onClose={() => setEditingBlockId(null)}
                   />
                 ) : (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <PanelLeft className="w-6 h-6 mx-auto mb-2 opacity-40" />
-                    <p className="text-[11px]">Select a block on the canvas to edit it.</p>
+                  <div className="text-center py-16 text-muted-foreground">
+                    <div className="w-8 h-8 mx-auto mb-2 rounded-md border border-dashed border-border flex items-center justify-center">
+                      <PanelLeft className="w-3.5 h-3.5 opacity-50" />
+                    </div>
+                    <p className="text-[11px]">Select a layer to edit its properties</p>
                   </div>
                 )}
               </div>
@@ -823,6 +820,17 @@ function PageBuilderPage() {
           </div>
         )}
       </div>
+
+      {/* Floating Insert Pill (Framer-style) */}
+      {!isMobile && (
+        <button
+          onClick={() => setAddBlockOpen(true)}
+          className="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 px-4 py-2 rounded-full bg-foreground text-background shadow-2xl hover:scale-[1.03] transition-transform text-[11px] font-semibold"
+        >
+          <Plus className="w-3.5 h-3.5" /> Insert block
+        </button>
+      )}
+
 
       {/* ═══ Mobile Bottom Bar ═══ */}
       {isMobile && (
