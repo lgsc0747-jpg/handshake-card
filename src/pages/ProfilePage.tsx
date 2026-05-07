@@ -21,24 +21,13 @@ const ProfilePage = () => {
     display_name: "",
     username: "",
     email_public: "",
-    headline: "",
-    bio: "",
-    phone: "",
-    location: "",
-    website: "",
-    linkedin_url: "",
-    github_url: "",
-    availability_status: "Available",
-    work_mode: "On-site",
-    show_availability: true,
-    show_location: true,
   });
 
   useEffect(() => {
     if (!user) return;
     supabase
       .from("profiles")
-      .select("*")
+      .select("avatar_url, display_name, username, email_public")
       .eq("user_id", user.id)
       .single()
       .then(({ data }) => {
@@ -48,17 +37,6 @@ const ProfilePage = () => {
             display_name: data.display_name ?? "",
             username: data.username ?? "",
             email_public: data.email_public ?? user.email ?? "",
-            headline: data.headline ?? "",
-            bio: data.bio ?? "",
-            phone: data.phone ?? "",
-            location: data.location ?? "",
-            website: data.website ?? "",
-            linkedin_url: data.linkedin_url ?? "",
-            github_url: data.github_url ?? "",
-            availability_status: data.availability_status ?? "Available",
-            work_mode: data.work_mode ?? "On-site",
-            show_availability: data.show_availability ?? true,
-            show_location: data.show_location ?? true,
           });
         }
         setLoading(false);
@@ -70,59 +48,32 @@ const ProfilePage = () => {
     setSaving(true);
     const { error } = await supabase
       .from("profiles")
-      .update({
-        display_name: profile.display_name,
-        username: profile.username,
-        email_public: profile.email_public,
-        headline: profile.headline,
-        bio: profile.bio,
-        phone: profile.phone,
-        location: profile.location,
-        website: profile.website,
-        linkedin_url: profile.linkedin_url,
-        github_url: profile.github_url,
-        availability_status: profile.availability_status,
-        work_mode: profile.work_mode,
-        show_availability: profile.show_availability,
-        show_location: profile.show_location,
-      })
+      .update(profile)
       .eq("user_id", user.id);
-
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Profile updated", description: "Your changes have been saved." });
-    }
+    if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
+    else toast({ title: "Account updated" });
     setSaving(false);
   };
 
-  const update = (field: string, value: string) =>
-    setProfile((p) => ({ ...p, [field]: value }));
+  const update = (f: string, v: string) => setProfile((p) => ({ ...p, [f]: v }));
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
-
     setUploading(true);
     const ext = file.name.split(".").pop();
     const path = `${user.id}/avatar.${ext}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("avatars")
-      .upload(path, file, { upsert: true });
-
-    if (uploadError) {
-      toast({ title: "Upload failed", description: uploadError.message, variant: "destructive" });
+    const { error } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+    if (error) {
+      toast({ title: "Upload failed", description: error.message, variant: "destructive" });
       setUploading(false);
       return;
     }
-
     const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
     const newUrl = `${urlData.publicUrl}?t=${Date.now()}`;
-
     await supabase.from("profiles").update({ avatar_url: newUrl }).eq("user_id", user.id);
     setAvatarUrl(newUrl);
-    toast({ title: "Avatar updated", description: "Your new photo is live." });
+    toast({ title: "Avatar updated" });
     setUploading(false);
   };
 
@@ -140,22 +91,23 @@ const ProfilePage = () => {
     <DashboardLayout>
       <div className="space-y-6 max-w-2xl">
         <div>
-          <h1 className="text-2xl font-display font-bold">Profile</h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage your digital identity and public landing page</p>
+          <p className="text-eyebrow text-muted-foreground">Account</p>
+          <h1 className="text-display font-semibold tracking-tight">Profile</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Account-level details. Public design and content live in your <a href="/personas" className="text-accent underline">personas</a>.
+          </p>
         </div>
 
-        <Card className="glass-card animate-fade-in">
+        <Card className="rounded-sm">
           <CardHeader>
-            <CardTitle className="font-display">Account Details</CardTitle>
+            <CardTitle className="text-sm">Account details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex items-center gap-4">
               <div className="relative group">
                 <Avatar className="w-16 h-16">
                   {avatarUrl && <AvatarImage src={avatarUrl} alt="Avatar" />}
-                  <AvatarFallback className="bg-accent text-accent-foreground text-xl font-display">
-                    {(profile.display_name || "U").slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
+                  <AvatarFallback className="text-xl">{(profile.display_name || "U").slice(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <button
                   type="button"
@@ -163,75 +115,35 @@ const ProfilePage = () => {
                   disabled={uploading}
                   className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                 >
-                  {uploading ? (
-                    <Loader2 className="w-5 h-5 text-white animate-spin" />
-                  ) : (
-                    <Camera className="w-5 h-5 text-white" />
-                  )}
+                  {uploading ? <Loader2 className="w-5 h-5 text-white animate-spin" /> : <Camera className="w-5 h-5 text-white" />}
                 </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleAvatarUpload}
-                />
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
               </div>
               <div>
                 <p className="font-medium">{profile.display_name || "Unnamed"}</p>
                 <p className="text-sm text-muted-foreground">{user?.email}</p>
-                {profile.username && (
-                  <p className="text-xs text-primary">/p/{profile.username}</p>
-                )}
+                {profile.username && <p className="text-xs text-accent">/p/{profile.username}</p>}
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-sm text-muted-foreground">Display Name</label>
+                <label className="text-eyebrow text-muted-foreground">Display name</label>
                 <Input value={profile.display_name} onChange={(e) => update("display_name", e.target.value)} />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm text-muted-foreground">Username</label>
+                <label className="text-eyebrow text-muted-foreground">Username</label>
                 <Input value={profile.username} onChange={(e) => update("username", e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""))} />
               </div>
-              <div className="space-y-1.5">
-                <label className="text-sm text-muted-foreground">Headline</label>
-                <Input value={profile.headline} onChange={(e) => update("headline", e.target.value)} placeholder="Full-Stack Developer" />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm text-muted-foreground">Public Email</label>
+              <div className="space-y-1.5 md:col-span-2">
+                <label className="text-eyebrow text-muted-foreground">Public email (account fallback)</label>
                 <Input type="email" value={profile.email_public} onChange={(e) => update("email_public", e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm text-muted-foreground">Phone</label>
-                <Input value={profile.phone} onChange={(e) => update("phone", e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm text-muted-foreground">Location</label>
-                <Input value={profile.location} onChange={(e) => update("location", e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm text-muted-foreground">Website</label>
-                <Input value={profile.website} onChange={(e) => update("website", e.target.value)} placeholder="https://..." />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm text-muted-foreground">LinkedIn</label>
-                <Input value={profile.linkedin_url} onChange={(e) => update("linkedin_url", e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm text-muted-foreground">GitHub</label>
-                <Input value={profile.github_url} onChange={(e) => update("github_url", e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm text-muted-foreground">Availability</label>
-                <Input value={profile.availability_status} onChange={(e) => update("availability_status", e.target.value)} placeholder="Available for Hire" />
               </div>
             </div>
 
-            <Button onClick={handleSave} className="gradient-primary text-primary-foreground" disabled={saving}>
+            <Button onClick={handleSave} disabled={saving} className="rounded-sm">
               {saving ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Save className="w-4 h-4 mr-1.5" />}
-              Save Changes
+              Save changes
             </Button>
           </CardContent>
         </Card>

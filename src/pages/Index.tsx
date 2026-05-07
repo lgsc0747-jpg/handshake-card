@@ -1,44 +1,20 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { AnalyticsChart } from "@/components/AnalyticsChart";
-import { WidgetManager } from "@/components/WidgetManager";
-import { PersonaPieChart } from "@/components/PersonaPieChart";
 import { DeviceDonutChart } from "@/components/dashboard/DeviceDonutChart";
-import { ActivityHeatmap } from "@/components/dashboard/ActivityHeatmap";
-import { LinkCTRChart } from "@/components/dashboard/LinkCTRChart";
-import { CTAClickChart } from "@/components/dashboard/CTAClickChart";
-import { SecurityMetrics } from "@/components/dashboard/SecurityMetrics";
-import { ConnectionSourceChart } from "@/components/dashboard/ConnectionSourceChart";
-import { PersonaBarChart } from "@/components/dashboard/PersonaBarChart";
 import { ConversionFunnel } from "@/components/dashboard/ConversionFunnel";
-import { ExportButton } from "@/components/dashboard/ExportButton";
-import { LeadGenTracker } from "@/components/dashboard/LeadGenTracker";
-import { TapVelocityChart } from "@/components/dashboard/TapVelocityChart";
-import { TimeframeSelector } from "@/components/dashboard/TimeframeSelector";
-import { SortableChartCard, resetChartSizes } from "@/components/dashboard/SortableChartCard";
-import { ChartVisibilityManager } from "@/components/dashboard/ChartVisibilityManager";
-
+import { PersonaBarChart } from "@/components/dashboard/PersonaBarChart";
 import { ChartPaletteProvider, ChartPaletteSelector } from "@/components/dashboard/ChartPaletteSelector";
-import { ChartTitleWithInfo } from "@/components/dashboard/ChartTitleWithInfo";
-import { AIInsightsCard } from "@/components/dashboard/AIInsightsCard";
+import { TimeframeSelector } from "@/components/dashboard/TimeframeSelector";
+import { ExportButton } from "@/components/dashboard/ExportButton";
+import { PersonaCardCarousel } from "@/components/dashboard/PersonaCardCarousel";
 import { useNfcData } from "@/hooks/useNfcData";
 import { useAuth } from "@/contexts/AuthContext";
-import { usePreferences } from "@/contexts/PreferencesContext";
 import { useSubscription } from "@/hooks/useSubscription";
-import { UpgradeOverlay } from "@/components/UpgradePrompt";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, Users, MousePointerClick, FileText, ArrowUpRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-import {
-  DndContext, closestCenter, PointerSensor, TouchSensor,
-  useSensor, useSensors, type DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  SortableContext, rectSortingStrategy, arrayMove,
-} from "@dnd-kit/sortable";
 
 const TIMEFRAME_LABELS: Record<string, string> = {
   thirtymin: "Last 30 min",
@@ -48,75 +24,31 @@ const TIMEFRAME_LABELS: Record<string, string> = {
   quarterly: "Last 90 days",
 };
 
-/* ─── Chart card keys per tab ─── */
-type EngagementCard = "aiInsights" | "analytics" | "funnel" | "linkCTR" | "ctaClicks" | "liveFeed";
-type PersonaCard = "personaPie" | "personaBar";
-type TechnicalCard = "deviceType" | "browser" | "os" | "tapVelocity" | "heatmap" | "connections";
-type SecurityCard = "securityMetrics" | "handshake" | "leadGen";
+interface KpiProps {
+  label: string;
+  value: string | number;
+  delta?: string;
+  icon: React.ReactNode;
+}
 
-const DEFAULT_ENGAGEMENT: EngagementCard[] = ["aiInsights", "analytics", "funnel", "linkCTR", "ctaClicks", "liveFeed"];
-const DEFAULT_TECHNICAL: TechnicalCard[] = ["deviceType", "browser", "os", "tapVelocity", "heatmap", "connections"];
-const DEFAULT_SECURITY: SecurityCard[] = ["securityMetrics", "handshake", "leadGen"];
-
-const ENGAGEMENT_LABELS: Record<EngagementCard, string> = {
-  aiInsights: "AI Insights",
-  analytics: "Analytics Trend",
-  funnel: "Conversion Funnel",
-  linkCTR: "Link CTR",
-  ctaClicks: "CTA Clicks",
-  liveFeed: "Live Feed",
-};
-const PERSONA_LABELS: Record<PersonaCard, string> = {
-  personaPie: "Persona Distribution",
-  personaBar: "Persona Performance",
-};
-const TECHNICAL_LABELS: Record<TechnicalCard, string> = {
-  deviceType: "Device Type",
-  browser: "Browser",
-  os: "Operating System",
-  tapVelocity: "Tap Velocity",
-  heatmap: "Activity Heatmap",
-  connections: "Connection Sources",
-};
-const SECURITY_LABELS: Record<SecurityCard, string> = {
-  securityMetrics: "Security Metrics",
-  handshake: "Digital Handshake",
-  leadGen: "Lead Gen Tracker",
-};
+function Kpi({ label, value, delta, icon }: KpiProps) {
+  return (
+    <div className="rounded-sm border border-border bg-card p-4 flex flex-col gap-1.5">
+      <div className="flex items-center justify-between text-muted-foreground">
+        <span className="text-eyebrow">{label}</span>
+        {icon}
+      </div>
+      <p className="text-2xl font-display font-semibold tracking-tight tabular-nums">{value}</p>
+      {delta && <p className="text-eyebrow text-muted-foreground">{delta}</p>}
+    </div>
+  );
+}
 
 const Dashboard = () => {
   const { user } = useAuth();
   const { stats, chartData, timeframe, setTimeframe, loading } = useNfcData();
   const { isPro } = useSubscription();
-  const { prefs, patchPrefs } = usePreferences();
   const [recentLogs, setRecentLogs] = useState<any[]>([]);
-
-  const editMode = true;
-
-  const engOrder = (prefs.dashEngagementOrder as EngagementCard[] | undefined) ?? DEFAULT_ENGAGEMENT;
-  const techOrder = (prefs.dashTechnicalOrder as TechnicalCard[] | undefined) ?? DEFAULT_TECHNICAL;
-  const secOrder = (prefs.dashSecurityOrder as SecurityCard[] | undefined) ?? DEFAULT_SECURITY;
-  const visibility = prefs.dashChartVisibility ?? {};
-
-  const setEngOrder = (next: EngagementCard[] | ((p: EngagementCard[]) => EngagementCard[])) => {
-    const value = typeof next === "function" ? next(engOrder) : next;
-    patchPrefs({ dashEngagementOrder: value });
-  };
-  const setTechOrder = (next: TechnicalCard[] | ((p: TechnicalCard[]) => TechnicalCard[])) => {
-    const value = typeof next === "function" ? next(techOrder) : next;
-    patchPrefs({ dashTechnicalOrder: value });
-  };
-  const setSecOrder = (next: SecurityCard[] | ((p: SecurityCard[]) => SecurityCard[])) => {
-    const value = typeof next === "function" ? next(secOrder) : next;
-    patchPrefs({ dashSecurityOrder: value });
-  };
-
-  const isVisible = (key: string) => visibility[key] ?? true;
-  const toggleVisibility = (key: string, v: boolean) => patchPrefs({ dashChartVisibility: { ...visibility, [key]: v } });
-
-  const pointerSensor = useSensor(PointerSensor, { activationConstraint: { distance: 5 } });
-  const touchSensor = useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } });
-  const sensors = useSensors(pointerSensor, touchSensor);
 
   useEffect(() => {
     if (!user) return;
@@ -125,166 +57,19 @@ const Dashboard = () => {
       .select("id, entity_id, occasion, interaction_type, metadata, created_at")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
-      .limit(8)
+      .limit(10)
       .then(({ data }) => setRecentLogs(data ?? []));
   }, [user]);
 
-  const timeSince = (dateStr: string) => {
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return "just now";
-    if (mins < 60) return `${mins}m ago`;
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h ago`;
-    return `${Math.floor(hrs / 24)}d ago`;
-  };
-
-  const getLogIcon = (type: string | null) => {
-    switch (type) {
-      case "profile_view": return "👁️";
-      case "vcard_download": return "📇";
-      case "cv_download": return "📄";
-      case "link_click": return "🔗";
-      case "security_attempt": return "🔒";
-      default: return "📡";
-    }
-  };
-
   const totalLinkClicks = stats.linkCTR.reduce((s, l) => s + l.clicks, 0);
 
-  const makeDragHandler = <T extends string>(setter: React.Dispatch<React.SetStateAction<T[]>>) =>
-    (event: DragEndEvent) => {
-      const { active, over } = event;
-      if (!over || active.id === over.id) return;
-      setter((prev) => {
-        const oi = prev.indexOf(active.id as T);
-        const ni = prev.indexOf(over.id as T);
-        return arrayMove(prev, oi, ni);
-      });
-    };
-
-  const resetAll = () => {
-    patchPrefs({
-      dashEngagementOrder: DEFAULT_ENGAGEMENT,
-      dashTechnicalOrder: DEFAULT_TECHNICAL,
-      dashSecurityOrder: DEFAULT_SECURITY,
-      dashChartVisibility: {},
-      dashChartSizes: {},
-    });
-    resetChartSizes();
-    window.location.reload();
-  };
-
-  /* ─── Render helpers for each card ─── */
-  const engCards: Record<EngagementCard, React.ReactNode> = {
-    aiInsights: (
-      <SortableChartCard id="aiInsights" editMode={editMode} className="lg:col-span-2">
-        <AIInsightsCard />
-      </SortableChartCard>
-    ),
-    analytics: (
-      <SortableChartCard id="analytics" editMode={editMode} className="lg:col-span-2">
-        <AnalyticsChart data={chartData} />
-      </SortableChartCard>
-    ),
-    funnel: (
-      <SortableChartCard id="funnel" editMode={editMode}>
-        <ConversionFunnel
-          profileViews={stats.profileViews}
-          cardFlips={stats.cardFlips}
-          linkClicks={totalLinkClicks}
-          vcardDownloads={stats.vcardDownloads}
-        />
-      </SortableChartCard>
-    ),
-    linkCTR: (
-      <SortableChartCard id="linkCTR" editMode={editMode}>
-        <LinkCTRChart data={stats.linkCTR} />
-      </SortableChartCard>
-    ),
-    ctaClicks: (
-      <SortableChartCard id="ctaClicks" editMode={editMode}>
-        <CTAClickChart data={stats.ctaClicks} />
-      </SortableChartCard>
-    ),
-    liveFeed: (
-      <SortableChartCard id="liveFeed" editMode={editMode}>
-        <div className="glass-card rounded-lg p-4 animate-fade-in">
-          <div className="mb-3">
-            <ChartTitleWithInfo
-              title="Live Feed"
-              info="The 8 most recent interactions on your profile, in real time. Each row is one event — tap, save, link click — with the visitor's device and persona context."
-              className="text-xs sm:text-sm"
-            />
-          </div>
-          {recentLogs.length === 0 ? (
-            <p className="text-xs text-muted-foreground">No interactions yet.</p>
-          ) : (
-            <div className="space-y-2">
-              {recentLogs.map((log: any) => {
-                const meta = (log.metadata as Record<string, any>) ?? {};
-                return (
-                  <div key={log.id} className="flex items-start gap-2 group">
-                    <span className="text-sm mt-0.5">{getLogIcon(log.interaction_type)}</span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium truncate">{log.occasion || log.interaction_type}</p>
-                      <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                        {meta.device && <Badge variant="outline" className="text-[9px] px-1 py-0">{meta.device}</Badge>}
-                        {meta.browser && <Badge variant="outline" className="text-[9px] px-1 py-0">{meta.browser}</Badge>}
-                        {meta.persona_slug && <Badge variant="secondary" className="text-[9px] px-1 py-0">{meta.persona_slug}</Badge>}
-                        <span className="text-[9px] text-muted-foreground">{timeSince(log.created_at)}</span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </SortableChartCard>
-    ),
-  };
-
-  const techCards: Record<TechnicalCard, React.ReactNode> = {
-    deviceType: <SortableChartCard id="deviceType" editMode={editMode}><DeviceDonutChart data={stats.deviceBreakdown} title="Device Type" /></SortableChartCard>,
-    browser: <SortableChartCard id="browser" editMode={editMode}><DeviceDonutChart data={stats.browserBreakdown} title="Browser" /></SortableChartCard>,
-    os: <SortableChartCard id="os" editMode={editMode}><DeviceDonutChart data={stats.osBreakdown} title="Operating System" /></SortableChartCard>,
-    tapVelocity: <SortableChartCard id="tapVelocity" editMode={editMode} className="col-span-full"><TapVelocityChart data={stats.tapVelocity} /></SortableChartCard>,
-    heatmap: <SortableChartCard id="heatmap" editMode={editMode}><ActivityHeatmap data={stats.hourlyHeat} /></SortableChartCard>,
-    connections: <SortableChartCard id="connections" editMode={editMode}><ConnectionSourceChart sources={stats.connectionSources} /></SortableChartCard>,
-  };
-
-  const secCards: Record<SecurityCard, React.ReactNode> = {
-    securityMetrics: (
-      <SortableChartCard id="securityMetrics" editMode={editMode}>
-        <SecurityMetrics
-          authSuccessRate={stats.authSuccessRate}
-          leadGenCount={stats.leadGenCount}
-          unauthorizedAttempts={stats.unauthorizedAttempts}
-          avgDwellTime={stats.avgDwellTime}
-        />
-      </SortableChartCard>
-    ),
-    handshake: (
-      <SortableChartCard id="handshake" editMode={editMode}>
-        <div className="glass-card rounded-lg p-4 animate-fade-in space-y-2">
-          <ChartTitleWithInfo
-            title="Digital Handshake"
-            info="Quick-stack of engagement KPIs: how often visitors save your contact, submit forms, watch videos, and come back for a second look."
-            className="text-xs sm:text-sm"
-          />
-          <div className="space-y-1.5 text-xs sm:text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">Save Rate</span><span className="font-bold">{stats.contactSaveRate}%</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">vCards</span><span className="font-bold">{stats.vcardDownloads}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Contact Forms</span><span className="font-bold">{stats.contactFormSubmissions}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Video Plays</span><span className="font-bold">{stats.videoPlays}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Return</span><span className="font-bold">{stats.returnVisitorRate}%</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Depth</span><span className="font-bold">{stats.interactionDepthRate}%</span></div>
-          </div>
-        </div>
-      </SortableChartCard>
-    ),
-    leadGen: <SortableChartCard id="leadGen" editMode={editMode} className="col-span-full"><LeadGenTracker /></SortableChartCard>,
+  const timeSince = (s: string) => {
+    const m = Math.floor((Date.now() - new Date(s).getTime()) / 60000);
+    if (m < 1) return "now";
+    if (m < 60) return `${m}m`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h`;
+    return `${Math.floor(h / 24)}d`;
   };
 
   if (loading) {
@@ -299,109 +84,94 @@ const Dashboard = () => {
 
   return (
     <ChartPaletteProvider>
-    <DashboardLayout>
-      <div className="space-y-5">
-        {/* Header — gradient title + glass action bar */}
-        <div className="rounded-2xl glass-card border border-border/40 px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="text-xl sm:text-3xl font-display font-bold bg-gradient-to-r from-primary via-primary to-primary/60 bg-clip-text text-transparent">
-              Dashboard
-            </h1>
-            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              {TIMEFRAME_LABELS[timeframe]}
-            </p>
+      <DashboardLayout>
+        <div className="space-y-5">
+          {/* Header */}
+          <div className="flex items-end justify-between flex-wrap gap-3 border-b border-border pb-4">
+            <div>
+              <p className="text-eyebrow text-muted-foreground">Overview</p>
+              <h1 className="text-display font-semibold tracking-tight">Analytics</h1>
+              <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                {TIMEFRAME_LABELS[timeframe]}
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <TimeframeSelector value={timeframe} onChange={setTimeframe} />
+              <ChartPaletteSelector />
+              {isPro && <ExportButton stats={stats} chartData={chartData} />}
+            </div>
           </div>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <TimeframeSelector value={timeframe} onChange={setTimeframe} />
-            <ChartPaletteSelector />
-            <ChartVisibilityManager
-              visibility={visibility}
-              onChange={toggleVisibility}
-              sections={[
-                { title: "Engagement", options: DEFAULT_ENGAGEMENT.map((k) => ({ key: k, label: ENGAGEMENT_LABELS[k] })) },
-                { title: "Personas", options: (Object.keys(PERSONA_LABELS) as PersonaCard[]).map((k) => ({ key: k, label: PERSONA_LABELS[k] })) },
-                { title: "Technical", options: DEFAULT_TECHNICAL.map((k) => ({ key: k, label: TECHNICAL_LABELS[k] })) },
-                { title: "Security", options: DEFAULT_SECURITY.map((k) => ({ key: k, label: SECURITY_LABELS[k] })) },
-              ]}
+
+          {/* KPI Strip */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Kpi label="Profile views" value={stats.profileViews} icon={<Eye className="w-3.5 h-3.5" />} />
+            <Kpi label="Unique visitors" value={stats.uniqueVisitors} icon={<Users className="w-3.5 h-3.5" />} />
+            <Kpi label="Save rate" value={`${stats.contactSaveRate}%`} icon={<FileText className="w-3.5 h-3.5" />} />
+            <Kpi label="Leads" value={stats.leadGenCount} icon={<MousePointerClick className="w-3.5 h-3.5" />} />
+          </div>
+
+          {/* 3D Card carousel — front and center */}
+          <PersonaCardCarousel />
+
+          {/* Trend + funnel */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+            <div className="lg:col-span-2">
+              <AnalyticsChart data={chartData} />
+            </div>
+            <ConversionFunnel
+              profileViews={stats.profileViews}
+              cardFlips={stats.cardFlips}
+              linkClicks={totalLinkClicks}
+              vcardDownloads={stats.vcardDownloads}
             />
-            <Button variant="ghost" size="sm" className="text-[10px] text-muted-foreground" onClick={resetAll} title="Reset layout & sizes">
-              Reset
-            </Button>
-            {isPro && <ExportButton stats={stats} chartData={chartData} />}
+          </div>
+
+          {/* Personas + devices + live */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+            <div className="lg:col-span-2">
+              <PersonaBarChart data={stats.personaPerformance} />
+            </div>
+            <DeviceDonutChart data={stats.deviceBreakdown} title="Devices" />
+          </div>
+
+          {/* Recent activity */}
+          <div className="rounded-sm border border-border bg-card">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+              <p className="text-eyebrow text-muted-foreground">Recent activity</p>
+              <Link to="/logs" className="text-eyebrow text-accent hover:underline flex items-center gap-1">
+                View all <ArrowUpRight className="w-3 h-3" />
+              </Link>
+            </div>
+            {recentLogs.length === 0 ? (
+              <p className="text-sm text-muted-foreground p-6 text-center">No interactions yet.</p>
+            ) : (
+              <div className="divide-y divide-border">
+                {recentLogs.map((log) => {
+                  const meta = (log.metadata as Record<string, any>) ?? {};
+                  return (
+                    <div key={log.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/40 transition-colors">
+                      <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
+                      <p className="text-sm font-medium flex-1 truncate">
+                        {log.occasion || log.interaction_type?.replace(/_/g, " ")}
+                      </p>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {meta.persona_slug && (
+                          <Badge variant="outline" className="rounded-sm text-eyebrow">
+                            {meta.persona_slug}
+                          </Badge>
+                        )}
+                        {meta.device && <span className="text-eyebrow text-muted-foreground">{meta.device}</span>}
+                        <span className="text-eyebrow text-muted-foreground tabular-nums w-8 text-right">{timeSince(log.created_at)}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
-
-        {/* KPI Widgets */}
-        <WidgetManager stats={stats} />
-
-        {/* Tabs */}
-        <Tabs defaultValue="engagement" className="space-y-3">
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid bg-muted/30 backdrop-blur-md border border-border/40 rounded-xl p-1">
-            <TabsTrigger value="engagement" className="text-[10px] sm:text-xs rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">Engagement</TabsTrigger>
-            <TabsTrigger value="personas" className="text-[10px] sm:text-xs rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">Personas</TabsTrigger>
-            <TabsTrigger value="technical" className="text-[10px] sm:text-xs rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">Technical</TabsTrigger>
-            <TabsTrigger value="security" className="text-[10px] sm:text-xs rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">Security</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="engagement" className="space-y-3">
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={makeDragHandler(setEngOrder)}>
-              <SortableContext items={engOrder.filter(isVisible)} strategy={rectSortingStrategy}>
-                <div className="flex flex-wrap gap-3">
-                  {engOrder.filter(isVisible).map(k => <div key={k}>{engCards[k]}</div>)}
-                </div>
-              </SortableContext>
-            </DndContext>
-          </TabsContent>
-
-          <TabsContent value="personas" className="space-y-3">
-            {isPro ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                {isVisible("personaPie") && <PersonaPieChart />}
-                {isVisible("personaBar") && <PersonaBarChart data={stats.personaPerformance} />}
-              </div>
-            ) : (
-              <UpgradeOverlay feature="Persona Analytics" description="Upgrade to Pro to see detailed persona performance breakdowns.">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                  {isVisible("personaPie") && <PersonaPieChart />}
-                  {isVisible("personaBar") && <PersonaBarChart data={stats.personaPerformance} />}
-                </div>
-              </UpgradeOverlay>
-            )}
-          </TabsContent>
-
-          <TabsContent value="technical" className="space-y-3">
-            {isPro ? (
-              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={makeDragHandler(setTechOrder)}>
-                <SortableContext items={techOrder.filter(isVisible)} strategy={rectSortingStrategy}>
-                  <div className="flex flex-wrap gap-3">
-                    {techOrder.filter(isVisible).map(k => <div key={k}>{techCards[k]}</div>)}
-                  </div>
-                </SortableContext>
-              </DndContext>
-            ) : (
-              <UpgradeOverlay feature="Technical Analytics" description="Upgrade to Pro for device, tap velocity, and heatmap insights.">
-                <div className="flex flex-wrap gap-3">
-                  {isVisible("deviceType") && <div className="flex-1 min-w-[280px]"><DeviceDonutChart data={stats.deviceBreakdown} title="Device Type" /></div>}
-                  {isVisible("browser") && <div className="flex-1 min-w-[280px]"><DeviceDonutChart data={stats.browserBreakdown} title="Browser" /></div>}
-                  {isVisible("os") && <div className="flex-1 min-w-[280px]"><DeviceDonutChart data={stats.osBreakdown} title="Operating System" /></div>}
-                </div>
-              </UpgradeOverlay>
-            )}
-          </TabsContent>
-
-          <TabsContent value="security" className="space-y-3">
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={makeDragHandler(setSecOrder)}>
-              <SortableContext items={secOrder.filter(isVisible)} strategy={rectSortingStrategy}>
-                <div className="flex flex-wrap gap-3">
-                  {secOrder.filter(isVisible).map(k => <div key={k}>{secCards[k]}</div>)}
-                </div>
-              </SortableContext>
-            </DndContext>
-          </TabsContent>
-        </Tabs>
-      </div>
-    </DashboardLayout>
+      </DashboardLayout>
     </ChartPaletteProvider>
   );
 };
