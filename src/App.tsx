@@ -24,7 +24,7 @@ import PersonaAnalyticsPage from "./pages/PersonaAnalyticsPage.tsx";
 import AgencyPage from "./pages/AgencyPage.tsx";
 
 import SettingsPage from "./pages/SettingsPage.tsx";
-import ProfilePage from "./pages/ProfilePage.tsx";
+
 import PublicProfilePage from "./pages/PublicProfilePage.tsx";
 import LoginPage from "./pages/LoginPage.tsx";
 import SignupPage from "./pages/SignupPage.tsx";
