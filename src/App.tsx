@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -24,7 +24,7 @@ import PersonaAnalyticsPage from "./pages/PersonaAnalyticsPage.tsx";
 import AgencyPage from "./pages/AgencyPage.tsx";
 
 import SettingsPage from "./pages/SettingsPage.tsx";
-import ProfilePage from "./pages/ProfilePage.tsx";
+
 import PublicProfilePage from "./pages/PublicProfilePage.tsx";
 import LoginPage from "./pages/LoginPage.tsx";
 import SignupPage from "./pages/SignupPage.tsx";
@@ -70,7 +70,7 @@ const App = () => (
             <Route path="/nfc-manager" element={<ProtectedRoute><NfcManagerPage /></ProtectedRoute>} />
             <Route path="/logs" element={<ProtectedRoute><LogsPage /></ProtectedRoute>} />
             
-            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route path="/profile" element={<Navigate to="/settings?tab=account" replace />} />
             <Route path="/personas" element={<ProtectedRoute><PersonasPage /></ProtectedRoute>} />
             <Route path="/leads" element={<ProtectedRoute><LeadsPage /></ProtectedRoute>} />
             <Route path="/design-studio" element={<ProtectedRoute><DesignStudioPage /></ProtectedRoute>} />
