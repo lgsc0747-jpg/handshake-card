@@ -1,7 +1,7 @@
 # Project Memory
 
 ## Core
-- Cyber Dark & iOS aesthetic: slate-950/900, glassmorphism, 24px+ squircle, SF Pro/Inter.
+- blocks.so design language: soft warm-neutral + dark-first, 8–12px radii, subtle shadows, indigo accent, Inter only.
 - Supabase relational DB: strict RLS, Security Definer RPCs for public access.
 - React 18 SPA: strict pin @tanstack/react-query@5.56.2, use react-router-dom Link.
 - Privacy-First: NEVER implement location tracking. Follow Philippine Data Privacy Act.
