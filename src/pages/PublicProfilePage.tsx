@@ -688,20 +688,6 @@ const PublicProfilePage = () => {
       </motion.div>
     </section>
   );
-  if (accessBlocked) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 px-4 text-center">
-        <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
-          <Wifi className="w-6 h-6 text-muted-foreground" />
-        </div>
-        <h1 className="text-xl font-display font-bold">Tap to view this profile</h1>
-        <p className="text-muted-foreground max-w-sm text-sm">
-          This profile is only accessible by tapping the owner's NFC card or scanning their QR code.
-          Direct links can't open it.
-        </p>
-      </div>
-    );
-  }
 
 
   const renderContact = () => (
