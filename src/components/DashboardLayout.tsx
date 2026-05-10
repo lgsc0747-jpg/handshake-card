@@ -92,6 +92,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               <Breadcrumbs />
             </div>
             <CommandHint />
+            <ThemeToggle />
             <NotificationBell />
           </header>
           <main
