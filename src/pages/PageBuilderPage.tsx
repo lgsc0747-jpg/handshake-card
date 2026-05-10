@@ -41,6 +41,7 @@ import { NfcCardsPanel } from "@/components/page-builder/NfcCardsPanel";
 import { RecentInteractionsPanel } from "@/components/page-builder/RecentInteractionsPanel";
 import { PageCanvas, PAGE_CANVAS_MAX_W_PX } from "@/components/page-builder/PageCanvas";
 import { PreviewDiffOverlay } from "@/components/page-builder/PreviewDiffOverlay";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Activity, GitCompare } from "lucide-react";
 
 const ICON_MAP: Record<string, any> = {
@@ -603,6 +604,7 @@ function PageBuilderPage() {
             <Redo2 className="w-3.5 h-3.5" />
           </Button>
           <PBThemeSwitcher />
+          <ThemeToggle />
           <div className="w-px h-4 bg-border mx-1 hidden sm:block" />
           <div className="hidden sm:flex items-center gap-0.5 bg-muted/40 rounded-md p-0.5">
             <Button size="sm" variant={deviceMode === "desktop" ? "default" : "ghost"} className="h-6 w-6 p-0 rounded-sm" onClick={() => setDeviceMode("desktop")}>

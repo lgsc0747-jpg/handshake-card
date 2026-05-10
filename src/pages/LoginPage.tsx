@@ -16,6 +16,7 @@ import { Turnstile, TurnstileInstance } from "@marsidev/react-turnstile";
 import { getTurnstileSiteKey, currentHostname, detectEnvironment } from "@/lib/turnstileEnv";
 import { DestinationPicker } from "@/components/auth/DestinationPicker";
 import { TurnstileDiagnostics } from "@/components/auth/TurnstileDiagnostics";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -163,7 +164,10 @@ const LoginPage = () => {
   const env = detectEnvironment();
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 relative">
+      <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10">
+        <ThemeToggle />
+      </div>
       {showPicker && <DestinationPicker email={showPicker.email} />}
 
       <Card className="w-full max-w-md glass-elevated animate-fade-in">
