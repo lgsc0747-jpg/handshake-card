@@ -15,7 +15,8 @@ import {
   KeyRound, Bell, UserX, User, Palette, Camera, Loader2, Mail, Link2, Unlink, Save,
 } from "lucide-react";
 import { DeleteAccountDialog } from "@/components/DeleteAccountDialog";
-import { useDashboardTheme, DASHBOARD_THEMES, type DashboardTheme } from "@/contexts/DashboardThemeContext";
+import { useDashboardTheme, type ColorMode } from "@/contexts/DashboardThemeContext";
+import { Sun, Moon, MonitorSmartphone } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,7 +25,7 @@ import { getCookiePrefs, saveCookiePrefs, type CookiePrefs } from "@/components/
 const NOTIF_KEY = "notification_prefs";
 
 const SettingsPage = () => {
-  const { theme, setTheme } = useDashboardTheme();
+  const { colorMode, setColorMode } = useDashboardTheme();
   const { user, signOut } = useAuth();
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -391,28 +392,28 @@ const SettingsPage = () => {
           {/* ─── Appearance ─── */}
           <TabsContent value="appearance" className="space-y-4">
             <Section
-              title="Dashboard theme"
-              description="Pick a color theme for the admin workspace. Public personas have their own theme settings."
+              title="Appearance"
+              description="Choose light, dark, or follow your system. The same palette is used across login, dashboard, and the page builder."
               icon={<Palette className="w-4 h-4" />}
             >
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {(Object.entries(DASHBOARD_THEMES) as [DashboardTheme, typeof DASHBOARD_THEMES[DashboardTheme]][]).map(([key, cfg]) => (
+              <div className="grid grid-cols-3 gap-2 max-w-md">
+                {([
+                  { value: "light",  label: "Light",  Icon: Sun },
+                  { value: "dark",   label: "Dark",   Icon: Moon },
+                  { value: "system", label: "System", Icon: MonitorSmartphone },
+                ] as { value: ColorMode; label: string; Icon: any }[]).map(({ value, label, Icon }) => (
                   <button
-                    key={key}
-                    onClick={() => setTheme(key)}
-                    className={`relative flex items-center gap-2.5 p-3 rounded-lg border transition-all text-left ${
-                      theme === key ? "border-accent bg-accent/5" : "border-border/60 hover:border-accent/40"
+                    key={value}
+                    onClick={() => setColorMode(value)}
+                    className={`relative flex flex-col items-center justify-center gap-2 p-4 rounded-lg border transition-all ${
+                      colorMode === value ? "border-accent bg-accent/5" : "border-border/60 hover:border-accent/40"
                     }`}
                   >
-                    <div className="flex gap-0.5 shrink-0">
-                      <span className="w-3.5 h-3.5 rounded-md border border-border" style={{ background: cfg.preview }} />
-                      <span className="w-3.5 h-3.5 rounded-md border border-border" style={{ background: cfg.secondary }} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium truncate">{cfg.label}</p>
-                      <p className="text-[10px] text-muted-foreground truncate">{cfg.description}</p>
-                    </div>
-                    {theme === key && <Check className="w-3.5 h-3.5 text-accent shrink-0" />}
+                    <Icon className="w-5 h-5" />
+                    <span className="text-xs font-medium">{label}</span>
+                    {colorMode === value && (
+                      <Check className="w-3.5 h-3.5 text-accent absolute top-2 right-2" />
+                    )}
                   </button>
                 ))}
               </div>
