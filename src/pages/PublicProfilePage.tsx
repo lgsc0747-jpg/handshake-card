@@ -157,12 +157,14 @@ const PublicProfilePage = () => {
         return;
       }
 
-      // Detect tap source up front so we can skip rate limit for trusted entries
+      // Strict access policy: only allow viewers who arrived via an NFC/QR
+      // tap (a /u/<code> short-link redirect or an explicit ?src=qr|nfc URL),
+      // or the profile owner themselves. Block typed/shared URLs.
       let earlySource: string | undefined;
       try {
         const params = new URLSearchParams(window.location.search);
         const raw = (params.get("src") ?? "").toLowerCase();
-        if (raw === "qr" || raw === "nfc" || raw === "link") earlySource = raw;
+        if (raw === "qr" || raw === "nfc") earlySource = raw;
       } catch { /* ignore */ }
       try {
         const tapRaw = sessionStorage.getItem("tap_origin");
@@ -175,8 +177,20 @@ const PublicProfilePage = () => {
         }
       } catch { /* ignore */ }
 
-      // Rate-limit check: blocks anyone enumerating /p/<random>/<random> URLs.
-      // NFC / QR taps are always allowed.
+      // Allow the owner to preview their own profile by direct URL
+      let isOwner = false;
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.id && user.id === profileData.user_id) isOwner = true;
+      } catch { /* ignore */ }
+
+      if (!earlySource && !isOwner) {
+        setAccessBlocked(true);
+        setLoading(false);
+        return;
+      }
+
+      // Rate-limit check (still useful as a secondary guard)
       try {
         const { data: gate } = await supabase.functions.invoke("check-profile-access", {
           body: { target_user_id: profileData.user_id, source_method: earlySource },
