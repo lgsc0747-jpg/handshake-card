@@ -1,53 +1,22 @@
 import { useEffect, useState, useCallback } from "react";
-import { motion } from "framer-motion";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { Page, PageHeader, PageSection } from "@/components/layout/Page";
+import { Page, PageHeader } from "@/components/layout/Page";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
-} from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
-import { Building2, Plus, ShieldCheck, UserPlus, Loader2, MessageSquare, Send, Mail } from "lucide-react";
+import { Building2, Plus, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { fadeUp } from "@/lib/motion";
+import { AgencyOverview } from "@/components/agency/AgencyOverview";
+import { AgencyMembers } from "@/components/agency/AgencyMembers";
+import { AgencyInbox } from "@/components/agency/AgencyInbox";
+import { AgencyGoals } from "@/components/agency/AgencyGoals";
+import { AgencyTemplates } from "@/components/agency/AgencyTemplates";
+import { AgencySettings } from "@/components/agency/AgencySettings";
 
-type OrgRole = "owner" | "admin" | "manager" | "member";
 interface Org { id: string; name: string; slug: string; owner_user_id: string; }
-interface MemberRow {
-  membership_id: string;
-  user_id: string;
-  role: OrgRole;
-  display_name: string | null;
-  username: string | null;
-  avatar_url: string | null;
-}
-interface PermRow {
-  id: string;
-  member_user_id: string;
-  resource_type: string;
-  permission: string;
-  resource_id: string | null;
-}
-
-const RESOURCES = ["persona", "lead", "card", "page", "analytics"] as const;
-const PERMS = ["view", "edit", "delete", "manage"] as const;
-type ResourceType = typeof RESOURCES[number];
-type Permission = typeof PERMS[number];
-
-const initials = (m: MemberRow) =>
-  (m.display_name || m.username || m.user_id).slice(0, 2).toUpperCase();
 
 const AgencyPage = () => {
   const { user } = useAuth();
@@ -55,35 +24,10 @@ const AgencyPage = () => {
   const [accountType, setAccountType] = useState<"personal" | "agency">("personal");
   const [orgs, setOrgs] = useState<Org[]>([]);
   const [activeOrg, setActiveOrg] = useState<Org | null>(null);
-  const [members, setMembers] = useState<MemberRow[]>([]);
-  const [perms, setPerms] = useState<PermRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [newOrgName, setNewOrgName] = useState("");
   const [creating, setCreating] = useState(false);
-
-  // Invite dialog
-  const [inviteOpen, setInviteOpen] = useState(false);
-  const [inviteIdent, setInviteIdent] = useState("");
-  const [inviteRole, setInviteRole] = useState<OrgRole>("member");
-  const [inviting, setInviting] = useState(false);
-
-  // Messages
-  interface AgencyMessage {
-    id: string; sender_user_id: string; recipient_user_id: string | null;
-    subject: string | null; body: string; created_at: string;
-  }
-  const [messages, setMessages] = useState<AgencyMessage[]>([]);
-  const [composeRecipient, setComposeRecipient] = useState<string>("all");
-  const [composeSubject, setComposeSubject] = useState("");
-  const [composeBody, setComposeBody] = useState("");
-  const [sending, setSending] = useState(false);
-
-  const loadMessages = useCallback(async (orgId: string) => {
-    const { data } = await supabase.from("agency_messages")
-      .select("*").eq("organization_id", orgId)
-      .order("created_at", { ascending: false }).limit(50);
-    setMessages((data ?? []) as AgencyMessage[]);
-  }, []);
+  const [tab, setTab] = useState("overview");
 
   const loadOrgs = useCallback(async () => {
     if (!user) return;
@@ -101,54 +45,10 @@ const AgencyPage = () => {
 
   useEffect(() => { loadOrgs(); }, [loadOrgs]);
 
-  const loadMembersAndPerms = useCallback(async (orgId: string) => {
-    const [m, p] = await Promise.all([
-      supabase.rpc("get_org_member_profiles", { _org_id: orgId }),
-      supabase.from("member_permissions").select("*").eq("organization_id", orgId),
-    ]);
-    setMembers(((m.data ?? []) as MemberRow[]));
-    setPerms(((p.data ?? []) as PermRow[]));
-  }, []);
-
-  useEffect(() => {
-    if (!activeOrg) { setMembers([]); setPerms([]); setMessages([]); return; }
-    loadMembersAndPerms(activeOrg.id);
-    loadMessages(activeOrg.id);
-  }, [activeOrg, loadMembersAndPerms, loadMessages]);
-
-  const sendMessage = async () => {
-    if (!activeOrg || !composeBody.trim()) return;
-    setSending(true);
-    const { error } = await supabase.functions.invoke("send-agency-message", {
-      body: {
-        organization_id: activeOrg.id,
-        recipient_user_id: composeRecipient === "all" ? null : composeRecipient,
-        subject: composeSubject.trim() || null,
-        body: composeBody.trim(),
-      },
-    });
-    setSending(false);
-    if (error) return toast({ title: "Send failed", description: error.message, variant: "destructive" });
-    toast({ title: "Message sent", description: "Members will receive an email notification." });
-    setComposeBody(""); setComposeSubject(""); setComposeRecipient("all");
-    loadMessages(activeOrg.id);
-  };
-
-
   const upgradeToAgency = async () => {
-    if (!user) return;
-    const { error } = await supabase.from("profiles").update({ account_type: "agency" }).eq("user_id", user.id);
-    if (error) return toast({ title: "Upgrade failed", description: error.message, variant: "destructive" });
+    const { error } = await supabase.from("profiles").update({ account_type: "agency" }).eq("user_id", user!.id);
+    if (error) return toast({ title: "Failed", description: error.message, variant: "destructive" });
     setAccountType("agency");
-    toast({ title: "Switched to agency", description: "You can now create a workspace." });
-  };
-
-  const switchToPersonal = async () => {
-    if (!user) return;
-    const { error } = await supabase.from("profiles").update({ account_type: "personal" }).eq("user_id", user.id);
-    if (error) return toast({ title: "Switch failed", description: error.message, variant: "destructive" });
-    setAccountType("personal");
-    toast({ title: "Switched to personal" });
   };
 
   const createOrg = async () => {
@@ -156,60 +56,15 @@ const AgencyPage = () => {
     setCreating(true);
     const slug = newOrgName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")
       + "-" + Math.random().toString(36).slice(2, 6);
-    const { data, error } = await supabase
-      .from("organizations")
-      .insert({ name: newOrgName.trim(), slug, owner_user_id: user.id })
-      .select()
-      .single();
+    const { data, error } = await supabase.from("organizations")
+      .insert({ name: newOrgName.trim(), slug, owner_user_id: user.id }).select().single();
     setCreating(false);
     if (error) return toast({ title: "Create failed", description: error.message, variant: "destructive" });
+    toast({ title: "Workspace created" });
     setNewOrgName("");
-    toast({ title: "Workspace created", description: data.name });
-    const created = data as Org;
-    setOrgs((prev) => [created, ...prev.filter((o) => o.id !== created.id)]);
-    setActiveOrg(created);
-    // Membership row is created by trigger; refresh after a tick
-    setTimeout(() => loadMembersAndPerms(created.id), 250);
+    setOrgs((prev) => [data as Org, ...prev]);
+    setActiveOrg(data as Org);
   };
-
-  const invite = async () => {
-    if (!activeOrg || !inviteIdent.trim()) return;
-    setInviting(true);
-    const { error } = await supabase.rpc("invite_org_member", {
-      _org_id: activeOrg.id,
-      _identifier: inviteIdent.trim(),
-      _role: inviteRole,
-    });
-    setInviting(false);
-    if (error) return toast({ title: "Invite failed", description: error.message, variant: "destructive" });
-    toast({ title: "Member added", description: inviteIdent });
-    setInviteIdent("");
-    setInviteOpen(false);
-    loadMembersAndPerms(activeOrg.id);
-  };
-
-  const togglePerm = async (memberUserId: string, resource: ResourceType, permission: Permission) => {
-    if (!activeOrg) return;
-    const existing = perms.find(
-      (p) => p.member_user_id === memberUserId && p.resource_type === resource
-        && p.permission === permission && p.resource_id === null,
-    );
-    if (existing) {
-      await supabase.from("member_permissions").delete().eq("id", existing.id);
-    } else {
-      await supabase.from("member_permissions").insert({
-        organization_id: activeOrg.id,
-        member_user_id: memberUserId,
-        resource_type: resource,
-        permission,
-      });
-    }
-    loadMembersAndPerms(activeOrg.id);
-  };
-
-  const hasPerm = (uid: string, r: ResourceType, p: Permission) =>
-    perms.some((x) => x.member_user_id === uid && x.resource_type === r
-      && x.permission === p && x.resource_id === null);
 
   return (
     <DashboardLayout>
@@ -223,339 +78,61 @@ const AgencyPage = () => {
               Agency
             </span>
           }
-          description="Manage workspaces, invite members and grant per-feature access."
-          actions={
-            accountType === "agency" ? (
-              <Button variant="outline" size="sm" onClick={switchToPersonal}>Switch to personal</Button>
-            ) : (
-              <Button size="sm" onClick={upgradeToAgency}>Switch to agency</Button>
-            )
-          }
+          description="Delegate personas, manage leads together, and track goals as a team."
+          actions={accountType !== "agency" ? (
+            <Button size="sm" onClick={upgradeToAgency}>Switch to agency</Button>
+          ) : null}
         />
 
         {loading ? (
-          <Card><CardContent className="p-8 text-center text-muted-foreground"><Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…</CardContent></Card>
+          <Card><CardContent className="p-8 text-center text-muted-foreground">
+            <Loader2 className="w-4 h-4 animate-spin inline mr-2" />Loading…
+          </CardContent></Card>
         ) : accountType !== "agency" ? (
-          <Card>
-            <CardContent className="p-6 sm:p-8 space-y-3">
-              <h3 className="text-lg font-semibold">Personal account</h3>
-              <p className="text-sm text-muted-foreground">
-                You're on a personal account. Switch to agency to create a shared workspace and invite members with granular access controls.
-              </p>
-            </CardContent>
-          </Card>
+          <Card><CardContent className="p-8 space-y-2">
+            <h3 className="text-lg font-semibold">Personal account</h3>
+            <p className="text-sm text-muted-foreground">Switch to an agency account to create a shared workspace, invite teammates, and delegate access to specific personas.</p>
+          </CardContent></Card>
         ) : (
-          <>
-            <PageSection title="Workspaces">
-              <div className="flex flex-wrap gap-2 mb-3">
-                {orgs.map((o) => (
-                  <Button
-                    key={o.id}
-                    size="sm"
-                    variant={activeOrg?.id === o.id ? "default" : "outline"}
-                    onClick={() => setActiveOrg(o)}
-                    className="rounded-full"
-                  >
-                    {o.name}
-                  </Button>
-                ))}
-                {orgs.length === 0 && (
-                  <p className="text-xs text-muted-foreground">No workspaces yet — create your first one below.</p>
-                )}
-              </div>
-              <Card>
-                <CardContent className="p-4 flex flex-col sm:flex-row gap-2">
-                  <Input
-                    placeholder="New workspace name"
-                    value={newOrgName}
-                    onChange={(e) => setNewOrgName(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && createOrg()}
-                  />
-                  <Button onClick={createOrg} disabled={creating || !newOrgName.trim()}>
-                    {creating ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Plus className="w-4 h-4 mr-1.5" />}
-                    Create
-                  </Button>
-                </CardContent>
-              </Card>
-            </PageSection>
-
-            {activeOrg && (
-              <Tabs defaultValue="members" className="space-y-3">
-                <TabsList className="rounded-sm w-full sm:w-auto grid grid-cols-2 sm:flex">
-                  <TabsTrigger value="members" className="rounded-sm text-xs">Members</TabsTrigger>
-                  <TabsTrigger value="messages" className="rounded-sm text-xs">
-                    <MessageSquare className="w-3.5 h-3.5 mr-1.5" />Messages
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="members">
-              <PageSection
-                title="Members & permissions"
-                description="Owners and admins have all permissions implicitly. Toggle per-feature access for managers and members."
-                actions={
-                  <Button size="sm" onClick={() => setInviteOpen(true)}>
-                    <UserPlus className="w-4 h-4 mr-1.5" />
-                    <span className="hidden xs:inline">Invite member</span>
-                    <span className="xs:hidden">Invite</span>
-                  </Button>
-                }
-              >
-                {members.length === 0 && (
-                  <Card><CardContent className="p-6 text-center text-muted-foreground text-xs">No members yet.</CardContent></Card>
-                )}
-
-                {/* Mobile / tablet — stacked cards */}
-                <div className="lg:hidden space-y-2">
-                  {members.map((m) => {
-                    const isPrivileged = m.role === "owner" || m.role === "admin";
-                    return (
-                      <Card key={m.membership_id}>
-                        <CardContent className="p-3 space-y-3">
-                          <div className="flex items-center gap-2.5">
-                            <Avatar className="w-8 h-8 shrink-0">
-                              {m.avatar_url && <AvatarImage src={m.avatar_url} />}
-                              <AvatarFallback className="text-[10px]">{initials(m)}</AvatarFallback>
-                            </Avatar>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium truncate">
-                                {m.display_name || m.username || "—"}
-                                {m.user_id === user?.id && <span className="text-muted-foreground font-normal"> (you)</span>}
-                              </p>
-                              {m.username && <p className="text-[11px] text-muted-foreground truncate">@{m.username}</p>}
-                            </div>
-                            <Badge variant={isPrivileged ? "default" : "secondary"} className="rounded-full text-[10px] shrink-0">
-                              {m.role}
-                            </Badge>
-                          </div>
-                          {isPrivileged ? (
-                            <p className="text-[11px] text-muted-foreground inline-flex items-center gap-1.5">
-                              <ShieldCheck className="w-3.5 h-3.5 text-primary" /> Full access to all resources
-                            </p>
-                          ) : (
-                            <div className="space-y-2">
-                              {RESOURCES.map((r) => (
-                                <div key={r} className="flex flex-wrap items-center gap-x-3 gap-y-1.5 py-1.5 border-t border-border/40">
-                                  <span className="text-[11px] uppercase tracking-wide text-muted-foreground capitalize w-20 shrink-0">{r}</span>
-                                  {PERMS.map((p) => (
-                                    <label key={p} className="inline-flex items-center gap-1.5 text-xs cursor-pointer min-h-[32px]">
-                                      <Checkbox
-                                        checked={hasPerm(m.user_id, r, p)}
-                                        onCheckedChange={() => togglePerm(m.user_id, r, p)}
-                                        aria-label={`${r} ${p}`}
-                                      />
-                                      <span>{p}</span>
-                                    </label>
-                                  ))}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-
-                {/* Desktop — full matrix */}
-                <Card className="hidden lg:block">
-                  <CardContent className="p-0 overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead className="bg-muted/40">
-                        <tr>
-                          <th className="text-left p-3">Member</th>
-                          <th className="text-left p-3">Role</th>
-                          {RESOURCES.map((r) => (
-                            <th key={r} colSpan={PERMS.length} className="text-center p-3 capitalize border-l border-border/40">
-                              {r}
-                            </th>
-                          ))}
-                        </tr>
-                        <tr className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                          <th></th>
-                          <th></th>
-                          {RESOURCES.map((r) => PERMS.map((p) => (
-                            <th key={r + p} className="px-1 pb-2 text-center font-medium">{p}</th>
-                          )))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {members.map((m) => {
-                          const isPrivileged = m.role === "owner" || m.role === "admin";
-                          return (
-                            <motion.tr
-                              key={m.membership_id}
-                              variants={fadeUp}
-                              initial="initial"
-                              animate="animate"
-                              className="border-t border-border/50"
-                            >
-                              <td className="p-3">
-                                <div className="flex items-center gap-2 min-w-[160px]">
-                                  <Avatar className="w-7 h-7">
-                                    {m.avatar_url && <AvatarImage src={m.avatar_url} />}
-                                    <AvatarFallback className="text-[10px]">{initials(m)}</AvatarFallback>
-                                  </Avatar>
-                                  <div className="flex flex-col">
-                                    <span className="text-xs font-medium leading-tight">
-                                      {m.display_name || m.username || "—"}
-                                      {m.user_id === user?.id && <span className="text-muted-foreground font-normal"> (you)</span>}
-                                    </span>
-                                    {m.username && (
-                                      <span className="text-[10px] text-muted-foreground leading-tight">@{m.username}</span>
-                                    )}
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="p-3">
-                                <Badge variant={isPrivileged ? "default" : "secondary"} className="rounded-full text-[10px]">
-                                  {m.role}
-                                </Badge>
-                              </td>
-                              {RESOURCES.map((r) => PERMS.map((p) => (
-                                <td key={r + p} className="px-1 py-3 text-center border-l border-border/20">
-                                  {isPrivileged ? (
-                                    <ShieldCheck className="w-3.5 h-3.5 text-primary mx-auto opacity-60" />
-                                  ) : (
-                                    <Checkbox
-                                      checked={hasPerm(m.user_id, r, p)}
-                                      onCheckedChange={() => togglePerm(m.user_id, r, p)}
-                                      aria-label={`${r} ${p}`}
-                                    />
-                                  )}
-                                </td>
-                              )))}
-                            </motion.tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </CardContent>
-                </Card>
-              </PageSection>
-                </TabsContent>
-
-                <TabsContent value="messages">
-                  <PageSection
-                    title="Messages"
-                    description="Send updates to a single member or broadcast to the whole workspace. Recipients also get an email."
-                  >
-                    <Card className="mb-3">
-                      <CardContent className="p-4 space-y-3">
-                        <div className="grid sm:grid-cols-2 gap-2">
-                          <div className="space-y-1.5">
-                            <Label className="text-xs">To</Label>
-                            <Select value={composeRecipient} onValueChange={setComposeRecipient}>
-                              <SelectTrigger><SelectValue /></SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="all">Everyone in workspace</SelectItem>
-                                {members.filter((m) => m.user_id !== user?.id).map((m) => (
-                                  <SelectItem key={m.user_id} value={m.user_id}>
-                                    {m.display_name || m.username || m.user_id.slice(0, 8)}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="space-y-1.5">
-                            <Label className="text-xs">Subject (optional)</Label>
-                            <Input value={composeSubject} onChange={(e) => setComposeSubject(e.target.value)} placeholder="Quick update…" />
-                          </div>
-                        </div>
-                        <Textarea
-                          value={composeBody}
-                          onChange={(e) => setComposeBody(e.target.value)}
-                          placeholder="Write your message…"
-                          rows={4}
-                        />
-                        <div className="flex justify-end">
-                          <Button onClick={sendMessage} disabled={sending || !composeBody.trim()}>
-                            {sending ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Send className="w-4 h-4 mr-1.5" />}
-                            Send
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <div className="space-y-2">
-                      {messages.length === 0 && (
-                        <p className="text-xs text-muted-foreground text-center py-6">No messages yet.</p>
-                      )}
-                      {messages.map((msg) => {
-                        const sender = members.find((m) => m.user_id === msg.sender_user_id);
-                        const recipient = msg.recipient_user_id
-                          ? members.find((m) => m.user_id === msg.recipient_user_id)
-                          : null;
-                        return (
-                          <Card key={msg.id}>
-                            <CardContent className="p-3 space-y-1.5">
-                              <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
-                                <span>
-                                  <span className="text-foreground font-medium">
-                                    {sender?.display_name || sender?.username || "Member"}
-                                  </span>
-                                  {" → "}
-                                  {recipient
-                                    ? (recipient.display_name || recipient.username || "member")
-                                    : <Badge variant="secondary" className="text-[9px] py-0">Everyone</Badge>}
-                                </span>
-                                <span className="inline-flex items-center gap-1">
-                                  <Mail className="w-3 h-3" />
-                                  {new Date(msg.created_at).toLocaleString()}
-                                </span>
-                              </div>
-                              {msg.subject && <p className="text-sm font-medium">{msg.subject}</p>}
-                              <p className="text-sm whitespace-pre-wrap">{msg.body}</p>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  </PageSection>
-                </TabsContent>
-              </Tabs>
-            )}
-          </>
-        )}
-
-        <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Invite member</DialogTitle>
-              <DialogDescription>
-                Add an existing user to <span className="font-medium">{activeOrg?.name}</span> by username or public email.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="invite-ident">Username or email</Label>
-                <Input
-                  id="invite-ident"
-                  placeholder="jane or jane@example.com"
-                  value={inviteIdent}
-                  onChange={(e) => setInviteIdent(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && invite()}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Role</Label>
-                <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as OrgRole)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="member">Member</SelectItem>
-                    <SelectItem value="manager">Manager</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                  </SelectContent>
-                </Select>
+          <div className="space-y-4">
+            {/* Workspace switcher */}
+            <div className="flex flex-wrap items-center gap-2">
+              {orgs.map((o) => (
+                <Button key={o.id} size="sm" variant={activeOrg?.id === o.id ? "default" : "outline"}
+                  className="rounded-full" onClick={() => setActiveOrg(o)}>{o.name}</Button>
+              ))}
+              <div className="flex gap-1 ml-auto">
+                <Input className="h-8 w-44" placeholder="New workspace"
+                  value={newOrgName} onChange={(e) => setNewOrgName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && createOrg()} />
+                <Button size="sm" onClick={createOrg} disabled={creating || !newOrgName.trim()}>
+                  {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                </Button>
               </div>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setInviteOpen(false)}>Cancel</Button>
-              <Button onClick={invite} disabled={inviting || !inviteIdent.trim()}>
-                {inviting && <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />}
-                Add member
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+
+            {!activeOrg ? (
+              <Card><CardContent className="p-8 text-center text-muted-foreground">Create your first workspace to get started.</CardContent></Card>
+            ) : (
+              <Tabs value={tab} onValueChange={setTab}>
+                <TabsList className="flex flex-wrap h-auto">
+                  <TabsTrigger value="overview">Overview</TabsTrigger>
+                  <TabsTrigger value="members">Members</TabsTrigger>
+                  <TabsTrigger value="inbox">Inbox</TabsTrigger>
+                  <TabsTrigger value="goals">Goals</TabsTrigger>
+                  <TabsTrigger value="templates">Templates</TabsTrigger>
+                  <TabsTrigger value="settings">Settings</TabsTrigger>
+                </TabsList>
+                <TabsContent value="overview" className="mt-4"><AgencyOverview orgId={activeOrg.id} /></TabsContent>
+                <TabsContent value="members" className="mt-4"><AgencyMembers orgId={activeOrg.id} /></TabsContent>
+                <TabsContent value="inbox" className="mt-4"><AgencyInbox orgId={activeOrg.id} /></TabsContent>
+                <TabsContent value="goals" className="mt-4"><AgencyGoals orgId={activeOrg.id} /></TabsContent>
+                <TabsContent value="templates" className="mt-4"><AgencyTemplates orgId={activeOrg.id} /></TabsContent>
+                <TabsContent value="settings" className="mt-4"><AgencySettings orgId={activeOrg.id} orgName={activeOrg.name} /></TabsContent>
+              </Tabs>
+            )}
+          </div>
+        )}
       </Page>
     </DashboardLayout>
   );
