@@ -102,9 +102,9 @@ export function AgencyInbox({ orgId }: Props) {
     const tpl = templates.find((t) => t.id === tplId);
     if (!tpl || !active) return;
     const replace = (s: string) => s
-      .replaceAll("{{lead_name}}", active.visitor_name || "there")
-      .replaceAll("{{persona}}", personaLabel(active.persona_id))
-      .replaceAll("{{owner}}", user?.user_metadata?.full_name ?? user?.email ?? "");
+      .replace(/\{\{lead_name\}\}/g, active.visitor_name || "there")
+      .replace(/\{\{persona\}\}/g, personaLabel(active.persona_id))
+      .replace(/\{\{owner\}\}/g, (user?.user_metadata as any)?.full_name ?? user?.email ?? "");
     setComposeSubject(replace(tpl.subject));
     setComposeBody(replace(tpl.body));
   };
