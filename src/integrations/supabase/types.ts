@@ -71,6 +71,161 @@ export type Database = {
         }
         Relationships: []
       }
+      agency_activity: {
+        Row: {
+          actor_user_id: string
+          created_at: string
+          id: string
+          mentions: string[]
+          metadata: Json
+          organization_id: string
+          summary: string
+          target_id: string | null
+          target_type: string | null
+          verb: string
+        }
+        Insert: {
+          actor_user_id: string
+          created_at?: string
+          id?: string
+          mentions?: string[]
+          metadata?: Json
+          organization_id: string
+          summary: string
+          target_id?: string | null
+          target_type?: string | null
+          verb: string
+        }
+        Update: {
+          actor_user_id?: string
+          created_at?: string
+          id?: string
+          mentions?: string[]
+          metadata?: Json
+          organization_id?: string
+          summary?: string
+          target_id?: string | null
+          target_type?: string | null
+          verb?: string
+        }
+        Relationships: []
+      }
+      agency_email_templates: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+          organization_id: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          created_by: string
+          id?: string
+          name: string
+          organization_id: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+          organization_id?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      agency_goal_items: {
+        Row: {
+          created_at: string
+          done_at: string | null
+          done_by: string | null
+          goal_id: string
+          id: string
+          is_done: boolean
+          label: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          done_at?: string | null
+          done_by?: string | null
+          goal_id: string
+          id?: string
+          is_done?: boolean
+          label: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          done_at?: string | null
+          done_by?: string | null
+          goal_id?: string
+          id?: string
+          is_done?: boolean
+          label?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_goal_items_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "agency_goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agency_goals: {
+        Row: {
+          assignee_user_id: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          due_at: string | null
+          id: string
+          is_archived: boolean
+          organization_id: string
+          persona_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assignee_user_id?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          due_at?: string | null
+          id?: string
+          is_archived?: boolean
+          organization_id: string
+          persona_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assignee_user_id?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          due_at?: string | null
+          id?: string
+          is_archived?: boolean
+          organization_id?: string
+          persona_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       agency_messages: {
         Row: {
           body: string
@@ -111,6 +266,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      agency_settings: {
+        Row: {
+          first_response_sla_minutes: number
+          organization_id: string
+          reply_to_email: string | null
+          sender_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          first_response_sla_minutes?: number
+          organization_id: string
+          reply_to_email?: string | null
+          sender_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          first_response_sla_minutes?: number
+          organization_id?: string
+          reply_to_email?: string | null
+          sender_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       categories: {
         Row: {
@@ -278,8 +457,10 @@ export type Database = {
       }
       lead_captures: {
         Row: {
+          assigned_to: string | null
           communications: Json
           created_at: string
+          first_response_at: string | null
           id: string
           metadata: Json | null
           next_action_at: string | null
@@ -295,8 +476,10 @@ export type Database = {
           visitor_phone: string | null
         }
         Insert: {
+          assigned_to?: string | null
           communications?: Json
           created_at?: string
+          first_response_at?: string | null
           id?: string
           metadata?: Json | null
           next_action_at?: string | null
@@ -312,8 +495,10 @@ export type Database = {
           visitor_phone?: string | null
         }
         Update: {
+          assigned_to?: string | null
           communications?: Json
           created_at?: string
+          first_response_at?: string | null
           id?: string
           metadata?: Json | null
           next_action_at?: string | null
@@ -337,6 +522,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      lead_messages: {
+        Row: {
+          author_user_id: string
+          body: string
+          created_at: string
+          delivery_status: string | null
+          email_message_id: string | null
+          id: string
+          kind: string
+          lead_id: string
+          persona_id: string
+          subject: string | null
+        }
+        Insert: {
+          author_user_id: string
+          body: string
+          created_at?: string
+          delivery_status?: string | null
+          email_message_id?: string | null
+          id?: string
+          kind: string
+          lead_id: string
+          persona_id: string
+          subject?: string | null
+        }
+        Update: {
+          author_user_id?: string
+          body?: string
+          created_at?: string
+          delivery_status?: string | null
+          email_message_id?: string | null
+          id?: string
+          kind?: string
+          lead_id?: string
+          persona_id?: string
+          subject?: string | null
+        }
+        Relationships: []
       }
       login_attempts: {
         Row: {
@@ -565,6 +789,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      persona_member_grants: {
+        Row: {
+          created_at: string
+          granted_by: string | null
+          id: string
+          member_user_id: string
+          organization_id: string
+          permission: string
+          persona_id: string
+          section: string
+        }
+        Insert: {
+          created_at?: string
+          granted_by?: string | null
+          id?: string
+          member_user_id: string
+          organization_id: string
+          permission: string
+          persona_id: string
+          section: string
+        }
+        Update: {
+          created_at?: string
+          granted_by?: string | null
+          id?: string
+          member_user_id?: string
+          organization_id?: string
+          permission?: string
+          persona_id?: string
+          section?: string
+        }
+        Relationships: []
       }
       persona_sections: {
         Row: {
@@ -1242,6 +1499,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_persona_section_access: {
+        Args: {
+          _persona_id: string
+          _required_permission?: string
+          _section: string
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1309,6 +1575,15 @@ export type Database = {
           _subject: string
         }
         Returns: string
+      }
+      set_persona_grants: {
+        Args: {
+          _grants: Json
+          _member: string
+          _org_id: string
+          _persona_id: string
+        }
+        Returns: undefined
       }
       short_link_stats: {
         Args: { p_user_id: string }
