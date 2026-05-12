@@ -173,9 +173,12 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
       {/* Brand */}
       <div className={cn("flex items-center gap-2 h-12 border-b border-sidebar-border", collapsed ? "justify-center px-2" : "px-4")}>
-        <div className="w-6 h-6 rounded-sm bg-foreground text-background flex items-center justify-center shrink-0">
-          <span className="font-mono text-[11px] font-bold tracking-tight">H</span>
-        </div>
+        <img
+          src={handshakeLogo}
+          alt="Handshake"
+          className="w-7 h-7 shrink-0 dark:invert"
+          draggable={false}
+        />
         {!collapsed && (
           <div className="flex items-center gap-1.5 min-w-0">
             <span className="font-display text-[13px] font-bold tracking-tight text-foreground truncate">
