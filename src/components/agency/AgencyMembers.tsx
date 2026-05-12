@@ -8,10 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Loader2, ShieldCheck, UserPlus } from "lucide-react";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Loader2, ShieldCheck, UserPlus, X, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
-interface Props { orgId: string; }
+interface Props { orgId: string; ownerUserId: string; onLeft?: () => void; }
 type OrgRole = "owner" | "admin" | "manager" | "member";
 const SECTIONS = ["identity","design","blocks","cards","leads","analytics","inbox","goals"] as const;
 const PERMS = ["view","edit","manage"] as const;
