@@ -28,6 +28,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
+import handshakeLogo from "@/assets/handshake-logo.png";
 
 interface NavItem {
   title: string;

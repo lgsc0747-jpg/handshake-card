@@ -17,6 +17,7 @@ import { getTurnstileSiteKey, currentHostname, detectEnvironment } from "@/lib/t
 import { DestinationPicker } from "@/components/auth/DestinationPicker";
 import { TurnstileDiagnostics } from "@/components/auth/TurnstileDiagnostics";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import handshakeLogo from "@/assets/handshake-logo.png";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
