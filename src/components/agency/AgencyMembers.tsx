@@ -38,8 +38,9 @@ const PRESETS: Record<string, Array<{ section: string; permission: string }>> = 
   ],
 };
 
-export function AgencyMembers({ orgId }: Props) {
+export function AgencyMembers({ orgId, ownerUserId, onLeft }: Props) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [members, setMembers] = useState<Member[]>([]);
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [grants, setGrants] = useState<Grant[]>([]);
@@ -48,6 +49,27 @@ export function AgencyMembers({ orgId }: Props) {
   const [inviteIdent, setInviteIdent] = useState("");
   const [inviteRole, setInviteRole] = useState<OrgRole>("member");
   const [inviting, setInviting] = useState(false);
+  const [removeTarget, setRemoveTarget] = useState<Member | null>(null);
+  const [leaveOpen, setLeaveOpen] = useState(false);
+
+  const isOwner = user?.id === ownerUserId;
+
+  const removeMember = async (m: Member) => {
+    const { error } = await supabase.rpc("remove_org_member", { _org_id: orgId, _member_user_id: m.user_id });
+    if (error) return toast({ title: "Remove failed", description: error.message, variant: "destructive" });
+    toast({ title: "Member removed" });
+    setRemoveTarget(null);
+    load();
+  };
+
+  const leaveWorkspace = async () => {
+    const { error } = await supabase.rpc("leave_organization", { _org_id: orgId });
+    if (error) return toast({ title: "Couldn't leave", description: error.message, variant: "destructive" });
+    toast({ title: "You left the workspace" });
+    setLeaveOpen(false);
+    onLeft?.();
+  };
+
 
   const [matrixMember, setMatrixMember] = useState<Member | null>(null);
 
@@ -122,24 +144,58 @@ export function AgencyMembers({ orgId }: Props) {
 
       <Card>
         <CardContent className="p-0 divide-y divide-border/40">
-          {members.map((m) => (
-            <div key={m.membership_id} className="flex items-center gap-3 p-4">
-              <Avatar className="h-10 w-10">
-                {m.avatar_url && <AvatarImage src={m.avatar_url} />}
-                <AvatarFallback>{(m.display_name || m.username || "?").slice(0,2).toUpperCase()}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <div className="font-medium truncate">{m.display_name || m.username || "Unnamed"}</div>
-                <div className="text-xs text-muted-foreground truncate">@{m.username ?? "—"}</div>
+          {members.map((m) => {
+            const isSelf = m.user_id === user?.id;
+            const isWorkspaceOwner = m.user_id === ownerUserId;
+            return (
+              <div key={m.membership_id} className="flex items-center gap-3 p-4">
+                <Avatar className="h-10 w-10">
+                  {m.avatar_url && <AvatarImage src={m.avatar_url} />}
+                  <AvatarFallback>{(m.display_name || m.username || "?").slice(0,2).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium truncate">
+                    {m.display_name || m.username || "Unnamed"}
+                    {isSelf && <span className="ml-2 text-xs text-muted-foreground">(you)</span>}
+                  </div>
+                  <div className="text-xs text-muted-foreground truncate">@{m.username ?? "—"}</div>
+                </div>
+                <Badge variant="outline" className="capitalize">{m.role}</Badge>
+                <Button size="sm" variant="outline" onClick={() => setMatrixMember(m)}>
+                  <ShieldCheck className="w-3.5 h-3.5 mr-1.5" /> Permissions
+                </Button>
+                {isSelf && !isWorkspaceOwner && (
+                  <Button size="sm" variant="outline" onClick={() => setLeaveOpen(true)}>
+                    <LogOut className="w-3.5 h-3.5 mr-1.5" /> Leave
+                  </Button>
+                )}
+                {!isSelf && !isWorkspaceOwner && isOwner && (
+                  <Button size="icon" variant="ghost" onClick={() => setRemoveTarget(m)} title="Remove member">
+                    <X className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
-              <Badge variant="outline" className="capitalize">{m.role}</Badge>
-              <Button size="sm" variant="outline" onClick={() => setMatrixMember(m)}>
-                <ShieldCheck className="w-3.5 h-3.5 mr-1.5" /> Permissions
-              </Button>
-            </div>
-          ))}
+            );
+          })}
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={!!removeTarget}
+        onOpenChange={(o) => !o && setRemoveTarget(null)}
+        title={`Remove ${removeTarget?.display_name || removeTarget?.username || "member"}?`}
+        description="They'll immediately lose access to this workspace and any persona grants."
+        confirmLabel="Remove"
+        onConfirm={() => removeTarget && removeMember(removeTarget)}
+      />
+      <ConfirmDialog
+        open={leaveOpen}
+        onOpenChange={setLeaveOpen}
+        title="Leave this workspace?"
+        description="You'll lose access to its personas, leads, and inbox. The owner can re-invite you later."
+        confirmLabel="Leave"
+        onConfirm={leaveWorkspace}
+      />
 
       {/* Invite dialog */}
       <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
