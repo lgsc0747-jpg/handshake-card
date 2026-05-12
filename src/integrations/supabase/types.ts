@@ -1542,6 +1542,7 @@ export type Database = {
         Returns: boolean
       }
       is_user_pro: { Args: { p_user_id: string }; Returns: boolean }
+      leave_organization: { Args: { _org_id: string }; Returns: undefined }
       move_to_dlq: {
         Args: {
           dlq_name: string
@@ -1565,6 +1566,10 @@ export type Database = {
       }
       record_profile_view_attempt: {
         Args: { _ip: string; _source?: string; _target: string }
+        Returns: undefined
+      }
+      remove_org_member: {
+        Args: { _member_user_id: string; _org_id: string }
         Returns: undefined
       }
       send_agency_message: {

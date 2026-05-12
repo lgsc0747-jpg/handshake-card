@@ -17,6 +17,7 @@ import { getTurnstileSiteKey, currentHostname, detectEnvironment } from "@/lib/t
 import { DestinationPicker } from "@/components/auth/DestinationPicker";
 import { TurnstileDiagnostics } from "@/components/auth/TurnstileDiagnostics";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import handshakeLogo from "@/assets/handshake-logo.png";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -172,8 +173,8 @@ const LoginPage = () => {
 
       <Card className="w-full max-w-md glass-elevated animate-fade-in">
         <CardHeader className="text-center space-y-3">
-          <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center mx-auto">
-            <Wifi className="w-6 h-6 text-primary-foreground" />
+          <div className="w-14 h-14 rounded-2xl bg-foreground/5 flex items-center justify-center mx-auto">
+            <img src={handshakeLogo} alt="Handshake" className="w-9 h-9 dark:invert" draggable={false} />
           </div>
           <CardTitle className="font-display text-2xl">Welcome back</CardTitle>
           <CardDescription>Sign in to your Handshake account</CardDescription>
