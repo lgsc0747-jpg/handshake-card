@@ -9,8 +9,12 @@
 - Mobile-first: disable global scrolling during touch-based component interactions.
 - No UI redundancy: all user-level configuration strictly belongs in the /settings hub.
 - Page Builder is Pro-only. Personal Profile (fly-up 3D card) is the default free landing page.
+- Global page transition (blur+zoom-in) on every route via `<PageTransition>`. Don't add per-page fade-ins.
+- Brand mark is the handshake outline logo (`src/assets/handshake-logo.png`), used in sidebar + login. `dark:invert` keeps it visible on dark backgrounds.
+- Agency: one auto-provisioned workspace per agency account. No multi-workspace UI. Self-invite blocked server-side.
 
 ## Memories
+- [Page Transitions](mem://style/page-transitions) — Global blur+zoom-in route transition via framer-motion AnimatePresence
 - [Visual Design](mem://style/visual-design) — Cyber Dark aesthetic, glassmorphism, slate colors, bento box grid
 - [Database](mem://architecture/database) — Supabase schemas, JSONB blocks, public RPCs, pgcrypto
 - [NFC Integration](mem://architecture/nfc-integration) — Web NFC API / mobile app bridge for secure card serial transmission
