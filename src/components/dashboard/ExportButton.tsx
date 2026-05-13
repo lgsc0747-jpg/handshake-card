@@ -2,9 +2,18 @@ import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import type { NfcStats } from "@/hooks/useNfcData";
 
+const TIMEFRAME_LABELS: Record<string, string> = {
+  thirtymin: "Last 30 min",
+  daily: "Last 24h",
+  weekly: "Last 7 days",
+  monthly: "Last 30 days",
+  quarterly: "Last 90 days",
+};
+
 interface ExportButtonProps {
   stats: NfcStats;
   chartData: { label: string; taps: number; vcards: number }[];
+  timeframe: string;
 }
 
 /** Escape a value for CSV (RFC 4180). Preserves leading "=" so spreadsheet apps evaluate formulas. */
@@ -14,15 +23,19 @@ const csv = (v: string | number | null | undefined): string => {
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
 
-export function ExportButton({ stats, chartData }: ExportButtonProps) {
+export function ExportButton({ stats, chartData, timeframe }: ExportButtonProps) {
   const handleExport = () => {
     const rows: (string | number)[][] = [];
     const push = (...r: (string | number)[][]) => rows.push(...r);
 
+    const rangeLabel = TIMEFRAME_LABELS[timeframe] || timeframe;
+    const generatedAt = new Date().toLocaleString();
+
     // ── Header ─────────────────────────────────────────────
     push(
       ["Handshake — Analytics Export"],
-      [`Generated`, new Date().toLocaleString()],
+      ["Date range", rangeLabel],
+      ["Generated", generatedAt],
       [],
     );
 
@@ -101,7 +114,7 @@ export function ExportButton({ stats, chartData }: ExportButtonProps) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `handshake-analytics-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `handshake-analytics-${timeframe}-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
