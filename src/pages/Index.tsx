@@ -1,10 +1,6 @@
-import { useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { AnalyticsChart } from "@/components/AnalyticsChart";
-import { DeviceDonutChart } from "@/components/dashboard/DeviceDonutChart";
-import { ConversionFunnel } from "@/components/dashboard/ConversionFunnel";
-import { PersonaBarChart } from "@/components/dashboard/PersonaBarChart";
 import { ChartPaletteProvider, ChartPaletteSelector } from "@/components/dashboard/ChartPaletteSelector";
 import { TimeframeSelector } from "@/components/dashboard/TimeframeSelector";
 import { ExportButton } from "@/components/dashboard/ExportButton";
@@ -13,8 +9,22 @@ import { useNfcData } from "@/hooks/useNfcData";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Eye, Users, MousePointerClick, FileText, ArrowUpRight } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Eye, Users, MousePointerClick, FileText, ArrowUpRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+
+const AnalyticsChart = lazy(() =>
+  import("@/components/AnalyticsChart").then((m) => ({ default: m.AnalyticsChart }))
+);
+const DeviceDonutChart = lazy(() =>
+  import("@/components/dashboard/DeviceDonutChart").then((m) => ({ default: m.DeviceDonutChart }))
+);
+const ConversionFunnel = lazy(() =>
+  import("@/components/dashboard/ConversionFunnel").then((m) => ({ default: m.ConversionFunnel }))
+);
+const PersonaBarChart = lazy(() =>
+  import("@/components/dashboard/PersonaBarChart").then((m) => ({ default: m.PersonaBarChart }))
+);
 
 const TIMEFRAME_LABELS: Record<string, string> = {
   thirtymin: "Last 30 min",
@@ -40,6 +50,44 @@ function Kpi({ label, value, delta, icon }: KpiProps) {
       </div>
       <p className="text-2xl font-display font-semibold tracking-tight tabular-nums">{value}</p>
       {delta && <p className="text-eyebrow text-muted-foreground">{delta}</p>}
+    </div>
+  );
+}
+
+function KpiSkeleton() {
+  return (
+    <div className="rounded-sm border border-border bg-card p-4 flex flex-col gap-1.5">
+      <div className="flex items-center justify-between text-muted-foreground">
+        <Skeleton className="h-3 w-20" />
+        <Skeleton className="h-3.5 w-3.5 rounded-full" />
+      </div>
+      <Skeleton className="h-7 w-16 mt-1" />
+    </div>
+  );
+}
+
+function ChartSkeleton({ height = "h-[240px]" }: { height?: string }) {
+  return (
+    <div className="glass-card animate-fade-in">
+      <div className="px-6 pt-5 pb-2">
+        <Skeleton className="h-4 w-32" />
+      </div>
+      <div className={`px-6 pb-6 ${height}`}>
+        <Skeleton className="h-full w-full rounded-sm" />
+      </div>
+    </div>
+  );
+}
+
+function FunnelSkeleton() {
+  return (
+    <div className="glass-card animate-fade-in">
+      <div className="px-6 pt-5 pb-2">
+        <Skeleton className="h-4 w-32" />
+      </div>
+      <div className="px-6 pb-6 h-[240px]">
+        <Skeleton className="h-full w-full rounded-sm" />
+      </div>
     </div>
   );
 }
@@ -72,16 +120,6 @@ const Dashboard = () => {
     return `${Math.floor(h / 24)}d`;
   };
 
-  if (loading) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-        </div>
-      </DashboardLayout>
-    );
-  }
-
   return (
     <ChartPaletteProvider>
       <DashboardLayout>
@@ -99,40 +137,73 @@ const Dashboard = () => {
             <div className="flex items-center gap-1.5 flex-wrap">
               <TimeframeSelector value={timeframe} onChange={setTimeframe} />
               <ChartPaletteSelector />
-              {isPro && <ExportButton stats={stats} chartData={chartData} />}
+              {isPro && <ExportButton stats={stats} chartData={chartData} timeframe={timeframe} />}
             </div>
           </div>
 
           {/* KPI Strip */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Kpi label="Profile views" value={stats.profileViews} icon={<Eye className="w-3.5 h-3.5" />} />
-            <Kpi label="Unique visitors" value={stats.uniqueVisitors} icon={<Users className="w-3.5 h-3.5" />} />
-            <Kpi label="Save rate" value={`${stats.contactSaveRate}%`} icon={<FileText className="w-3.5 h-3.5" />} />
-            <Kpi label="Leads" value={stats.leadGenCount} icon={<MousePointerClick className="w-3.5 h-3.5" />} />
-          </div>
+          {loading ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <KpiSkeleton />
+              <KpiSkeleton />
+              <KpiSkeleton />
+              <KpiSkeleton />
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Kpi label="Profile views" value={stats.profileViews} icon={<Eye className="w-3.5 h-3.5" />} />
+              <Kpi label="Unique visitors" value={stats.uniqueVisitors} icon={<Users className="w-3.5 h-3.5" />} />
+              <Kpi label="Save rate" value={`${stats.contactSaveRate}%`} icon={<FileText className="w-3.5 h-3.5" />} />
+              <Kpi label="Leads" value={stats.leadGenCount} icon={<MousePointerClick className="w-3.5 h-3.5" />} />
+            </div>
+          )}
 
-          {/* 3D Card carousel — front and center */}
+          {/* 3D Card carousel */}
           <PersonaCardCarousel />
 
           {/* Trend + funnel */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
             <div className="lg:col-span-2">
-              <AnalyticsChart data={chartData} />
+              {loading ? (
+                <ChartSkeleton />
+              ) : (
+                <Suspense fallback={<ChartSkeleton />}>
+                  <AnalyticsChart data={chartData} />
+                </Suspense>
+              )}
             </div>
-            <ConversionFunnel
-              profileViews={stats.profileViews}
-              cardFlips={stats.cardFlips}
-              linkClicks={totalLinkClicks}
-              vcardDownloads={stats.vcardDownloads}
-            />
+            {loading ? (
+              <FunnelSkeleton />
+            ) : (
+              <Suspense fallback={<FunnelSkeleton />}>
+                <ConversionFunnel
+                  profileViews={stats.profileViews}
+                  cardFlips={stats.cardFlips}
+                  linkClicks={totalLinkClicks}
+                  vcardDownloads={stats.vcardDownloads}
+                />
+              </Suspense>
+            )}
           </div>
 
-          {/* Personas + devices + live */}
+          {/* Personas + devices */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
             <div className="lg:col-span-2">
-              <PersonaBarChart data={stats.personaPerformance} />
+              {loading ? (
+                <ChartSkeleton height="h-[220px]" />
+              ) : (
+                <Suspense fallback={<ChartSkeleton height="h-[220px]" />}>
+                  <PersonaBarChart data={stats.personaPerformance} />
+                </Suspense>
+              )}
             </div>
-            <DeviceDonutChart data={stats.deviceBreakdown} title="Devices" />
+            {loading ? (
+              <ChartSkeleton />
+            ) : (
+              <Suspense fallback={<ChartSkeleton />}>
+                <DeviceDonutChart data={stats.deviceBreakdown} title="Devices" />
+              </Suspense>
+            )}
           </div>
 
           {/* Recent activity */}
@@ -143,7 +214,17 @@ const Dashboard = () => {
                 View all <ArrowUpRight className="w-3 h-3" />
               </Link>
             </div>
-            {recentLogs.length === 0 ? (
+            {loading ? (
+              <div className="divide-y divide-border">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3 px-4 py-2.5">
+                    <Skeleton className="w-1.5 h-1.5 rounded-full shrink-0" />
+                    <Skeleton className="h-3 w-40 flex-1" />
+                    <Skeleton className="h-3 w-12 shrink-0" />
+                  </div>
+                ))}
+              </div>
+            ) : recentLogs.length === 0 ? (
               <p className="text-sm text-muted-foreground p-6 text-center">No interactions yet.</p>
             ) : (
               <div className="divide-y divide-border">
