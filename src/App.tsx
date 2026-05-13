@@ -39,7 +39,6 @@ import NotFound from "./pages/NotFound.tsx";
 import UnsubscribePage from "./pages/UnsubscribePage.tsx";
 import HelpPage from "./pages/HelpPage.tsx";
 import { CookieConsentBanner } from "@/components/CookieConsentBanner";
-import { PageTransition } from "@/components/PageTransition";
 import { CommandPalette } from "@/components/CommandPalette";
 import { KeyboardShortcutsModal } from "@/components/KeyboardShortcutsModal";
 import "@fontsource/space-grotesk/400.css";
@@ -62,7 +61,6 @@ const App = () => (
           <PasswordRotationPrompt />
           <CommandPalette />
           <KeyboardShortcutsModal />
-          <PageTransition>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
@@ -94,7 +92,6 @@ const App = () => (
             <Route path="/unsubscribe" element={<UnsubscribePage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
-          </PageTransition>
           </DashboardThemeProvider>
           <CookieConsentBanner />
           </PreferencesProvider>
