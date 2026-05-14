@@ -217,6 +217,7 @@ function PageBuilderPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deviceMode, setDeviceMode] = useState<"desktop" | "mobile">("desktop");
+  const [canvasSelection, setCanvasSelection] = useState<Set<string>>(new Set());
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [addBlockOpen, setAddBlockOpen] = useState(false);
   const [templateOpen, setTemplateOpen] = useState(false);
