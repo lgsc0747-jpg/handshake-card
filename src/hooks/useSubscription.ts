@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -50,35 +50,41 @@ const PLAN_LIMITS: Record<Plan, PlanLimits> = {
   },
 };
 
+// Cache plan per user so navigations never flash "free" before "pro" loads.
+const cache = new Map<string, Plan>();
+
 export function useSubscription() {
   const { user } = useAuth();
-  const [plan, setPlan] = useState<Plan>("free");
-  const [loading, setLoading] = useState(true);
+  const userId = user?.id ?? null;
+  const [plan, setPlan] = useState<Plan>(() => (userId ? cache.get(userId) ?? "free" : "free"));
+  const [loading, setLoading] = useState<boolean>(() => (userId ? !cache.has(userId) : false));
 
   useEffect(() => {
-    if (!user) {
+    if (!userId) {
       setPlan("free");
       setLoading(false);
       return;
     }
-
-    const fetchPlan = async () => {
-      const { data } = await supabase
-        .from("user_subscriptions")
-        .select("plan")
-        .eq("user_id", user.id)
-        .single();
-
-      if (data?.plan) {
-        setPlan(data.plan as Plan);
-      } else {
-        setPlan("free");
-      }
+    if (cache.has(userId)) {
+      setPlan(cache.get(userId)!);
       setLoading(false);
-    };
-
-    fetchPlan();
-  }, [user]);
+      return;
+    }
+    let cancelled = false;
+    supabase
+      .from("user_subscriptions")
+      .select("plan")
+      .eq("user_id", userId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled) return;
+        const next = (data?.plan as Plan) || "free";
+        cache.set(userId, next);
+        setPlan(next);
+        setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [userId]);
 
   const limits = PLAN_LIMITS[plan];
   const isPro = plan === "pro";
