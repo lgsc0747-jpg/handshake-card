@@ -388,6 +388,7 @@ function PageBuilderPage() {
 
   const addBlock = async (type: BlockTypeId) => {
     if (!user || !selectedPageId) return;
+    const { data } = await supabase.from("page_blocks").insert({
       page_id: selectedPageId, user_id: user.id, block_type: type,
       content: {}, styles: {}, sort_order: blocks.length,
     }).select().single();
