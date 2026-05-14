@@ -51,16 +51,18 @@ const SettingsPage = () => {
     setIdentities(((data?.identities ?? []) as any[]).map((i) => ({ id: i.identity_id, provider: i.provider })));
   };
 
-  useEffect(() => { refreshIdentities(); }, [user]);
+  useEffect(() => { refreshIdentities(); }, [user?.id]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;
+    let cancelled = false;
     supabase
       .from("profiles")
       .select("avatar_url, display_name, username, email_public")
       .eq("user_id", user.id)
       .single()
       .then(({ data }) => {
+        if (cancelled) return;
         if (data) {
           setAvatarUrl(data.avatar_url);
           setProfile({
@@ -71,7 +73,10 @@ const SettingsPage = () => {
         }
         setProfileLoading(false);
       });
-  }, [user]);
+    return () => { cancelled = true; };
+    // Intentionally only depend on user.id so token refreshes don't clobber unsaved edits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const updateProfile = (f: string, v: string) => setProfile((p) => ({ ...p, [f]: v }));
 
