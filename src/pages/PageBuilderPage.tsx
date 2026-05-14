@@ -42,7 +42,9 @@ import { RecentInteractionsPanel } from "@/components/page-builder/RecentInterac
 import { PageCanvas, PAGE_CANVAS_MAX_W_PX } from "@/components/page-builder/PageCanvas";
 import { PreviewDiffOverlay } from "@/components/page-builder/PreviewDiffOverlay";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Activity, GitCompare } from "lucide-react";
+import { Activity, GitCompare, MoveDiagonal, LayoutGrid as LayoutGridIcon, Square as SquareIcon } from "lucide-react";
+import { FreeformCanvas } from "@/components/page-builder/canvas/FreeformCanvas";
+import type { LayoutMode } from "@/components/page-builder/canvas/types";
 
 const ICON_MAP: Record<string, any> = {
   Type, AlignLeft, Image, LayoutGrid, Play, Minus, SeparatorHorizontal,
@@ -215,6 +217,7 @@ function PageBuilderPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deviceMode, setDeviceMode] = useState<"desktop" | "mobile">("desktop");
+  const [canvasSelection, setCanvasSelection] = useState<Set<string>>(new Set());
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [addBlockOpen, setAddBlockOpen] = useState(false);
   const [templateOpen, setTemplateOpen] = useState(false);
@@ -376,6 +379,11 @@ function PageBuilderPage() {
   const updatePageTitle = async (id: string, title: string) => {
     await supabase.from("site_pages").update({ title, slug: title.toLowerCase().replace(/\s+/g, "-") }).eq("id", id);
     setPages(pages.map(p => p.id === id ? { ...p, title, slug: title.toLowerCase().replace(/\s+/g, "-") } : p));
+  };
+
+  const updatePageLayoutMode = async (id: string, mode: LayoutMode) => {
+    setPages(pages.map(p => p.id === id ? { ...p, layout_mode: mode } : p));
+    await supabase.from("site_pages").update({ layout_mode: mode } as any).eq("id", id);
   };
 
   const addBlock = async (type: BlockTypeId) => {
@@ -614,6 +622,27 @@ function PageBuilderPage() {
               <Smartphone className="w-3 h-3" />
             </Button>
           </div>
+          {selectedPage && (
+            <div className="hidden sm:flex items-center gap-0.5 bg-muted/40 rounded-md p-0.5" title="Layout mode">
+              {([
+                { id: "stack" as LayoutMode, Icon: AlignLeft, label: "Stack" },
+                { id: "grid" as LayoutMode, Icon: LayoutGridIcon, label: "Grid" },
+                { id: "free" as LayoutMode, Icon: MoveDiagonal, label: "Free" },
+              ]).map(({ id, Icon, label }) => (
+                <Button
+                  key={id}
+                  size="sm"
+                  variant={(selectedPage.layout_mode ?? "stack") === id ? "default" : "ghost"}
+                  className="h-6 px-2 rounded-sm text-[10px] gap-1"
+                  onClick={() => updatePageLayoutMode(selectedPage.id, id)}
+                  title={label}
+                >
+                  <Icon className="w-3 h-3" />
+                  <span className="hidden md:inline">{label}</span>
+                </Button>
+              ))}
+            </div>
+          )}
           {import.meta.env.DEV && selectedPersonaId && (
             <Button size="sm" variant="ghost" className="h-7 w-7 p-0 rounded-md" onClick={() => setDiffOpen(true)} title="Compare">
               <GitCompare className="w-3.5 h-3.5" />
@@ -762,26 +791,45 @@ function PageBuilderPage() {
                 }}
               >
                 <PageCanvas surface="editor" mobileFrame={deviceMode === "mobile"} className="flex-1">
-                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleSortEnd}>
-                    <SortableContext items={blocks.filter(b => b.is_visible || editingBlockId === b.id).map(b => b.id)} strategy={verticalListSortingStrategy}>
-                      {blocks.filter(b => b.is_visible || editingBlockId === b.id).map(block => (
-                        <SortablePreviewBlock
-                          key={block.id} block={block}
-                          editingBlockId={editingBlockId}
-                          onSelect={() => setEditingBlockId(block.id)}
-                          persona={livePersona}
-                        />
-                      ))}
-                    </SortableContext>
-                  </DndContext>
-                  {blocks.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center flex-1 min-h-[300px] text-muted-foreground">
-                      <Plus className="w-8 h-8 mb-2" />
-                      <p className="text-sm">Add your first block</p>
-                    </div>
+                  {(selectedPage?.layout_mode ?? "stack") !== "stack" ? (
+                    <FreeformCanvas
+                      blocks={blocks.filter(b => b.is_visible || editingBlockId === b.id)}
+                      mode={(selectedPage?.layout_mode ?? "free") as LayoutMode}
+                      settings={selectedPage?.canvas_settings ?? {}}
+                      selectedIds={canvasSelection}
+                      setSelectedIds={(s) => {
+                        setCanvasSelection(s);
+                        if (s.size === 1) setEditingBlockId(Array.from(s)[0]);
+                      }}
+                      onUpdateBlocks={(next, opts) => {
+                        setBlocks(next);
+                        if (opts?.commit) pushHistory(next);
+                      }}
+                      persona={livePersona}
+                    />
                   ) : (
-                    /* Spacer keeps the canvas filling available height. */
-                    <div className="flex-1" aria-hidden="true" />
+                    <>
+                      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleSortEnd}>
+                        <SortableContext items={blocks.filter(b => b.is_visible || editingBlockId === b.id).map(b => b.id)} strategy={verticalListSortingStrategy}>
+                          {blocks.filter(b => b.is_visible || editingBlockId === b.id).map(block => (
+                            <SortablePreviewBlock
+                              key={block.id} block={block}
+                              editingBlockId={editingBlockId}
+                              onSelect={() => setEditingBlockId(block.id)}
+                              persona={livePersona}
+                            />
+                          ))}
+                        </SortableContext>
+                      </DndContext>
+                      {blocks.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center flex-1 min-h-[300px] text-muted-foreground">
+                          <Plus className="w-8 h-8 mb-2" />
+                          <p className="text-sm">Add your first block</p>
+                        </div>
+                      ) : (
+                        <div className="flex-1" aria-hidden="true" />
+                      )}
+                    </>
                   )}
                 </PageCanvas>
               </div>

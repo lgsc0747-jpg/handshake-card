@@ -99,8 +99,10 @@ const PublicProfilePage = () => {
   const [sections, setSections] = useState<SectionData[]>([]);
   const [pageBlocks, setPageBlocks] = useState<PageBlock[]>([]);
   const [hasPageBuilder, setHasPageBuilder] = useState(false);
-  const [sitePages, setSitePages] = useState<{ id: string; title: string; slug: string; is_homepage: boolean; page_icon: string | null }[]>([]);
+  const [sitePages, setSitePages] = useState<{ id: string; title: string; slug: string; is_homepage: boolean; page_icon: string | null; layout_mode?: string; canvas_settings?: any }[]>([]);
   const [activePageId, setActivePageId] = useState<string | null>(null);
+  const activePage = sitePages.find(p => p.id === activePageId);
+  const activeLayoutMode = (activePage?.layout_mode ?? "stack") as "stack" | "grid" | "free";
   const [ownerIsPro, setOwnerIsPro] = useState(false);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -242,7 +244,7 @@ const PublicProfilePage = () => {
         // Load all site pages for this persona
         const { data: allSitePages } = await supabase
           .from("site_pages")
-          .select("id, title, slug, is_homepage, page_icon")
+          .select("id, title, slug, is_homepage, page_icon, layout_mode, canvas_settings")
           .eq("persona_id", personaData.id)
           .eq("is_visible", true)
           .order("sort_order");
@@ -841,22 +843,55 @@ const PublicProfilePage = () => {
               ...(hasPageTheme ? pageThemeStyles : {}),
             }}
           >
-            {pageBlocks.map(block => (
-              <div key={block.id} data-block-id={block.id}>
-                <BlockRenderer block={block} persona={persona} onTrackInteraction={(type, metadata) => {
-                  const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-                  fetch(`https://${projectId}.supabase.co/functions/v1/log-interaction`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      target_user_id: merged.user_id,
-                      interaction_type: type,
-                      metadata: { ...metadata, ua: navigator.userAgent, persona_slug: persona?.slug },
-                    }),
-                  }).catch(() => {});
-                }} />
-              </div>
-            ))}
+            {(() => {
+              const trackInteraction = (type: string, metadata: any) => {
+                const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+                fetch(`https://${projectId}.supabase.co/functions/v1/log-interaction`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    target_user_id: merged.user_id,
+                    interaction_type: type,
+                    metadata: { ...metadata, ua: navigator.userAgent, persona_slug: persona?.slug },
+                  }),
+                }).catch(() => {});
+              };
+              const isFreeform = activeLayoutMode !== "stack";
+              const isMobileViewport = typeof window !== "undefined" && window.innerWidth < 768;
+              if (isFreeform && !isMobileViewport) {
+                const positioned = pageBlocks
+                  .map(b => ({ b, l: (b.styles as any)?.layout }))
+                  .filter(x => x.l && typeof x.l.x === "number");
+                const totalH = Math.max(600, ...positioned.map(({ l }) => (l.y || 0) + (l.h || 160) + 32));
+                return (
+                  <div className="relative w-full" style={{ height: totalH }}>
+                    {positioned.map(({ b, l }) => (
+                      <div
+                        key={b.id}
+                        data-block-id={b.id}
+                        className="absolute"
+                        style={{ left: l.x, top: l.y, width: l.w, height: l.h }}
+                      >
+                        <BlockRenderer block={b} persona={persona} onTrackInteraction={trackInteraction} />
+                      </div>
+                    ))}
+                  </div>
+                );
+              }
+              // stack mode OR mobile fallback (sort by y, then x)
+              const ordered = isFreeform
+                ? [...pageBlocks].sort((a, b) => {
+                    const la = (a.styles as any)?.layout || { y: 0, x: 0 };
+                    const lb = (b.styles as any)?.layout || { y: 0, x: 0 };
+                    return la.y - lb.y || la.x - lb.x;
+                  })
+                : pageBlocks;
+              return ordered.map(block => (
+                <div key={block.id} data-block-id={block.id}>
+                  <BlockRenderer block={block} persona={persona} onTrackInteraction={trackInteraction} />
+                </div>
+              ));
+            })()}
             <div className="flex-1" aria-hidden="true" />
           </PageCanvas>
         ) : (

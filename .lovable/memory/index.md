@@ -14,6 +14,7 @@
 - Agency: one auto-provisioned workspace per agency account. No multi-workspace UI. Self-invite blocked server-side.
 
 ## Memories
+- [Canvas Page Builder](mem://features/canvas-page-builder) — Per-page layout_mode (stack/grid/free), marquee select, drag-resize, guides
 - [Page Transitions](mem://style/page-transitions) — Global blur+zoom-in route transition via framer-motion AnimatePresence
 - [Visual Design](mem://style/visual-design) — Cyber Dark aesthetic, glassmorphism, slate colors, bento box grid
 - [Database](mem://architecture/database) — Supabase schemas, JSONB blocks, public RPCs, pgcrypto
