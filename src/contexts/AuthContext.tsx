@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -21,19 +21,27 @@ export const useAuth = () => useContext(AuthContext);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const lastTokenRef = useRef<string | null>(null);
+  const lastUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
+    // Skip identity-equal updates so consumers don't see new references
+    // (and re-run effects) on every TOKEN_REFRESHED / window-focus event.
+    const apply = (next: Session | null) => {
+      const nextToken = next?.access_token ?? null;
+      const nextUserId = next?.user?.id ?? null;
+      if (nextToken === lastTokenRef.current && nextUserId === lastUserIdRef.current) {
         setLoading(false);
+        return;
       }
-    );
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
+      lastTokenRef.current = nextToken;
+      lastUserIdRef.current = nextUserId;
+      setSession(next);
       setLoading(false);
-    });
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => apply(s));
+    supabase.auth.getSession().then(({ data: { session: s } }) => apply(s));
 
     return () => subscription.unsubscribe();
   }, []);

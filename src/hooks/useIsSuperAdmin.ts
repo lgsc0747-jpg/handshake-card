@@ -1,30 +1,42 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
+const cache = new Map<string, boolean>();
+
 export function useIsSuperAdmin() {
   const { user } = useAuth();
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const userId = user?.id ?? null;
+  const [isSuperAdmin, setIsSuperAdmin] = useState<boolean>(() => (userId ? cache.get(userId) ?? false : false));
+  const [loading, setLoading] = useState<boolean>(() => (userId ? !cache.has(userId) : false));
 
   useEffect(() => {
-    if (!user) {
+    if (!userId) {
       setIsSuperAdmin(false);
       setLoading(false);
       return;
     }
-
+    if (cache.has(userId)) {
+      setIsSuperAdmin(cache.get(userId)!);
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
     supabase
       .from("user_roles")
       .select("role")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .eq("role", "super_admin" as any)
       .maybeSingle()
       .then(({ data }) => {
-        setIsSuperAdmin(!!data);
+        if (cancelled) return;
+        const next = !!data;
+        cache.set(userId, next);
+        setIsSuperAdmin(next);
         setLoading(false);
       });
-  }, [user]);
+    return () => { cancelled = true; };
+  }, [userId]);
 
   return { isSuperAdmin, loading };
 }

@@ -1,30 +1,43 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
+// Module-level cache so navigation between pages never flickers the value
+// back to "not admin" while a fresh fetch is in-flight.
+const cache = new Map<string, boolean>();
+
 export function useIsAdmin() {
   const { user } = useAuth();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const userId = user?.id ?? null;
+  const [isAdmin, setIsAdmin] = useState<boolean>(() => (userId ? cache.get(userId) ?? false : false));
+  const [loading, setLoading] = useState<boolean>(() => (userId ? !cache.has(userId) : false));
 
   useEffect(() => {
-    if (!user) {
+    if (!userId) {
       setIsAdmin(false);
       setLoading(false);
       return;
     }
-
-    setLoading(true);
+    if (cache.has(userId)) {
+      setIsAdmin(cache.get(userId)!);
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
     supabase
       .from("user_roles")
       .select("role")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .in("role", ["admin", "super_admin"])
       .then(({ data }) => {
-        setIsAdmin((data?.length ?? 0) > 0);
+        if (cancelled) return;
+        const next = (data?.length ?? 0) > 0;
+        cache.set(userId, next);
+        setIsAdmin(next);
         setLoading(false);
       });
-  }, [user]);
+    return () => { cancelled = true; };
+  }, [userId]);
 
   return { isAdmin, loading };
 }
