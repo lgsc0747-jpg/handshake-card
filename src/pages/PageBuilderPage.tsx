@@ -622,6 +622,27 @@ function PageBuilderPage() {
               <Smartphone className="w-3 h-3" />
             </Button>
           </div>
+          {selectedPage && (
+            <div className="hidden sm:flex items-center gap-0.5 bg-muted/40 rounded-md p-0.5" title="Layout mode">
+              {([
+                { id: "stack" as LayoutMode, Icon: AlignLeft, label: "Stack" },
+                { id: "grid" as LayoutMode, Icon: LayoutGridIcon, label: "Grid" },
+                { id: "free" as LayoutMode, Icon: MoveDiagonal, label: "Free" },
+              ]).map(({ id, Icon, label }) => (
+                <Button
+                  key={id}
+                  size="sm"
+                  variant={(selectedPage.layout_mode ?? "stack") === id ? "default" : "ghost"}
+                  className="h-6 px-2 rounded-sm text-[10px] gap-1"
+                  onClick={() => updatePageLayoutMode(selectedPage.id, id)}
+                  title={label}
+                >
+                  <Icon className="w-3 h-3" />
+                  <span className="hidden md:inline">{label}</span>
+                </Button>
+              ))}
+            </div>
+          )}
           {import.meta.env.DEV && selectedPersonaId && (
             <Button size="sm" variant="ghost" className="h-7 w-7 p-0 rounded-md" onClick={() => setDiffOpen(true)} title="Compare">
               <GitCompare className="w-3.5 h-3.5" />
