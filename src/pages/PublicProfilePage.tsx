@@ -99,8 +99,10 @@ const PublicProfilePage = () => {
   const [sections, setSections] = useState<SectionData[]>([]);
   const [pageBlocks, setPageBlocks] = useState<PageBlock[]>([]);
   const [hasPageBuilder, setHasPageBuilder] = useState(false);
-  const [sitePages, setSitePages] = useState<{ id: string; title: string; slug: string; is_homepage: boolean; page_icon: string | null }[]>([]);
+  const [sitePages, setSitePages] = useState<{ id: string; title: string; slug: string; is_homepage: boolean; page_icon: string | null; layout_mode?: string; canvas_settings?: any }[]>([]);
   const [activePageId, setActivePageId] = useState<string | null>(null);
+  const activePage = sitePages.find(p => p.id === activePageId);
+  const activeLayoutMode = (activePage?.layout_mode ?? "stack") as "stack" | "grid" | "free";
   const [ownerIsPro, setOwnerIsPro] = useState(false);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
