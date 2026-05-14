@@ -34,6 +34,10 @@ export interface SitePage {
   page_icon: string | null;
   created_at: string;
   updated_at: string;
+  /** "stack" (default vertical list), "grid" (snap), or "free" (freeform). */
+  layout_mode?: "stack" | "grid" | "free";
+  /** Padding, columns, gutter, row height, guide visibility. */
+  canvas_settings?: Record<string, any>;
 }
 
 export interface PageBlock {
