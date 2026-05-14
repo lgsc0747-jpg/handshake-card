@@ -1,86 +1,99 @@
-## Agency Workspace Rebuild
+## Page Builder — Freeform Canvas Revamp
 
-A complete rebuild of `/agency` into a true multi-seat workspace with granular delegation, a real inbox for leads, and team productivity features.
+Move the page builder from a strictly vertical, sortable list to a **canvas-based editor** where blocks can be positioned, sized, and selected like in Figma/Canva — while preserving the existing block types, theming, and live render contract.
 
-### 1. Granular Permissions (per persona × per section × per member)
+---
 
-New table `persona_member_grants`:
-- `organization_id`, `persona_id`, `member_user_id`
-- `section`: enum-ish text — `identity`, `design`, `blocks`, `cards`, `leads`, `analytics`, `inbox`, `goals`
-- `permission`: `view` | `edit` | `manage`
-- Plus four **role presets** in UI: Viewer, Editor, Lead Manager, Analyst — each writes a bundle of grants.
+### 1. New layout model per block
 
-Owner/admin opens a persona, sees a matrix: rows = members, columns = sections, cells = view/edit/manage dropdown. Save persists rows.
+Extend `page_blocks` (and the in-app `PageBlock` type) with optional layout fields stored in `styles.layout`:
 
-A new SECURITY DEFINER RPC `has_persona_section_access(_persona_id, _section, _permission)` is called from existing pages to gate edit affordances. Lead/inbox/goals tables get RLS using this RPC, so non-owners can read/write only what they're granted.
-
-### 2. Lead Inbox with Outbound Email + Internal Notes
-
-Per-lead conversation thread inside Agency → Inbox:
-- New table `lead_messages`: `lead_id`, `author_user_id`, `kind` (`note` | `email_out`), `body`, `subject`, `email_message_id`, `created_at`.
-- Compose box with two tabs: **Send Email** (goes out via shared agency address) and **Internal Note** (team-only).
-- Outbound emails routed through a new edge function `send-lead-email` that uses Lovable Emails (notify subdomain) with `From: "<Org name> <team@notify.handshake-nfc.online>"` and `Reply-To: agency_settings.reply_to_email` (configurable per org). Lead receives a real email; replies land in the configured reply-to inbox (no inbound capture this pass).
-- Each sent email is logged in `lead_messages` and `email_send_log`; thread shows delivery status badge.
-- Reusable **email templates** (`agency_email_templates` table, org-scoped) selectable from the compose box with `{{lead_name}}`, `{{persona}}`, `{{owner}}` token replacement.
-
-### 3. Goals & Checklist
-
-New table `agency_goals`: `organization_id`, `persona_id?`, `assignee_user_id?`, `title`, `description`, `due_at`, `created_by`, plus `agency_goal_items`: `goal_id`, `label`, `is_done`, `done_at`, `done_by`, `sort_order`.
-
-UI: collapsible Goals card per persona (and an "All goals" tab in Agency). Big "+ Goal" FAB. Click a goal → drawer with check-listable items, progress bar, due-date pill, assignee avatar.
-
-### 4. Lead Assignment & SLA
-
-- Add `assigned_to uuid` and `first_response_at timestamptz` columns to `lead_captures`.
-- Inbox lists show assignee avatar; unassigned leads filter chip.
-- SLA: org-level `first_response_sla_minutes` (default 240). Overdue leads get a red "Overdue" badge based on `created_at + sla - first_response_at IS NULL`.
-- `first_response_at` is auto-stamped on first `email_out` message.
-
-### 5. Activity Feed + @mentions
-
-New table `agency_activity`: `organization_id`, `actor_user_id`, `verb`, `target_type`, `target_id`, `summary`, `mentions uuid[]`, `created_at`.
-- Triggers (or write-through in app code) log: lead assigned, email sent, note added, goal completed, member added, persona shared.
-- Right-rail "Activity" panel with realtime subscription (Supabase Realtime on `agency_activity`).
-- `@username` autocomplete in note/email composers; mentioned users get an in-app notification (reuse `NotificationListener` + a new `mention` notification type).
-
-### 6. Page Restructure
-
-Tabs in `/agency`:
-1. **Overview** — KPI strip (open leads, overdue, goals progress, members), recent activity feed.
-2. **Members** — list + per-member quick role; "Permissions" button opens the persona×section matrix.
-3. **Personas** — pick a persona to manage sharing, see who has which sections.
-4. **Inbox** — lead list (filters: assignee, persona, overdue, unread) + thread view + composer.
-5. **Goals** — kanban-ish list grouped by status (Active / Done).
-6. **Templates** — manage shared email templates.
-7. **Settings** — org name, shared reply-to email, SLA minutes, default sender name.
-
-Profile/Account/Persona settings pages get a small "Shared with team" indicator when applicable, and edit affordances hide based on `has_persona_section_access`.
-
-### Technical Details
-
-```text
-NEW TABLES
-  persona_member_grants      RLS: org admins manage; member can read own grants
-  lead_messages              RLS: visible if owner OR has_persona_section_access(persona, 'inbox', 'view')
-  agency_email_templates     RLS: org members read; admins write
-  agency_goals + items       RLS: org members read; assignee/creator/admin write
-  agency_activity            RLS: org members read; service role + RPC writes
-  agency_settings            (1 row per org) reply_to_email, sender_name, sla_minutes
-
-NEW EDGE FUNCTIONS
-  send-lead-email            validates JWT, checks has_persona_section_access,
-                             enqueues via Lovable Emails queue, logs to lead_messages
-  agency-activity-log        thin wrapper used by client to insert activity rows
-
-CHANGES TO EXISTING
-  lead_captures: + assigned_to, first_response_at columns + index
-  PersonaPage / DesignStudio / BlockEditor: gate edit buttons with new hook
-  NotificationListener: subscribe to mentions
+```ts
+styles.layout = {
+  mode: "stack" | "grid" | "free",   // per-page setting; mirrored on each block for safety
+  x: number, y: number,              // px from canvas top-left (free + grid)
+  w: number, h: number,              // px width/height (auto if undefined)
+  col?: number, row?: number,        // grid cell anchor (grid mode)
+  colSpan?: number, rowSpan?: number
+}
 ```
 
-### Out of scope this pass
-- Inbound email parsing (lead replies still land in your real inbox via Reply-To).
-- Per-persona custom sender domains.
-- Billing/seat limits.
+A new `site_pages.layout_mode` column (`stack` default) controls which mode the canvas renders in. Existing pages stay in `stack` mode → zero regressions.
 
-I'll implement everything above; the migration runs first (one approval), then code lands in a single sweep.
+### 2. Three canvas modes
+
+- **Smart grid** — auto 12-col responsive grid, blocks snap to columns/rows. Good default for marketing pages.
+- **Linear grid** — user defines columns + row height (e.g. 8 cols × 80 px). Blocks snap to that grid; visible guides.
+- **Freeform** — absolute positioning, no snap. Imaginary margin guides shown as faint dashed lines (configurable: e.g. 24 px from each edge of the canvas).
+
+Mode picker lives in the top toolbar next to Desktop/Mobile preview toggles.
+
+### 3. Marquee multi-select
+
+- Click-drag on empty canvas area draws a translucent selection rectangle.
+- Any block whose bounding box intersects gets selected.
+- Shift-click adds/removes individual blocks.
+- Multi-select supports: move together, delete, duplicate, align (left/center/right), distribute, group visibility toggle.
+
+### 4. Resize + move transform
+
+When a block is selected, render 8 resize handles + a move cursor on hover:
+- Corner handles: proportional resize (Shift = freeform).
+- Edge handles: width-only or height-only.
+- Drag the block body to move.
+- Snap to grid in grid modes; snap to margin guides + sibling edges in freeform (with magenta alignment guides like Figma).
+- Min size enforced per block type (e.g. button min 80×32).
+
+### 5. Margin & guide system
+
+Per-page settings:
+- Canvas padding (top/right/bottom/left) → rendered as dashed inset rectangle.
+- Optional column guides count + gutter.
+- Toggle "Show guides" in toolbar.
+
+Guides are visual-only; they don't constrain placement in freeform but do attract snap.
+
+### 6. Architecture
+
+New files:
+- `src/components/page-builder/canvas/FreeformCanvas.tsx` — renders blocks absolutely; owns marquee, drag, resize.
+- `src/components/page-builder/canvas/MarqueeSelection.tsx` — pointer-driven rectangle.
+- `src/components/page-builder/canvas/BlockFrame.tsx` — wraps a `BlockRenderer` with selection chrome + 8 handles.
+- `src/components/page-builder/canvas/GuideOverlay.tsx` — margin + column guides.
+- `src/components/page-builder/canvas/useCanvasSelection.ts` — selection state + keyboard (arrows nudge, ⌫ delete, ⌘D duplicate, ⌘A select all).
+- `src/components/page-builder/canvas/snap.ts` — snap math for grid/freeform.
+
+`PageBuilderPage.tsx` swaps the existing sortable list for `FreeformCanvas` when `layout_mode !== "stack"`. **Stack mode is preserved** as the legacy / mobile-friendly editor.
+
+### 7. Public render parity
+
+`BlockRenderer` is wrapped on `/p/:username` with the same absolute layout when `layout_mode !== "stack"`, so what you build is what visitors see. Mobile breakpoint auto-collapses freeform → stack (sorted by `y` then `x`) so phones never get a broken layout.
+
+### 8. Database migration
+
+```sql
+ALTER TABLE site_pages ADD COLUMN layout_mode text NOT NULL DEFAULT 'stack'
+  CHECK (layout_mode IN ('stack','grid','free'));
+ALTER TABLE site_pages ADD COLUMN canvas_settings jsonb NOT NULL DEFAULT '{}'::jsonb;
+-- canvas_settings: { padding:{t,r,b,l}, columns, gutter, rowHeight, showGuides }
+```
+
+No changes to `page_blocks` schema — layout lives inside the existing `styles` jsonb.
+
+### 9. Out of scope (this pass)
+
+- Block grouping / frames-within-frames
+- Z-index reordering UI (auto by sort_order, with bring-to-front shortcut)
+- Animation timeline
+
+---
+
+### Build order
+
+1. Migration + types + `layout_mode` toolbar toggle (stack stays default).
+2. `FreeformCanvas` skeleton with absolute block positioning + persisted x/y/w/h.
+3. `BlockFrame` with selection + 8-handle resize + drag move.
+4. Marquee multi-select + multi-block move/delete/duplicate.
+5. Smart grid + linear grid snap; guide overlay with margin reference lines.
+6. Public render parity + mobile fallback.
+7. Polish: alignment guides, keyboard shortcuts, undo/redo integration.
