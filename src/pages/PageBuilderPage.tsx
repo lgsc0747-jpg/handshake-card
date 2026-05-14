@@ -791,26 +791,45 @@ function PageBuilderPage() {
                 }}
               >
                 <PageCanvas surface="editor" mobileFrame={deviceMode === "mobile"} className="flex-1">
-                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleSortEnd}>
-                    <SortableContext items={blocks.filter(b => b.is_visible || editingBlockId === b.id).map(b => b.id)} strategy={verticalListSortingStrategy}>
-                      {blocks.filter(b => b.is_visible || editingBlockId === b.id).map(block => (
-                        <SortablePreviewBlock
-                          key={block.id} block={block}
-                          editingBlockId={editingBlockId}
-                          onSelect={() => setEditingBlockId(block.id)}
-                          persona={livePersona}
-                        />
-                      ))}
-                    </SortableContext>
-                  </DndContext>
-                  {blocks.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center flex-1 min-h-[300px] text-muted-foreground">
-                      <Plus className="w-8 h-8 mb-2" />
-                      <p className="text-sm">Add your first block</p>
-                    </div>
+                  {(selectedPage?.layout_mode ?? "stack") !== "stack" ? (
+                    <FreeformCanvas
+                      blocks={blocks.filter(b => b.is_visible || editingBlockId === b.id)}
+                      mode={(selectedPage?.layout_mode ?? "free") as LayoutMode}
+                      settings={selectedPage?.canvas_settings ?? {}}
+                      selectedIds={canvasSelection}
+                      setSelectedIds={(s) => {
+                        setCanvasSelection(s);
+                        if (s.size === 1) setEditingBlockId(Array.from(s)[0]);
+                      }}
+                      onUpdateBlocks={(next, opts) => {
+                        setBlocks(next);
+                        if (opts?.commit) pushHistory(next);
+                      }}
+                      persona={livePersona}
+                    />
                   ) : (
-                    /* Spacer keeps the canvas filling available height. */
-                    <div className="flex-1" aria-hidden="true" />
+                    <>
+                      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleSortEnd}>
+                        <SortableContext items={blocks.filter(b => b.is_visible || editingBlockId === b.id).map(b => b.id)} strategy={verticalListSortingStrategy}>
+                          {blocks.filter(b => b.is_visible || editingBlockId === b.id).map(block => (
+                            <SortablePreviewBlock
+                              key={block.id} block={block}
+                              editingBlockId={editingBlockId}
+                              onSelect={() => setEditingBlockId(block.id)}
+                              persona={livePersona}
+                            />
+                          ))}
+                        </SortableContext>
+                      </DndContext>
+                      {blocks.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center flex-1 min-h-[300px] text-muted-foreground">
+                          <Plus className="w-8 h-8 mb-2" />
+                          <p className="text-sm">Add your first block</p>
+                        </div>
+                      ) : (
+                        <div className="flex-1" aria-hidden="true" />
+                      )}
+                    </>
                   )}
                 </PageCanvas>
               </div>
