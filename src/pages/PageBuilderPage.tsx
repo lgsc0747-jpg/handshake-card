@@ -42,7 +42,9 @@ import { RecentInteractionsPanel } from "@/components/page-builder/RecentInterac
 import { PageCanvas, PAGE_CANVAS_MAX_W_PX } from "@/components/page-builder/PageCanvas";
 import { PreviewDiffOverlay } from "@/components/page-builder/PreviewDiffOverlay";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Activity, GitCompare } from "lucide-react";
+import { Activity, GitCompare, MoveDiagonal, LayoutGrid as LayoutGridIcon, Square as SquareIcon } from "lucide-react";
+import { FreeformCanvas } from "@/components/page-builder/canvas/FreeformCanvas";
+import type { LayoutMode } from "@/components/page-builder/canvas/types";
 
 const ICON_MAP: Record<string, any> = {
   Type, AlignLeft, Image, LayoutGrid, Play, Minus, SeparatorHorizontal,
