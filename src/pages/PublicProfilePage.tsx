@@ -244,7 +244,7 @@ const PublicProfilePage = () => {
         // Load all site pages for this persona
         const { data: allSitePages } = await supabase
           .from("site_pages")
-          .select("id, title, slug, is_homepage, page_icon")
+          .select("id, title, slug, is_homepage, page_icon, layout_mode, canvas_settings")
           .eq("persona_id", personaData.id)
           .eq("is_visible", true)
           .order("sort_order");
