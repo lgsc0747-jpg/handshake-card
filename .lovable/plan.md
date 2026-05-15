@@ -1,99 +1,124 @@
-## Page Builder — Freeform Canvas Revamp
+## Page Builder Canvas & Interaction Overhaul
 
-Move the page builder from a strictly vertical, sortable list to a **canvas-based editor** where blocks can be positioned, sized, and selected like in Figma/Canva — while preserving the existing block types, theming, and live render contract.
+A focused rebuild of the canvas editing model: per-page persistence, multi-select alignment, viewport-true sizing, right-click menus, inline text editing, and a leaner block settings panel.
 
 ---
 
-### 1. New layout model per block
+### 1. Per-page canvas settings persistence
 
-Extend `page_blocks` (and the in-app `PageBlock` type) with optional layout fields stored in `styles.layout`:
+`site_pages.canvas_settings` already exists as `jsonb`. Expand the saved shape to:
 
 ```ts
-styles.layout = {
-  mode: "stack" | "grid" | "free",   // per-page setting; mirrored on each block for safety
-  x: number, y: number,              // px from canvas top-left (free + grid)
-  w: number, h: number,              // px width/height (auto if undefined)
-  col?: number, row?: number,        // grid cell anchor (grid mode)
-  colSpan?: number, rowSpan?: number
+{
+  snap: boolean,        // snap-to-grid on/off
+  columns: number,      // column count
+  showColumns: boolean, // column guide visibility
+  showGuides: boolean,  // center + edge guide visibility
+  gutter: number,
+  rowHeight: number,
+  // padding fields removed (see section 3)
 }
 ```
 
-A new `site_pages.layout_mode` column (`stack` default) controls which mode the canvas renders in. Existing pages stay in `stack` mode → zero regressions.
+- Loaded from `site_pages` on page open, written on toolbar toggle / column change with debounce.
+- A small `useCanvasSettings(pageId)` hook owns the read/write so all canvas surfaces share it.
+- No DB migration required — the column already exists; we just stop writing `paddingT/R/B/L`.
 
-### 2. Three canvas modes
+### 2. Multi-block alignment & distribution
 
-- **Smart grid** — auto 12-col responsive grid, blocks snap to columns/rows. Good default for marketing pages.
-- **Linear grid** — user defines columns + row height (e.g. 8 cols × 80 px). Blocks snap to that grid; visible guides.
-- **Freeform** — absolute positioning, no snap. Imaginary margin guides shown as faint dashed lines (configurable: e.g. 24 px from each edge of the canvas).
+New `SelectionToolbar` floating above the bounding box of the multi-selection. Buttons:
 
-Mode picker lives in the top toolbar next to Desktop/Mobile preview toggles.
+- Align: Left / Center-H / Right / Top / Middle-V / Bottom
+- Distribute: Horizontal / Vertical (requires 3+ selected)
 
-### 3. Marquee multi-select
+Alignment math runs against the union bounding box of the selection. Distribution sorts by axis position then equalizes gaps. Single-select hides the toolbar. All ops commit in one history step.
 
-- Click-drag on empty canvas area draws a translucent selection rectangle.
-- Any block whose bounding box intersects gets selected.
-- Shift-click adds/removes individual blocks.
-- Multi-select supports: move together, delete, duplicate, align (left/center/right), distribute, group visibility toggle.
+New file: `src/components/page-builder/canvas/SelectionToolbar.tsx`
+New file: `src/components/page-builder/canvas/align.ts` (pure functions)
 
-### 4. Resize + move transform
+### 3. Remove margins, add center guide lines
 
-When a block is selected, render 8 resize handles + a move cursor on hover:
-- Corner handles: proportional resize (Shift = freeform).
-- Edge handles: width-only or height-only.
-- Drag the block body to move.
-- Snap to grid in grid modes; snap to margin guides + sibling edges in freeform (with magenta alignment guides like Figma).
-- Min size enforced per block type (e.g. button min 80×32).
+- Drop `paddingT/R/B/L` from `CanvasSettings` defaults and `GuideOverlay`.
+- `GuideOverlay` renders:
+  - Vertical + horizontal center lines spanning the full canvas
+  - Optional column lines (when `showColumns`)
+- New "out-of-bounds" indicator: when any block's bounding box exits the canvas width, the offending edge gets a red dashed stroke on `BlockFrame` until the block is moved back inside.
 
-### 5. Margin & guide system
+### 4. True viewport canvas sizing
 
-Per-page settings:
-- Canvas padding (top/right/bottom/left) → rendered as dashed inset rectangle.
-- Optional column guides count + gutter.
-- Toggle "Show guides" in toolbar.
+The canvas inner width follows the preview device:
 
-Guides are visual-only; they don't constrain placement in freeform but do attract snap.
+| Device  | Canvas size       |
+|---------|-------------------|
+| Desktop | 1920 × 1080 (min) |
+| Tablet  | 820 × 1180        |
+| Phone   | 390 × 844         |
 
-### 6. Architecture
+- `PageBuilderPage` already has a desktop/mobile toggle — extend to a 3-way switch (Desktop / Tablet / Phone).
+- Canvas wrapper renders at the exact pixel width and scales down with CSS `transform: scale()` to fit the available editor area, preserving 1:1 coordinate math.
+- Public render (`PublicProfilePage`) keeps its responsive collapse behavior (mobile → stack).
 
-New files:
-- `src/components/page-builder/canvas/FreeformCanvas.tsx` — renders blocks absolutely; owns marquee, drag, resize.
-- `src/components/page-builder/canvas/MarqueeSelection.tsx` — pointer-driven rectangle.
-- `src/components/page-builder/canvas/BlockFrame.tsx` — wraps a `BlockRenderer` with selection chrome + 8 handles.
-- `src/components/page-builder/canvas/GuideOverlay.tsx` — margin + column guides.
-- `src/components/page-builder/canvas/useCanvasSelection.ts` — selection state + keyboard (arrows nudge, ⌫ delete, ⌘D duplicate, ⌘A select all).
-- `src/components/page-builder/canvas/snap.ts` — snap math for grid/freeform.
+### 5. Slim block settings panel
 
-`PageBuilderPage.tsx` swaps the existing sortable list for `FreeformCanvas` when `layout_mode !== "stack"`. **Stack mode is preserved** as the legacy / mobile-friendly editor.
+Remove from `BlockEditor.tsx`:
+- Spacing / padding / margin inputs
+- Max-width selector
+- Manual alignment toggles
+- Per-block style overrides that overlap with canvas position
 
-### 7. Public render parity
+Keep only **content fields** (text, image URL, link, list items, etc.). Position, size, and alignment now live exclusively on the canvas via drag/resize + the new selection toolbar.
 
-`BlockRenderer` is wrapped on `/p/:username` with the same absolute layout when `layout_mode !== "stack"`, so what you build is what visitors see. Mobile breakpoint auto-collapses freeform → stack (sorted by `y` then `x`) so phones never get a broken layout.
+### 6. Right-click context menu
 
-### 8. Database migration
+New `BlockContextMenu` (radix `ContextMenu`) wrapped around each `BlockFrame`:
 
-```sql
-ALTER TABLE site_pages ADD COLUMN layout_mode text NOT NULL DEFAULT 'stack'
-  CHECK (layout_mode IN ('stack','grid','free'));
-ALTER TABLE site_pages ADD COLUMN canvas_settings jsonb NOT NULL DEFAULT '{}'::jsonb;
--- canvas_settings: { padding:{t,r,b,l}, columns, gutter, rowHeight, showGuides }
-```
+- Bring Forward / Send Backward / Bring to Front / Send to Back  → updates `sort_order` (z-index = sort_order in absolute mode)
+- Duplicate (⌘D)
+- Delete (⌫)
+- Copy (⌘C) / Paste (⌘V) — uses an in-memory `clipboardRef` (no system clipboard needed); paste places the block at cursor + 16px offset
 
-No changes to `page_blocks` schema — layout lives inside the existing `styles` jsonb.
+Layering controls live **only** in this menu. Top toolbar keeps Delete/Duplicate as quick actions.
 
-### 9. Out of scope (this pass)
+### 7. Canvas-first inline text editing
 
-- Block grouping / frames-within-frames
-- Z-index reordering UI (auto by sort_order, with bring-to-front shortcut)
-- Animation timeline
+For text-bearing blocks (`heading`, `text`, `quote`, `button`):
+
+- `BlockFrame` becomes `pointer-events: auto` on its content layer when the block is the sole selection and the user double-clicks.
+- Switches to a `contentEditable` overlay matching the block's typography.
+- Native cursor placement, drag-to-select, type-to-replace.
+- `Esc` or click-outside commits the change to `block.content.text` (or block-specific field) and exits edit mode.
+- The `BlockEditor` settings panel for these blocks loses its text input — only style/link fields remain.
+
+New file: `src/components/page-builder/canvas/InlineTextEditor.tsx`
+Updates to `BlockRenderer` to accept `editingText` mode and render the editable surface for the supported block types.
 
 ---
 
-### Build order
+### Files touched
 
-1. Migration + types + `layout_mode` toolbar toggle (stack stays default).
-2. `FreeformCanvas` skeleton with absolute block positioning + persisted x/y/w/h.
-3. `BlockFrame` with selection + 8-handle resize + drag move.
-4. Marquee multi-select + multi-block move/delete/duplicate.
-5. Smart grid + linear grid snap; guide overlay with margin reference lines.
-6. Public render parity + mobile fallback.
-7. Polish: alignment guides, keyboard shortcuts, undo/redo integration.
+**New**
+- `src/components/page-builder/canvas/SelectionToolbar.tsx`
+- `src/components/page-builder/canvas/BlockContextMenu.tsx`
+- `src/components/page-builder/canvas/InlineTextEditor.tsx`
+- `src/components/page-builder/canvas/align.ts`
+- `src/components/page-builder/canvas/useCanvasSettings.ts`
+- `src/components/page-builder/canvas/useBlockClipboard.ts`
+
+**Edited**
+- `src/components/page-builder/canvas/types.ts` — drop padding, add `showColumns`/`snap` flags
+- `src/components/page-builder/canvas/GuideOverlay.tsx` — center lines, no margin rect
+- `src/components/page-builder/canvas/FreeformCanvas.tsx` — viewport-true width, scale-to-fit, context menu, inline edit, selection toolbar
+- `src/components/page-builder/canvas/BlockFrame.tsx` — out-of-bounds stroke, double-click edit
+- `src/components/page-builder/canvas/snap.ts` — honor `snap` flag, no margin clamping
+- `src/components/page-builder/BlockEditor.tsx` — strip layout/spacing/text fields
+- `src/components/page-builder/BlockRenderer.tsx` — `editingText` prop
+- `src/pages/PageBuilderPage.tsx` — 3-way device toggle, settings hook wiring, top-toolbar buttons
+- `src/pages/PublicProfilePage.tsx` — keep current behavior (no margin reads)
+
+**No DB migration** — `canvas_settings` jsonb already exists.
+
+### Out of scope
+
+- System-clipboard paste of arbitrary HTML
+- Undo/redo for new ops (will inherit existing history if present, otherwise tracked in a follow-up)
+- Tablet/phone-specific block overrides (single coordinate set per block for now)
