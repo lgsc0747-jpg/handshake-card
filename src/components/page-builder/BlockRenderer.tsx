@@ -4,6 +4,7 @@ import { Mail, Phone, Globe, Linkedin, Github, Twitter, Instagram, Facebook, You
 import { useState, useRef, useEffect } from "react";
 import { InteractiveCard3D } from "@/components/InteractiveCard3D";
 import { downloadVCard } from "@/lib/vcard";
+import { InlineTextEditor } from "./canvas/InlineTextEditor";
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -71,9 +72,13 @@ interface BlockRendererProps {
   onClick?: () => void;
   persona?: any;
   onTrackInteraction?: (type: string, metadata?: Record<string, any>) => void;
+  /** When true, render an inline contentEditable surface for the primary text field. */
+  inlineEdit?: boolean;
+  onInlineEditCommit?: (field: string, value: string) => void;
+  onInlineEditCancel?: () => void;
 }
 
-export function BlockRenderer({ block, isEditing, onClick, persona, onTrackInteraction }: BlockRendererProps) {
+export function BlockRenderer({ block, isEditing, onClick, persona, onTrackInteraction, inlineEdit, onInlineEditCommit, onInlineEditCancel }: BlockRendererProps) {
   const { block_type, content, styles } = block;
   const animRef = useRef<HTMLDivElement>(null);
   const inView = useInView(animRef);
