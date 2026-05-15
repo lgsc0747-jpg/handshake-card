@@ -216,7 +216,7 @@ function PageBuilderPage() {
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [deviceMode, setDeviceMode] = useState<"desktop" | "mobile">("desktop");
+  const [deviceMode, setDeviceMode] = useState<"desktop" | "tablet" | "mobile">("desktop");
   const [canvasSelection, setCanvasSelection] = useState<Set<string>>(new Set());
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [addBlockOpen, setAddBlockOpen] = useState(false);
@@ -615,10 +615,13 @@ function PageBuilderPage() {
           <ThemeToggle />
           <div className="w-px h-4 bg-border mx-1 hidden sm:block" />
           <div className="hidden sm:flex items-center gap-0.5 bg-muted/40 rounded-md p-0.5">
-            <Button size="sm" variant={deviceMode === "desktop" ? "default" : "ghost"} className="h-6 w-6 p-0 rounded-sm" onClick={() => setDeviceMode("desktop")}>
+            <Button size="sm" variant={deviceMode === "desktop" ? "default" : "ghost"} className="h-6 w-6 p-0 rounded-sm" onClick={() => setDeviceMode("desktop")} title="Desktop">
               <Monitor className="w-3 h-3" />
             </Button>
-            <Button size="sm" variant={deviceMode === "mobile" ? "default" : "ghost"} className="h-6 w-6 p-0 rounded-sm" onClick={() => setDeviceMode("mobile")}>
+            <Button size="sm" variant={deviceMode === "tablet" ? "default" : "ghost"} className="h-6 w-6 p-0 rounded-sm" onClick={() => setDeviceMode("tablet")} title="Tablet">
+              <SquareIcon className="w-3 h-3" />
+            </Button>
+            <Button size="sm" variant={deviceMode === "mobile" ? "default" : "ghost"} className="h-6 w-6 p-0 rounded-sm" onClick={() => setDeviceMode("mobile")} title="Phone">
               <Smartphone className="w-3 h-3" />
             </Button>
           </div>
@@ -795,6 +798,7 @@ function PageBuilderPage() {
                     <FreeformCanvas
                       blocks={blocks.filter(b => b.is_visible || editingBlockId === b.id)}
                       mode={(selectedPage?.layout_mode ?? "free") as LayoutMode}
+                      device={deviceMode}
                       settings={selectedPage?.canvas_settings ?? {}}
                       selectedIds={canvasSelection}
                       setSelectedIds={(s) => {
@@ -805,6 +809,7 @@ function PageBuilderPage() {
                         setBlocks(next);
                         if (opts?.commit) pushHistory(next);
                       }}
+                      onDuplicateBlock={duplicateBlock}
                       persona={livePersona}
                     />
                   ) : (

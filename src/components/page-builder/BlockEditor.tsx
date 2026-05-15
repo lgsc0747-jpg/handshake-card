@@ -50,48 +50,9 @@ export function BlockEditor({ block, onChange, onDelete, onClose }: BlockEditorP
       {/* Block-specific content editors */}
       {renderContentEditor(block, updateContent, updateStyles)}
 
-      {/* Common style controls */}
+      {/* Common style controls — spacing/alignment/max-width removed; position lives on canvas */}
       <div className="space-y-3 pt-3 border-t border-border/40">
-        <h4 className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Spacing & Style</h4>
-        <div className="space-y-2">
-          <Label className="text-xs">Vertical Padding</Label>
-          <Slider
-            value={[block.styles.paddingY ?? 24]}
-            onValueChange={([v]) => updateStyles("paddingY", v)}
-            min={0} max={96} step={4}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label className="text-xs">Horizontal Padding</Label>
-          <Slider
-            value={[block.styles.paddingX ?? 16]}
-            onValueChange={([v]) => updateStyles("paddingX", v)}
-            min={0} max={64} step={4}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label className="text-xs">Max Width</Label>
-          <Select value={String(block.styles.maxWidth ?? "100%")} onValueChange={(v) => updateStyles("maxWidth", v)}>
-            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="100%">Full Width</SelectItem>
-              <SelectItem value="640px">Narrow (640px)</SelectItem>
-              <SelectItem value="768px">Medium (768px)</SelectItem>
-              <SelectItem value="1024px">Wide (1024px)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label className="text-xs">Alignment</Label>
-          <Select value={block.styles.alignment ?? "left"} onValueChange={(v) => updateStyles("alignment", v)}>
-            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="left">Left</SelectItem>
-              <SelectItem value="center">Center</SelectItem>
-              <SelectItem value="right">Right</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <h4 className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Style</h4>
         <ColorPickerField label="Background" value={block.styles.bgColor ?? "transparent"} onChange={(v) => updateStyles("bgColor", v === "transparent" ? undefined : v)} />
         <ImageUploadField
           label="Background Image"
@@ -99,38 +60,6 @@ export function BlockEditor({ block, onChange, onDelete, onClose }: BlockEditorP
           onChange={(url) => updateStyles("bgImage", url)}
           folder="page-blocks"
         />
-        {block.styles.bgImage && (
-          <div className="space-y-2">
-            <Label className="text-xs">Background Size</Label>
-            <Select value={block.styles.bgSize ?? "cover"} onValueChange={(v) => updateStyles("bgSize", v)}>
-              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="cover">Cover</SelectItem>
-                <SelectItem value="contain">Contain</SelectItem>
-                <SelectItem value="auto">Auto</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label className="text-xs">Background Transparency</Label>
-            <Switch
-              checked={block.styles.bgTransparencyEnabled ?? false}
-              onCheckedChange={(v) => updateStyles("bgTransparencyEnabled", v)}
-            />
-          </div>
-          {block.styles.bgTransparencyEnabled && (
-            <Slider
-              value={[block.styles.bgOpacity ?? 100]}
-              onValueChange={([v]) => updateStyles("bgOpacity", v)}
-              min={0} max={100} step={5}
-            />
-          )}
-          {block.styles.bgTransparencyEnabled && (
-            <span className="text-[10px] text-muted-foreground">{block.styles.bgOpacity ?? 100}% opacity</span>
-          )}
-        </div>
         <div className="space-y-2">
           <Label className="text-xs">Border Radius</Label>
           <Slider

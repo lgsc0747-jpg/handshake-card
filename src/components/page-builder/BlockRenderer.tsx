@@ -4,6 +4,7 @@ import { Mail, Phone, Globe, Linkedin, Github, Twitter, Instagram, Facebook, You
 import { useState, useRef, useEffect } from "react";
 import { InteractiveCard3D } from "@/components/InteractiveCard3D";
 import { downloadVCard } from "@/lib/vcard";
+import { InlineTextEditor } from "./canvas/InlineTextEditor";
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -71,9 +72,13 @@ interface BlockRendererProps {
   onClick?: () => void;
   persona?: any;
   onTrackInteraction?: (type: string, metadata?: Record<string, any>) => void;
+  /** When true, render an inline contentEditable surface for the primary text field. */
+  inlineEdit?: boolean;
+  onInlineEditCommit?: (field: string, value: string) => void;
+  onInlineEditCancel?: () => void;
 }
 
-export function BlockRenderer({ block, isEditing, onClick, persona, onTrackInteraction }: BlockRendererProps) {
+export function BlockRenderer({ block, isEditing, onClick, persona, onTrackInteraction, inlineEdit, onInlineEditCommit, onInlineEditCancel }: BlockRendererProps) {
   const { block_type, content, styles } = block;
   const animRef = useRef<HTMLDivElement>(null);
   const inView = useInView(animRef);
@@ -134,15 +139,22 @@ export function BlockRenderer({ block, isEditing, onClick, persona, onTrackInter
     case "heading":
       return (
         <div ref={animRef} className="relative" style={wrapperStyle}>
-          <h2
-            className="font-display font-bold leading-tight"
-            style={{
-              fontSize: content.fontSize ?? 32,
-              color: styles.textColor ?? "inherit",
-            }}
-          >
-            {content.text || "Heading"}
-          </h2>
+          {inlineEdit ? (
+            <InlineTextEditor
+              value={content.text ?? ""}
+              className="font-display font-bold leading-tight"
+              style={{ fontSize: content.fontSize ?? 32, color: styles.textColor ?? "inherit" }}
+              onCommit={(v) => onInlineEditCommit?.("text", v)}
+              onCancel={onInlineEditCancel}
+            />
+          ) : (
+            <h2
+              className="font-display font-bold leading-tight"
+              style={{ fontSize: content.fontSize ?? 32, color: styles.textColor ?? "inherit" }}
+            >
+              {content.text || "Heading"}
+            </h2>
+          )}
           {content.subtitle && (
             <p className="mt-2 text-muted-foreground" style={{ fontSize: (content.fontSize ?? 32) * 0.45 }}>
               {content.subtitle}
@@ -155,16 +167,31 @@ export function BlockRenderer({ block, isEditing, onClick, persona, onTrackInter
       return (
         <div ref={animRef} className="relative" style={wrapperStyle}>
           {editOverlay}
-          <div
-            className="leading-relaxed whitespace-pre-wrap"
-            style={{
-              fontSize: content.fontSize ?? 16,
-              color: styles.textColor ?? "inherit",
-              lineHeight: content.lineHeight ?? 1.7,
-            }}
-          >
-            {content.text || "Your text goes here. Click to edit and add your content."}
-          </div>
+          {inlineEdit ? (
+            <InlineTextEditor
+              value={content.text ?? ""}
+              multiline
+              className="leading-relaxed whitespace-pre-wrap"
+              style={{
+                fontSize: content.fontSize ?? 16,
+                color: styles.textColor ?? "inherit",
+                lineHeight: content.lineHeight ?? 1.7,
+              }}
+              onCommit={(v) => onInlineEditCommit?.("text", v)}
+              onCancel={onInlineEditCancel}
+            />
+          ) : (
+            <div
+              className="leading-relaxed whitespace-pre-wrap"
+              style={{
+                fontSize: content.fontSize ?? 16,
+                color: styles.textColor ?? "inherit",
+                lineHeight: content.lineHeight ?? 1.7,
+              }}
+            >
+              {content.text || "Your text goes here. Click to edit and add your content."}
+            </div>
+          )}
         </div>
       );
 

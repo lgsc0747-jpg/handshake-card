@@ -13,24 +13,22 @@ export function snapLayout(
   canvasWidth: number,
 ): BlockLayout {
   const s = { ...DEFAULT_CANVAS_SETTINGS, ...settings };
-  const usableW = Math.max(0, canvasWidth - s.paddingL - s.paddingR);
   let { x, y, w, h } = layout;
 
-  if (mode === "grid") {
-    const colW = (usableW - s.gutter * (s.columns - 1)) / s.columns;
+  if (mode === "grid" && s.snap) {
+    const colW = (canvasWidth - s.gutter * (s.columns - 1)) / s.columns;
     const cellX = colW + s.gutter;
-    const relX = x - s.paddingL;
-    const col = Math.max(0, Math.round(relX / cellX));
-    x = s.paddingL + col * cellX;
+    const col = Math.max(0, Math.round(x / cellX));
+    x = col * cellX;
     const cols = Math.max(1, Math.round((w + s.gutter) / cellX));
     w = cols * colW + (cols - 1) * s.gutter;
     y = snapValue(y, s.rowHeight);
     h = Math.max(s.rowHeight, snapValue(h, s.rowHeight));
-  } else if (mode === "free") {
-    x = snapValue(x, s.snap);
-    y = snapValue(y, s.snap);
-    w = snapValue(w, s.snap);
-    h = snapValue(h, s.snap);
+  } else if (mode === "free" && s.snap) {
+    x = snapValue(x, s.snapStep);
+    y = snapValue(y, s.snapStep);
+    w = snapValue(w, s.snapStep);
+    h = snapValue(h, s.snapStep);
   }
 
   w = Math.max(MIN_BLOCK_W, w);
