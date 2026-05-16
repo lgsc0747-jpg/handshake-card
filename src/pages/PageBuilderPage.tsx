@@ -986,59 +986,8 @@ function PageBuilderPage() {
   );
 }
 
-function PBThemeSwitcher() {
-  const { themeId, setThemeId } = usePageTheme();
-  const colorThemes = PAGE_THEMES.filter(t => t.type === "color");
-  const layoutThemes = PAGE_THEMES.filter(t => t.type === "layout");
+function PBThemeSwitcher() { return null; }
 
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Page Theme">
-          <Paintbrush className="w-3.5 h-3.5" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-52 max-h-80 overflow-y-auto">
-        <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
-          Color Schemes
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {colorThemes.map((t) => (
-          <DropdownMenuItem key={t.id} onClick={() => setThemeId(t.id)} className="flex items-center gap-2 cursor-pointer">
-            <span className="w-3 h-3 rounded-full shrink-0 border border-border" style={{ background: t.preview }} />
-            <div className="flex-1 min-w-0">
-              <span className="text-xs font-medium">{t.label}</span>
-              <p className="text-[9px] text-muted-foreground truncate">{t.description}</p>
-            </div>
-            {themeId === t.id && <Check className="w-3 h-3 text-primary shrink-0" />}
-          </DropdownMenuItem>
-        ))}
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
-          Layout Themes
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {layoutThemes.map((t) => (
-          <DropdownMenuItem key={t.id} onClick={() => setThemeId(t.id)} className="flex items-center gap-2 cursor-pointer">
-            <span className="w-3 h-3 rounded-full shrink-0 border border-border" style={{ background: t.preview }} />
-            <div className="flex-1 min-w-0">
-              <span className="text-xs font-medium">{t.label}</span>
-              <p className="text-[9px] text-muted-foreground truncate">{t.description}</p>
-            </div>
-            {themeId === t.id && <Check className="w-3 h-3 text-primary shrink-0" />}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
-function PageBuilderWithTheme() {
-  return (
-    <PageThemeProvider>
-      <PageBuilderPage />
-    </PageThemeProvider>
-  );
-}
+export default PageBuilderPage;
 
 export default PageBuilderWithTheme;
