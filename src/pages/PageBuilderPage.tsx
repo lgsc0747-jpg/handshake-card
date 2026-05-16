@@ -31,7 +31,8 @@ import {
   Home, PanelLeftClose, PanelLeft, FilePlus, Undo2, Redo2, BookTemplate,
   CheckSquare, Square, ArrowLeft, Wifi, Paintbrush, Check, Crown,
 } from "lucide-react";
-import { PageThemeProvider, usePageTheme, PAGE_THEMES, getPageThemeStyles, PAGE_THEME_CLASS } from "@/contexts/PageBuilderThemeContext";
+import { CanvasBackgroundPanel } from "@/components/page-builder/canvas/CanvasBackgroundPanel";
+import type { CanvasSettings, BackgroundFill } from "@/components/page-builder/canvas/types";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator,
