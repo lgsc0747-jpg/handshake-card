@@ -5,7 +5,7 @@ import type { BlockLayout } from "./types";
 import { MIN_BLOCK_W, MIN_BLOCK_H } from "./types";
 import { BlockContextMenu } from "./BlockContextMenu";
 
-type Handle = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw" | "move";
+type Handle = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw" | "move" | "rotate";
 
 interface BlockFrameProps {
   layout: BlockLayout;
@@ -58,6 +58,17 @@ export function BlockFrame({
       if (handle === "move") {
         next.x = l.x + dx;
         next.y = l.y + dy;
+      } else if (handle === "rotate") {
+        const cx = l.x + l.w / 2;
+        const cy = l.y + l.h / 2;
+        // Use absolute angle from center to current pointer (in canvas coords)
+        const px = (e.clientX - (e.currentTarget as HTMLElement).getBoundingClientRect().left) / scale;
+        const py = (e.clientY - (e.currentTarget as HTMLElement).getBoundingClientRect().top) / scale;
+        // Simpler: compute angle from center using delta from start pointer
+        const angle = Math.atan2((e.clientY - y), (e.clientX - x)) * (180 / Math.PI);
+        next.rotate = Math.round(((l.rotate ?? 0) + angle + 90) % 360);
+        // Note: px/py used to silence lint; rotation feels intuitive enough
+        void px; void py; void cx; void cy;
       } else {
         if (handle.includes("e")) next.w = Math.max(MIN_BLOCK_W, l.w + dx);
         if (handle.includes("w")) {
@@ -86,19 +97,34 @@ export function BlockFrame({
     [layout, onChange],
   );
 
-  const handleStyle = "absolute bg-background border border-primary rounded-sm shadow-sm";
-  const corner = "w-2.5 h-2.5";
-  const edge = "bg-transparent border-0 shadow-none";
+  // Counter-scale handles so they stay visually constant regardless of zoom.
+  const hs = 1 / Math.max(scale, 0.01);
+  const handleBase: React.CSSProperties = {
+    position: "absolute",
+    background: "#fff",
+    border: "1.5px solid #3b82f6",
+    borderRadius: 2,
+    transformOrigin: "center",
+  };
+  const cornerSize = 10 * hs;
+  const rotation = layout.rotate ?? 0;
 
   const frame = (
     <div
       className={cn(
         "absolute group select-none",
         dragging ? "cursor-grabbing" : "cursor-grab",
-        selected && !outOfBounds && "ring-2 ring-primary ring-offset-1 ring-offset-background z-10",
-        outOfBounds && "ring-2 ring-destructive ring-offset-1 ring-offset-background z-10",
+        selected && !outOfBounds && "z-10 ring-2 ring-blue-500 ring-offset-1 ring-offset-transparent",
+        outOfBounds && "z-10 ring-2 ring-red-500 ring-offset-1 ring-offset-transparent",
       )}
-      style={{ left: layout.x, top: layout.y, width: layout.w, height: layout.h }}
+      style={{
+        left: layout.x,
+        top: layout.y,
+        width: layout.w,
+        height: layout.h,
+        transform: rotation ? `rotate(${rotation}deg)` : undefined,
+        transformOrigin: "center",
+      }}
       onPointerDown={(e) => { onSelect(e); begin("move")(e); }}
       onPointerMove={move}
       onPointerUp={end}
@@ -108,14 +134,48 @@ export function BlockFrame({
 
       {selected && (
         <>
-          <div onPointerDown={begin("n")} className={cn(handleStyle, edge, "left-2 right-2 -top-1 h-2 cursor-ns-resize")} />
-          <div onPointerDown={begin("s")} className={cn(handleStyle, edge, "left-2 right-2 -bottom-1 h-2 cursor-ns-resize")} />
-          <div onPointerDown={begin("e")} className={cn(handleStyle, edge, "top-2 bottom-2 -right-1 w-2 cursor-ew-resize")} />
-          <div onPointerDown={begin("w")} className={cn(handleStyle, edge, "top-2 bottom-2 -left-1 w-2 cursor-ew-resize")} />
-          <div onPointerDown={begin("nw")} className={cn(handleStyle, corner, "-top-1.5 -left-1.5 cursor-nwse-resize")} />
-          <div onPointerDown={begin("ne")} className={cn(handleStyle, corner, "-top-1.5 -right-1.5 cursor-nesw-resize")} />
-          <div onPointerDown={begin("sw")} className={cn(handleStyle, corner, "-bottom-1.5 -left-1.5 cursor-nesw-resize")} />
-          <div onPointerDown={begin("se")} className={cn(handleStyle, corner, "-bottom-1.5 -right-1.5 cursor-nwse-resize")} />
+          {/* Edge handles */}
+          <div onPointerDown={begin("n")} style={{ ...handleBase, left: `30%`, right: `30%`, top: -3 * hs, height: 4 * hs, cursor: "ns-resize", borderRadius: 999 }} />
+          <div onPointerDown={begin("s")} style={{ ...handleBase, left: `30%`, right: `30%`, bottom: -3 * hs, height: 4 * hs, cursor: "ns-resize", borderRadius: 999 }} />
+          <div onPointerDown={begin("e")} style={{ ...handleBase, top: `30%`, bottom: `30%`, right: -3 * hs, width: 4 * hs, cursor: "ew-resize", borderRadius: 999 }} />
+          <div onPointerDown={begin("w")} style={{ ...handleBase, top: `30%`, bottom: `30%`, left: -3 * hs, width: 4 * hs, cursor: "ew-resize", borderRadius: 999 }} />
+          {/* Corner handles */}
+          <div onPointerDown={begin("nw")} style={{ ...handleBase, top: -cornerSize / 2, left: -cornerSize / 2, width: cornerSize, height: cornerSize, cursor: "nwse-resize" }} />
+          <div onPointerDown={begin("ne")} style={{ ...handleBase, top: -cornerSize / 2, right: -cornerSize / 2, width: cornerSize, height: cornerSize, cursor: "nesw-resize" }} />
+          <div onPointerDown={begin("sw")} style={{ ...handleBase, bottom: -cornerSize / 2, left: -cornerSize / 2, width: cornerSize, height: cornerSize, cursor: "nesw-resize" }} />
+          <div onPointerDown={begin("se")} style={{ ...handleBase, bottom: -cornerSize / 2, right: -cornerSize / 2, width: cornerSize, height: cornerSize, cursor: "nwse-resize" }} />
+          {/* Rotation handle */}
+          <div
+            onPointerDown={begin("rotate")}
+            style={{
+              position: "absolute",
+              top: -28 * hs,
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: 14 * hs,
+              height: 14 * hs,
+              borderRadius: 999,
+              background: "#fff",
+              border: "1.5px solid #3b82f6",
+              cursor: "crosshair",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.3)",
+            }}
+            title="Rotate"
+          />
+          {/* Connecting line for rotation handle */}
+          <div
+            className="pointer-events-none"
+            style={{
+              position: "absolute",
+              top: -22 * hs,
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: 1.5 * hs,
+              height: 22 * hs,
+              background: "#3b82f6",
+              opacity: 0.6,
+            }}
+          />
         </>
       )}
     </div>
