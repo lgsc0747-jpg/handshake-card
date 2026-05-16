@@ -1,124 +1,110 @@
-## Page Builder Canvas & Interaction Overhaul
+## Page Builder: Figma/Framer-Style Overhaul
 
-A focused rebuild of the canvas editing model: per-page persistence, multi-select alignment, viewport-true sizing, right-click menus, inline text editing, and a leaner block settings panel.
-
----
-
-### 1. Per-page canvas settings persistence
-
-`site_pages.canvas_settings` already exists as `jsonb`. Expand the saved shape to:
-
-```ts
-{
-  snap: boolean,        // snap-to-grid on/off
-  columns: number,      // column count
-  showColumns: boolean, // column guide visibility
-  showGuides: boolean,  // center + edge guide visibility
-  gutter: number,
-  rowHeight: number,
-  // padding fields removed (see section 3)
-}
-```
-
-- Loaded from `site_pages` on page open, written on toolbar toggle / column change with debounce.
-- A small `useCanvasSettings(pageId)` hook owns the read/write so all canvas surfaces share it.
-- No DB migration required — the column already exists; we just stop writing `paddingT/R/B/L`.
-
-### 2. Multi-block alignment & distribution
-
-New `SelectionToolbar` floating above the bounding box of the multi-selection. Buttons:
-
-- Align: Left / Center-H / Right / Top / Middle-V / Bottom
-- Distribute: Horizontal / Vertical (requires 3+ selected)
-
-Alignment math runs against the union bounding box of the selection. Distribution sorts by axis position then equalizes gaps. Single-select hides the toolbar. All ops commit in one history step.
-
-New file: `src/components/page-builder/canvas/SelectionToolbar.tsx`
-New file: `src/components/page-builder/canvas/align.ts` (pure functions)
-
-### 3. Remove margins, add center guide lines
-
-- Drop `paddingT/R/B/L` from `CanvasSettings` defaults and `GuideOverlay`.
-- `GuideOverlay` renders:
-  - Vertical + horizontal center lines spanning the full canvas
-  - Optional column lines (when `showColumns`)
-- New "out-of-bounds" indicator: when any block's bounding box exits the canvas width, the offending edge gets a red dashed stroke on `BlockFrame` until the block is moved back inside.
-
-### 4. True viewport canvas sizing
-
-The canvas inner width follows the preview device:
-
-| Device  | Canvas size       |
-|---------|-------------------|
-| Desktop | 1920 × 1080 (min) |
-| Tablet  | 820 × 1180        |
-| Phone   | 390 × 844         |
-
-- `PageBuilderPage` already has a desktop/mobile toggle — extend to a 3-way switch (Desktop / Tablet / Phone).
-- Canvas wrapper renders at the exact pixel width and scales down with CSS `transform: scale()` to fit the available editor area, preserving 1:1 coordinate math.
-- Public render (`PublicProfilePage`) keeps its responsive collapse behavior (mobile → stack).
-
-### 5. Slim block settings panel
-
-Remove from `BlockEditor.tsx`:
-- Spacing / padding / margin inputs
-- Max-width selector
-- Manual alignment toggles
-- Per-block style overrides that overlap with canvas position
-
-Keep only **content fields** (text, image URL, link, list items, etc.). Position, size, and alignment now live exclusively on the canvas via drag/resize + the new selection toolbar.
-
-### 6. Right-click context menu
-
-New `BlockContextMenu` (radix `ContextMenu`) wrapped around each `BlockFrame`:
-
-- Bring Forward / Send Backward / Bring to Front / Send to Back  → updates `sort_order` (z-index = sort_order in absolute mode)
-- Duplicate (⌘D)
-- Delete (⌫)
-- Copy (⌘C) / Paste (⌘V) — uses an in-memory `clipboardRef` (no system clipboard needed); paste places the block at cursor + 16px offset
-
-Layering controls live **only** in this menu. Top toolbar keeps Delete/Duplicate as quick actions.
-
-### 7. Canvas-first inline text editing
-
-For text-bearing blocks (`heading`, `text`, `quote`, `button`):
-
-- `BlockFrame` becomes `pointer-events: auto` on its content layer when the block is the sole selection and the user double-clicks.
-- Switches to a `contentEditable` overlay matching the block's typography.
-- Native cursor placement, drag-to-select, type-to-replace.
-- `Esc` or click-outside commits the change to `block.content.text` (or block-specific field) and exits edit mode.
-- The `BlockEditor` settings panel for these blocks loses its text input — only style/link fields remain.
-
-New file: `src/components/page-builder/canvas/InlineTextEditor.tsx`
-Updates to `BlockRenderer` to accept `editingText` mode and render the editable surface for the supported block types.
+A full rebuild of the editor shell around a single scrollable freeform canvas with manual color control, floating contextual toolbars, and pan/zoom navigation.
 
 ---
 
-### Files touched
+### 1. Remove layout modes
+- Drop the Stack / Grid / Free toggle from `PageBuilderPage.tsx`.
+- Treat every page as freeform (absolute positioning) — keep `layout_mode` column for back-compat but always render in free mode.
+- Delete `useBlockClipboard`/old stack rendering branches in `PublicProfilePage.tsx`. Public render uses absolute coords on desktop, sorted stack on mobile (already behaves that way).
+
+### 2. Remove preset themes — full manual color control
+- Strip `PageThemeProvider`, `PAGE_THEMES`, and `PageThemeContext` usage from the builder + public render.
+- Replace with per-page + per-block manual color fields stored in JSON:
+  - `site_pages.canvas_settings.background`: `{ kind: "solid"|"gradient"|"image", color, gradient: {from,to,angle}, image: {url, fit, position, opacity, blur} }`
+  - `site_pages.canvas_settings.accent`: hex (used as default for new buttons/links)
+  - `page_blocks.styles.bg`, `.text`, `.borderColor`, `.borderWidth`, `.borderRadius`, `.shadow` (color + blur + spread + opacity)
+- Add a `ColorControl` primitive (color + alpha) reused everywhere. Gradient picker + image picker built on top.
+
+### 3. Image / gradient canvas background
+- New `CanvasBackgroundPanel` (left sidebar) with: solid/gradient/image tabs, fit (cover/contain/fill/tile), position, opacity slider, blur slider, replace/remove.
+- Image source: URL input + drag-drop to a dropzone; uploads go to existing `personas-assets` bucket under `pages/{pageId}/bg-{ts}`.
+- `FreeformCanvas` renders the background as an absolutely-positioned layer beneath blocks.
+
+### 4. Relocate & redesign the inspector
+- Remove the right-side `BlockEditor` panel.
+- Left sidebar becomes a 3-tab rail: **Layers** (block list/reorder), **Insert** (block library), **Page** (canvas bg, accent, sections).
+- Selection-driven editing happens through a **floating contextual toolbar** anchored above the bounding box (style, color, border, shadow, layer, delete). Built on `@radix-ui/react-popover` with `floating-ui` style positioning math.
+- Content-only fields (image URL, link href, list items, embed code) appear inside an expandable secondary popover from the floating toolbar — never blocks the canvas.
+
+### 5. Canvas navigation controls
+- New bottom toolbar `CanvasNavBar`: pan tool toggle, zoom out / % / zoom in, fit-to-screen, undo, redo.
+- Spacebar held → temporary pan mode; cursor switches to `grab` / `grabbing`; click-drag pans `scrollTop`/`scrollLeft` of the viewport.
+- Zoom range 25% – 400%, multiplies CSS `transform: scale()` on the canvas inner. Coordinates remain 1:1; pointer handlers divide by zoom.
+- Undo/redo: lightweight `useCanvasHistory` ring buffer over block layouts + content (max 50 steps), wired to ⌘Z / ⌘⇧Z.
+
+### 6. Selection marquee color
+- `FreeformCanvas` marquee rect changes from black/neutral to `bg-blue-500/15 border-blue-500` (`#3b82f6`).
+
+### 7. Perfect bounding box
+- `BlockFrame` updated:
+  - Outline: `ring-2 ring-blue-500` with white inner ring for contrast.
+  - 8 handles (corners + edges) sized in CSS pixels (compensate for zoom so they stay constant on screen).
+  - New top-center **rotation handle** (16px circle, 24px above box) → updates `block.styles.layout.rotate` (deg). Render uses `transform: rotate()` around center.
+  - Pointer math accounts for rotation when resizing/moving.
+
+### 8. Inline text editing (all text blocks)
+- Already exists for heading/text/quote/button via `InlineTextEditor`. Expand to all text-bearing blocks (testimonial quote, faq Q/A, stats labels, team name/role, button label).
+- Double-click anywhere on a text block enters edit mode with cursor; `Esc` / click-outside commits.
+- Mini floating text toolbar (font family, size, weight, color) appears above the editing element while in edit mode.
+- Remove text-content fields from any remaining inspector forms.
+
+### 9. Scrollable canvas + sections
+- Canvas is no longer a fixed-height box. New `canvas_settings.sections: Array<{ id, height, bg?: ColorOrImage, label? }>` with at least one default section.
+- Total canvas height = sum of section heights. Rendered as stacked full-width section bands inside the scroll viewport.
+- "+ Add Section" button at the bottom appends a new 600px section. Drag handle on each section's bottom edge resizes height. Sections reorder via drag handle in the layers panel.
+- Dashed divider line between sections shown only in editor (not public).
+- Blocks store absolute `y` relative to canvas top; they remain free to overlap sections. Section bg is purely cosmetic.
+- Public render: same sectioned background + absolute blocks on desktop; stacks on mobile (sorted by y).
+
+### 10. Responsive device handling
+- Top toolbar device toggle stays (Desktop 1440 / Tablet 768 / Phone 375). Switching only changes the canvas inner width; height stays scrollable.
+- No per-device block overrides yet (single coordinate set) — same as today; documented as a follow-up.
+
+### 11. Overall UI polish
+- Workspace bg → neutral `bg-zinc-900` with `bg-zinc-800` panels, subtle `shadow-lg`, `rounded-xl` panels.
+- Floating toolbars: `bg-zinc-900/95 backdrop-blur border border-white/10 rounded-lg shadow-2xl`.
+- Smooth `transition-all duration-150` on panel collapses, zoom level changes, selection ring.
+- Keep app's existing dark theme tokens; only the page-builder shell gets the Figma-like neutral skin.
+
+---
+
+### Files
 
 **New**
-- `src/components/page-builder/canvas/SelectionToolbar.tsx`
-- `src/components/page-builder/canvas/BlockContextMenu.tsx`
-- `src/components/page-builder/canvas/InlineTextEditor.tsx`
-- `src/components/page-builder/canvas/align.ts`
-- `src/components/page-builder/canvas/useCanvasSettings.ts`
-- `src/components/page-builder/canvas/useBlockClipboard.ts`
+- `src/components/page-builder/canvas/CanvasNavBar.tsx` — pan/zoom/fit/undo/redo
+- `src/components/page-builder/canvas/FloatingBlockToolbar.tsx` — selection-anchored style controls
+- `src/components/page-builder/canvas/FloatingTextToolbar.tsx` — appears during inline edit
+- `src/components/page-builder/canvas/CanvasBackgroundPanel.tsx` — solid/gradient/image
+- `src/components/page-builder/canvas/SectionLayer.tsx` — single section band + resize handle
+- `src/components/page-builder/canvas/useCanvasHistory.ts` — undo/redo
+- `src/components/page-builder/canvas/useCanvasViewport.ts` — zoom, pan, space-hold
+- `src/components/page-builder/canvas/ColorControl.tsx` — color + alpha primitive
+- `src/components/page-builder/canvas/GradientControl.tsx`
+- `src/components/page-builder/sidebar/LeftRail.tsx` — Layers / Insert / Page tabs
 
 **Edited**
-- `src/components/page-builder/canvas/types.ts` — drop padding, add `showColumns`/`snap` flags
-- `src/components/page-builder/canvas/GuideOverlay.tsx` — center lines, no margin rect
-- `src/components/page-builder/canvas/FreeformCanvas.tsx` — viewport-true width, scale-to-fit, context menu, inline edit, selection toolbar
-- `src/components/page-builder/canvas/BlockFrame.tsx` — out-of-bounds stroke, double-click edit
-- `src/components/page-builder/canvas/snap.ts` — honor `snap` flag, no margin clamping
-- `src/components/page-builder/BlockEditor.tsx` — strip layout/spacing/text fields
-- `src/components/page-builder/BlockRenderer.tsx` — `editingText` prop
-- `src/pages/PageBuilderPage.tsx` — 3-way device toggle, settings hook wiring, top-toolbar buttons
-- `src/pages/PublicProfilePage.tsx` — keep current behavior (no margin reads)
+- `src/pages/PageBuilderPage.tsx` — new shell layout, drop right panel + layout-mode toggle, mount new toolbars
+- `src/components/page-builder/canvas/FreeformCanvas.tsx` — zoom/pan, blue marquee, sections, bg layer
+- `src/components/page-builder/canvas/BlockFrame.tsx` — zoom-aware handles, rotation handle, blue ring
+- `src/components/page-builder/canvas/InlineTextEditor.tsx` — emit edit-state for mini toolbar
+- `src/components/page-builder/BlockRenderer.tsx` — read new style fields (bg/border/shadow/text color), expand inline-edit targets
+- `src/components/page-builder/BlockEditor.tsx` — slim down to a fallback popover view (or delete)
+- `src/components/page-builder/canvas/types.ts` — new `BackgroundFill`, `SectionDef`, layout rotate
+- `src/pages/PublicProfilePage.tsx` — render new canvas bg + sections; remove theme provider usage
 
-**No DB migration** — `canvas_settings` jsonb already exists.
+**Removed/Deprecated**
+- `src/contexts/PageBuilderThemeContext.tsx` — no longer imported by builder/public render (keep file only if still referenced elsewhere; delete if not)
+- Stack/Grid branches in canvas + `SelectionToolbar` align/distribute UI moves into the floating block toolbar
 
-### Out of scope
+**No DB migration required** — all new state fits in existing `jsonb` columns (`canvas_settings`, `page_blocks.styles`).
 
+---
+
+### Out of scope (call out, don't build)
+- Per-device block overrides (one coord set per block)
+- Multi-block alignment math beyond the existing helpers
+- Real text rich-formatting beyond font/size/weight/color (no bold/italic/lists)
 - System-clipboard paste of arbitrary HTML
-- Undo/redo for new ops (will inherit existing history if present, otherwise tracked in a follow-up)
-- Tablet/phone-specific block overrides (single coordinate set per block for now)
+- Side-by-side multi-device preview mode (single-device toggle only for now)

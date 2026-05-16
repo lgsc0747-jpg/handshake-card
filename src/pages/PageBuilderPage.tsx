@@ -31,7 +31,8 @@ import {
   Home, PanelLeftClose, PanelLeft, FilePlus, Undo2, Redo2, BookTemplate,
   CheckSquare, Square, ArrowLeft, Wifi, Paintbrush, Check, Crown,
 } from "lucide-react";
-import { PageThemeProvider, usePageTheme, PAGE_THEMES, getPageThemeStyles, PAGE_THEME_CLASS } from "@/contexts/PageBuilderThemeContext";
+import { CanvasBackgroundPanel } from "@/components/page-builder/canvas/CanvasBackgroundPanel";
+import type { CanvasSettings, BackgroundFill } from "@/components/page-builder/canvas/types";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator,
@@ -204,7 +205,7 @@ function PageBuilderPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  const pageThemeCtx = usePageTheme();
+  const pageThemeCtx = { themeId: "default", setThemeId: (_: string) => {}, setPersonaId: (_: string | null) => {} };
   const isMobile = useIsMobile();
   const { isPro, loading: subLoading } = useSubscription();
   const [personas, setPersonas] = useState<{ id: string; label: string; slug: string }[]>([]);
@@ -778,65 +779,34 @@ function PageBuilderPage() {
             <div className="flex justify-center p-2 md:p-4 min-h-full">
               <div
                 className={cn(
-                  "relative transition-all duration-300 shadow-lg flex flex-col",
-                  PAGE_THEME_CLASS,
-                  deviceMode === "mobile"
-                    ? "w-[375px] min-h-[667px] border-[6px] border-muted-foreground/15 rounded-[2.5rem]"
-                    : "w-full min-h-[calc(100vh-7rem)] rounded-xl border border-border/60",
+                  "relative transition-all duration-300 shadow-lg flex flex-col w-full min-h-[calc(100vh-7rem)] rounded-xl border border-white/10 bg-zinc-950",
                 )}
-                style={{
-                  ...getPageThemeStyles(pageThemeCtx.themeId),
-                  backgroundColor: "var(--page-bg, hsl(var(--background)))",
-                  color: "var(--page-text, hsl(var(--foreground)))",
-                  fontFamily: "var(--page-font, inherit)",
-                  borderRadius: deviceMode === "mobile" ? undefined : "var(--page-radius, 0.75rem)",
-                  maxWidth: deviceMode === "mobile" ? undefined : `${PAGE_CANVAS_MAX_W_PX + 32}px`,
-                }}
               >
-                <PageCanvas surface="editor" mobileFrame={deviceMode === "mobile"} className="flex-1">
-                  {(selectedPage?.layout_mode ?? "stack") !== "stack" ? (
-                    <FreeformCanvas
-                      blocks={blocks.filter(b => b.is_visible || editingBlockId === b.id)}
-                      mode={(selectedPage?.layout_mode ?? "free") as LayoutMode}
-                      device={deviceMode}
-                      settings={selectedPage?.canvas_settings ?? {}}
-                      selectedIds={canvasSelection}
-                      setSelectedIds={(s) => {
-                        setCanvasSelection(s);
-                        if (s.size === 1) setEditingBlockId(Array.from(s)[0]);
-                      }}
-                      onUpdateBlocks={(next, opts) => {
-                        setBlocks(next);
-                        if (opts?.commit) pushHistory(next);
-                      }}
-                      onDuplicateBlock={duplicateBlock}
-                      persona={livePersona}
-                    />
-                  ) : (
-                    <>
-                      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleSortEnd}>
-                        <SortableContext items={blocks.filter(b => b.is_visible || editingBlockId === b.id).map(b => b.id)} strategy={verticalListSortingStrategy}>
-                          {blocks.filter(b => b.is_visible || editingBlockId === b.id).map(block => (
-                            <SortablePreviewBlock
-                              key={block.id} block={block}
-                              editingBlockId={editingBlockId}
-                              onSelect={() => setEditingBlockId(block.id)}
-                              persona={livePersona}
-                            />
-                          ))}
-                        </SortableContext>
-                      </DndContext>
-                      {blocks.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center flex-1 min-h-[300px] text-muted-foreground">
-                          <Plus className="w-8 h-8 mb-2" />
-                          <p className="text-sm">Add your first block</p>
-                        </div>
-                      ) : (
-                        <div className="flex-1" aria-hidden="true" />
-                      )}
-                    </>
-                  )}
-                </PageCanvas>
+                <FreeformCanvas
+                  blocks={blocks.filter(b => b.is_visible || editingBlockId === b.id)}
+                  device={deviceMode}
+                  settings={(selectedPage?.canvas_settings ?? {}) as CanvasSettings}
+                  selectedIds={canvasSelection}
+                  setSelectedIds={(s) => {
+                    setCanvasSelection(s);
+                    if (s.size === 1) setEditingBlockId(Array.from(s)[0]);
+                  }}
+                  onUpdateBlocks={(next, opts) => {
+                    setBlocks(next);
+                    if (opts?.commit) pushHistory(next);
+                  }}
+                  onUpdateSettings={(next, opts) => {
+                    if (!selectedPage) return;
+                    setPages(pages.map(p => p.id === selectedPage.id ? { ...p, canvas_settings: next } : p));
+                    if (opts?.commit) {
+                      supabase.from("site_pages").update({ canvas_settings: next as any }).eq("id", selectedPage.id).then(() => {});
+                    }
+                  }}
+                  onDuplicateBlock={duplicateBlock}
+                  onUndo={undo}
+                  onRedo={redo}
+                  persona={livePersona}
+                />
               </div>
             </div>
           </ScrollArea>
@@ -1016,59 +986,8 @@ function PageBuilderPage() {
   );
 }
 
-function PBThemeSwitcher() {
-  const { themeId, setThemeId } = usePageTheme();
-  const colorThemes = PAGE_THEMES.filter(t => t.type === "color");
-  const layoutThemes = PAGE_THEMES.filter(t => t.type === "layout");
+function PBThemeSwitcher() { return null; }
 
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Page Theme">
-          <Paintbrush className="w-3.5 h-3.5" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-52 max-h-80 overflow-y-auto">
-        <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
-          Color Schemes
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {colorThemes.map((t) => (
-          <DropdownMenuItem key={t.id} onClick={() => setThemeId(t.id)} className="flex items-center gap-2 cursor-pointer">
-            <span className="w-3 h-3 rounded-full shrink-0 border border-border" style={{ background: t.preview }} />
-            <div className="flex-1 min-w-0">
-              <span className="text-xs font-medium">{t.label}</span>
-              <p className="text-[9px] text-muted-foreground truncate">{t.description}</p>
-            </div>
-            {themeId === t.id && <Check className="w-3 h-3 text-primary shrink-0" />}
-          </DropdownMenuItem>
-        ))}
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
-          Layout Themes
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {layoutThemes.map((t) => (
-          <DropdownMenuItem key={t.id} onClick={() => setThemeId(t.id)} className="flex items-center gap-2 cursor-pointer">
-            <span className="w-3 h-3 rounded-full shrink-0 border border-border" style={{ background: t.preview }} />
-            <div className="flex-1 min-w-0">
-              <span className="text-xs font-medium">{t.label}</span>
-              <p className="text-[9px] text-muted-foreground truncate">{t.description}</p>
-            </div>
-            {themeId === t.id && <Check className="w-3 h-3 text-primary shrink-0" />}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
+export default PageBuilderPage;
 
-function PageBuilderWithTheme() {
-  return (
-    <PageThemeProvider>
-      <PageBuilderPage />
-    </PageThemeProvider>
-  );
-}
 
-export default PageBuilderWithTheme;
