@@ -1,4 +1,4 @@
-export type LayoutMode = "stack" | "grid" | "free";
+export type LayoutMode = "free";
 export type DeviceMode = "desktop" | "tablet" | "mobile";
 
 export interface BlockLayout {
@@ -6,46 +6,75 @@ export interface BlockLayout {
   y: number;
   w: number;
   h: number;
+  /** Rotation in degrees, around the block's center. */
+  rotate?: number;
+}
+
+export type BackgroundFill =
+  | { kind: "solid"; color: string; opacity?: number }
+  | {
+      kind: "gradient";
+      from: string;
+      to: string;
+      angle?: number;
+      opacity?: number;
+    }
+  | {
+      kind: "image";
+      url: string;
+      fit?: "cover" | "contain" | "fill" | "tile";
+      position?: string;
+      opacity?: number;
+      blur?: number;
+    };
+
+export interface CanvasSection {
+  id: string;
+  height: number;
+  bg?: BackgroundFill | null;
+  label?: string;
 }
 
 export interface CanvasSettings {
-  /** Snap-to-grid toggle (free + grid modes). */
+  /** Snap-to-grid toggle (free mode). */
   snap?: boolean;
-  /** Column count for grid + column guides. */
-  columns?: number;
-  /** Show vertical column guides on the canvas. */
-  showColumns?: boolean;
-  /** Show center crosshair guides. */
-  showGuides?: boolean;
-  /** Pixel gutter between grid columns. */
-  gutter?: number;
-  /** Row height for grid mode snapping. */
-  rowHeight?: number;
-  /** Snap step in px when snap = true and mode = free. */
+  /** Pixel step for free-mode snapping. */
   snapStep?: number;
+  /** Center crosshair guides visibility. */
+  showGuides?: boolean;
+  /** Canvas / page background fill (page-wide, behind sections). */
+  background?: BackgroundFill | null;
+  /** Global accent color (default for new buttons/links). */
+  accent?: string | null;
+  /** Page sections (vertical bands stacked top-to-bottom). */
+  sections?: CanvasSection[];
 }
 
-export const DEFAULT_CANVAS_SETTINGS: Required<CanvasSettings> = {
+export const DEFAULT_CANVAS_SETTINGS: Required<
+  Pick<CanvasSettings, "snap" | "snapStep" | "showGuides">
+> & { background: BackgroundFill | null; accent: string | null; sections: CanvasSection[] } = {
   snap: true,
-  columns: 12,
-  showColumns: false,
-  showGuides: true,
-  gutter: 16,
-  rowHeight: 40,
   snapStep: 8,
+  showGuides: true,
+  background: { kind: "solid", color: "#0a0a0a", opacity: 1 },
+  accent: "#3b82f6",
+  sections: [{ id: "default", height: 1080 }],
 };
 
-/** Per-device canvas dimensions (true viewport sizing). */
-export const DEVICE_SIZES: Record<DeviceMode, { w: number; h: number }> = {
-  desktop: { w: 1920, h: 1080 },
-  tablet: { w: 820, h: 1180 },
-  mobile: { w: 390, h: 844 },
+/** Per-device canvas widths. Height is dynamic via sections. */
+export const DEVICE_SIZES: Record<DeviceMode, { w: number }> = {
+  desktop: { w: 1440 },
+  tablet: { w: 768 },
+  mobile: { w: 375 },
 };
+
+export const MIN_SECTION_H = 200;
+export const DEFAULT_SECTION_H = 600;
 
 export const DEFAULT_BLOCK_W = 320;
 export const DEFAULT_BLOCK_H = 160;
-export const MIN_BLOCK_W = 80;
-export const MIN_BLOCK_H = 32;
+export const MIN_BLOCK_W = 60;
+export const MIN_BLOCK_H = 24;
 
 export function readLayout(styles: Record<string, any> | null | undefined): BlockLayout | null {
   const l = styles?.layout;
@@ -55,6 +84,7 @@ export function readLayout(styles: Record<string, any> | null | undefined): Bloc
     y: l.y,
     w: typeof l.w === "number" ? l.w : DEFAULT_BLOCK_W,
     h: typeof l.h === "number" ? l.h : DEFAULT_BLOCK_H,
+    rotate: typeof l.rotate === "number" ? l.rotate : 0,
   };
 }
 
@@ -62,4 +92,34 @@ export function withLayout(styles: Record<string, any> | null | undefined, layou
   return { ...(styles || {}), layout };
 }
 
-export const TEXT_BLOCK_TYPES = new Set(["heading", "text", "quote", "button"]);
+export const TEXT_BLOCK_TYPES = new Set([
+  "heading", "text", "quote", "button",
+  "testimonial", "team",
+]);
+
+/** Compose a CSS background string from a BackgroundFill. */
+export function backgroundToCss(bg: BackgroundFill | null | undefined): React.CSSProperties {
+  if (!bg) return {};
+  const opacity = bg.opacity ?? 1;
+  if (bg.kind === "solid") {
+    return { backgroundColor: bg.color, opacity };
+  }
+  if (bg.kind === "gradient") {
+    return {
+      backgroundImage: `linear-gradient(${bg.angle ?? 135}deg, ${bg.from}, ${bg.to})`,
+      opacity,
+    };
+  }
+  // image
+  const fit = bg.fit ?? "cover";
+  const size = fit === "tile" ? "auto" : fit;
+  const repeat = fit === "tile" ? "repeat" : "no-repeat";
+  return {
+    backgroundImage: `url("${bg.url}")`,
+    backgroundSize: size as any,
+    backgroundRepeat: repeat,
+    backgroundPosition: bg.position ?? "center",
+    opacity,
+    filter: bg.blur ? `blur(${bg.blur}px)` : undefined,
+  };
+}
