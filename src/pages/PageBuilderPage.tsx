@@ -990,4 +990,4 @@ function PBThemeSwitcher() { return null; }
 
 export default PageBuilderPage;
 
-export default PageBuilderWithTheme;
+
