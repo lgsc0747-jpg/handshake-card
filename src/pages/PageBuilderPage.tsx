@@ -205,7 +205,7 @@ function PageBuilderPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  const pageThemeCtx = usePageTheme();
+  const pageThemeCtx = { themeId: "default", setThemeId: (_: string) => {}, setPersonaId: (_: string | null) => {} };
   const isMobile = useIsMobile();
   const { isPro, loading: subLoading } = useSubscription();
   const [personas, setPersonas] = useState<{ id: string; label: string; slug: string }[]>([]);
