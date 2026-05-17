@@ -146,27 +146,21 @@ export function FreeformCanvas({
 
   // Marquee + Pan
   const onCanvasPointerDown = (e: RPointerEvent<HTMLDivElement>) => {
-    if (e.target !== e.currentTarget) return;
     const wrap = wrapRef.current;
     if (panTool || spaceHeld) {
-      // pan: capture pointer on wrap, store starting scroll
       if (!wrap) return;
-      const startX = e.clientX;
-      const startY = e.clientY;
-      const startSL = wrap.scrollLeft;
-      const startST = wrap.scrollTop;
-      const onMove = (ev: PointerEvent) => {
-        wrap.scrollLeft = startSL - (ev.clientX - startX);
-        wrap.scrollTop = startST - (ev.clientY - startY);
+      e.preventDefault();
+      panStart.current = {
+        x: e.clientX,
+        y: e.clientY,
+        scrollLeft: wrap.scrollLeft,
+        scrollTop: wrap.scrollTop,
+        pointerId: e.pointerId,
       };
-      const onUp = () => {
-        window.removeEventListener("pointermove", onMove);
-        window.removeEventListener("pointerup", onUp);
-      };
-      window.addEventListener("pointermove", onMove);
-      window.addEventListener("pointerup", onUp);
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
       return;
     }
+    if (e.target !== e.currentTarget) return;
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
     setEditingTextId(null);
@@ -176,6 +170,11 @@ export function FreeformCanvas({
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   };
   const onCanvasPointerMove = (e: RPointerEvent<HTMLDivElement>) => {
+    if (panStart.current && wrapRef.current) {
+      wrapRef.current.scrollLeft = panStart.current.scrollLeft - (e.clientX - panStart.current.x);
+      wrapRef.current.scrollTop = panStart.current.scrollTop - (e.clientY - panStart.current.y);
+      return;
+    }
     if (!marqueeStart.current) return;
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -189,6 +188,11 @@ export function FreeformCanvas({
     });
   };
   const onCanvasPointerUp = (e: RPointerEvent<HTMLDivElement>) => {
+    if (panStart.current) {
+      try { (e.currentTarget as HTMLElement).releasePointerCapture(panStart.current.pointerId); } catch {}
+      panStart.current = null;
+      return;
+    }
     if (!marquee || !marqueeStart.current) {
       marqueeStart.current = null;
       setMarquee(null);
@@ -287,11 +291,11 @@ export function FreeformCanvas({
         const dy = e.key === "ArrowUp" ? -step : e.key === "ArrowDown" ? step : 0;
         moveSelection(dx, dy, { commit: true });
       } else if (meta && (e.key === "=" || e.key === "+")) {
-        e.preventDefault(); setScaleClamped(scale + 0.1);
+        e.preventDefault(); setScale(Math.min(4, Math.max(0.25, scale + 0.1)));
       } else if (meta && e.key === "-") {
-        e.preventDefault(); setScaleClamped(scale - 0.1);
+        e.preventDefault(); setScale(Math.min(4, Math.max(0.25, scale - 0.1)));
       } else if (meta && e.key === "0") {
-        e.preventDefault(); fitToScreen();
+        e.preventDefault(); fitCanvas();
       }
     };
     const onKeyUp = (e: KeyboardEvent) => {
@@ -404,6 +408,7 @@ export function FreeformCanvas({
                     selected={isSelected || isEditingThis}
                     outOfBounds={outOfBounds}
                     scale={scale}
+                    panActive={isPanning}
                     onSelect={(e) => {
                       if (isEditingThis) return;
                       if (e.shiftKey) {
@@ -499,16 +504,6 @@ export function FreeformCanvas({
         </div>
       </div>
 
-      <CanvasNavBar
-        scale={scale}
-        panTool={panTool}
-        setPanTool={setPanTool}
-        zoomIn={() => setScaleClamped(scale + 0.1)}
-        zoomOut={() => setScaleClamped(scale - 0.1)}
-        fit={fitToScreen}
-        onUndo={onUndo}
-        onRedo={onRedo}
-      />
     </div>
   );
 }
