@@ -5,7 +5,6 @@ import type { PageBlock } from "@/components/page-builder/types";
 import { BlockFrame } from "./BlockFrame";
 import { GuideOverlay } from "./GuideOverlay";
 import { SelectionToolbar } from "./SelectionToolbar";
-import { CanvasNavBar } from "./CanvasNavBar";
 import { snapLayout } from "./snap";
 import { alignBlocks, distributeBlocks, type AlignOp, type DistributeOp } from "./align";
 import { useBlockClipboard } from "./useBlockClipboard";
@@ -31,13 +30,15 @@ interface FreeformCanvasProps {
   blocks: PageBlock[];
   device: DeviceMode;
   settings: CanvasSettings;
+  scale: number;
+  setScale: (scale: number) => void;
+  panTool: boolean;
+  spaceHeld: boolean;
   selectedIds: Set<string>;
   setSelectedIds: (ids: Set<string>) => void;
   onUpdateBlocks: (next: PageBlock[], opts?: { commit?: boolean }) => void;
   onUpdateSettings: (next: CanvasSettings, opts?: { commit?: boolean }) => void;
   onDuplicateBlock?: (block: PageBlock) => void;
-  onUndo?: () => void;
-  onRedo?: () => void;
   persona?: any;
 }
 
@@ -50,17 +51,15 @@ function rectsIntersect(a: MarqueeRect, b: MarqueeRect) {
 function uid() { return Math.random().toString(36).slice(2, 9); }
 
 export function FreeformCanvas({
-  blocks, device, settings,
+  blocks, device, settings, scale, setScale, panTool, spaceHeld,
   selectedIds, setSelectedIds, onUpdateBlocks, onUpdateSettings, onDuplicateBlock,
-  onUndo, onRedo, persona,
+  persona,
 }: FreeformCanvasProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(1);
-  const [panTool, setPanTool] = useState(false);
-  const [spaceHeld, setSpaceHeld] = useState(false);
   const [marquee, setMarquee] = useState<MarqueeRect | null>(null);
   const marqueeStart = useRef<{ x: number; y: number } | null>(null);
+  const panStart = useRef<{ x: number; y: number; scrollLeft: number; scrollTop: number; pointerId: number } | null>(null);
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
   const clipboard = useBlockClipboard();
 
@@ -69,25 +68,21 @@ export function FreeformCanvas({
   const { w: canvasW } = DEVICE_SIZES[device];
   const canvasH = sections.reduce((sum, sec) => sum + sec.height, 0);
 
-  // Fit-to-container scaling (initial). User can zoom manually after.
-  const [autoFit, setAutoFit] = useState(true);
   useEffect(() => {
-    if (!wrapRef.current || !autoFit) return;
-    const ro = new ResizeObserver((entries) => {
-      const cr = entries[0]?.contentRect;
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    let didFit = false;
+    const ro = new ResizeObserver(([entry]) => {
+      if (didFit) return;
+      const cr = entry?.contentRect;
       if (!cr) return;
       const fit = Math.min(1, (cr.width - 64) / canvasW);
       setScale(Math.max(0.25, fit));
+      didFit = true;
     });
-    ro.observe(wrapRef.current);
+    ro.observe(wrap);
     return () => ro.disconnect();
-  }, [canvasW, autoFit]);
-
-  const setScaleClamped = (v: number) => {
-    setScale(Math.min(4, Math.max(0.25, v)));
-    setAutoFit(false);
-  };
-  const fitToScreen = () => { setAutoFit(true); };
+  }, [canvasW, setScale]);
 
   // Auto-place blocks that have no layout yet
   useEffect(() => {
