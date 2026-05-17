@@ -45,6 +45,7 @@ import { PreviewDiffOverlay } from "@/components/page-builder/PreviewDiffOverlay
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Activity, GitCompare, MoveDiagonal, LayoutGrid as LayoutGridIcon, Square as SquareIcon } from "lucide-react";
 import { FreeformCanvas } from "@/components/page-builder/canvas/FreeformCanvas";
+import { CanvasNavBar } from "@/components/page-builder/canvas/CanvasNavBar";
 import type { LayoutMode } from "@/components/page-builder/canvas/types";
 
 const ICON_MAP: Record<string, any> = {
@@ -218,6 +219,9 @@ function PageBuilderPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deviceMode, setDeviceMode] = useState<"desktop" | "tablet" | "mobile">("desktop");
+  const [canvasScale, setCanvasScale] = useState(1);
+  const [canvasPanTool, setCanvasPanTool] = useState(false);
+  const [canvasFitRequest, setCanvasFitRequest] = useState(0);
   const [canvasSelection, setCanvasSelection] = useState<Set<string>>(new Set());
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [addBlockOpen, setAddBlockOpen] = useState(false);
@@ -270,6 +274,10 @@ function PageBuilderPage() {
     historyIdxRef.current++;
     skipHistoryRef.current = true;
     setBlocks(JSON.parse(JSON.stringify(historyRef.current[historyIdxRef.current])));
+  }, []);
+
+  const setCanvasScaleClamped = useCallback((value: number) => {
+    setCanvasScale(Math.min(4, Math.max(0.25, value)));
   }, []);
 
   useEffect(() => {
