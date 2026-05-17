@@ -27,11 +27,12 @@ interface BlockFrameProps {
     paste: () => void;
     canPaste: boolean;
   };
+  panActive?: boolean;
   children: React.ReactNode;
 }
 
 export function BlockFrame({
-  layout, selected, outOfBounds, scale = 1,
+  layout, selected, outOfBounds, scale = 1, panActive = false,
   onSelect, onChange, onDoubleClick, contextMenu, children,
 }: BlockFrameProps) {
   const startRef = useRef<{ x: number; y: number; layout: BlockLayout; handle: Handle } | null>(null);
@@ -113,7 +114,7 @@ export function BlockFrame({
     <div
       className={cn(
         "absolute group select-none",
-        dragging ? "cursor-grabbing" : "cursor-grab",
+        panActive ? "cursor-grab" : dragging ? "cursor-grabbing" : "cursor-grab",
         selected && !outOfBounds && "z-10 ring-2 ring-blue-500 ring-offset-1 ring-offset-transparent",
         outOfBounds && "z-10 ring-2 ring-red-500 ring-offset-1 ring-offset-transparent",
       )}
@@ -125,7 +126,7 @@ export function BlockFrame({
         transform: rotation ? `rotate(${rotation}deg)` : undefined,
         transformOrigin: "center",
       }}
-      onPointerDown={(e) => { onSelect(e); begin("move")(e); }}
+      onPointerDown={(e) => { if (panActive) return; onSelect(e); begin("move")(e); }}
       onPointerMove={move}
       onPointerUp={end}
       onDoubleClick={onDoubleClick}
