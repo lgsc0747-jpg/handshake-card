@@ -783,6 +783,10 @@ function PageBuilderPage() {
                   blocks={blocks.filter(b => b.is_visible || editingBlockId === b.id)}
                   device={deviceMode}
                   settings={(selectedPage?.canvas_settings ?? {}) as CanvasSettings}
+                  scale={canvasScale}
+                  setScale={setCanvasScaleClamped}
+                  fitRequest={canvasFitRequest}
+                  panTool={canvasPanTool}
                   selectedIds={canvasSelection}
                   setSelectedIds={(s) => {
                     setCanvasSelection(s);
@@ -800,8 +804,6 @@ function PageBuilderPage() {
                     }
                   }}
                   onDuplicateBlock={duplicateBlock}
-                  onUndo={undo}
-                  onRedo={redo}
                   persona={livePersona}
                 />
               </div>
