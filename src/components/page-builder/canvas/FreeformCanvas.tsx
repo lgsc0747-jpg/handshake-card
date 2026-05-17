@@ -358,7 +358,7 @@ export function FreeformCanvas({
               }}
             >
               {/* Page background fill */}
-              <div className="absolute inset-0" style={backgroundToCss(s.background)} />
+              <div className="absolute inset-0 pointer-events-none" style={backgroundToCss(s.background)} />
 
               {/* Section bands (visual + per-section bg) */}
               {(() => {
@@ -369,11 +369,11 @@ export function FreeformCanvas({
                   return (
                     <div
                       key={sec.id}
-                      className="absolute left-0 right-0"
+                      className="absolute left-0 right-0 pointer-events-none"
                       style={{ top, height: sec.height }}
                     >
                       {sec.bg && (
-                        <div className="absolute inset-0" style={backgroundToCss(sec.bg)} />
+                        <div className="absolute inset-0 pointer-events-none" style={backgroundToCss(sec.bg)} />
                       )}
                       {/* Section divider line (editor only) */}
                       <div
@@ -533,7 +533,7 @@ function SectionResizeHandle({
         onResize(start.current.h + dy, true);
         start.current = null;
       }}
-      className="absolute left-0 right-0 bottom-0 z-20 cursor-ns-resize"
+      className="absolute left-0 right-0 bottom-0 z-20 cursor-ns-resize pointer-events-auto"
       style={{ height: 8, transform: "translateY(4px)" }}
       title="Drag to resize section"
     />
