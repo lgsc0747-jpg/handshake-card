@@ -5,7 +5,6 @@ import type { PageBlock } from "@/components/page-builder/types";
 import { BlockFrame } from "./BlockFrame";
 import { GuideOverlay } from "./GuideOverlay";
 import { SelectionToolbar } from "./SelectionToolbar";
-import { CanvasNavBar } from "./CanvasNavBar";
 import { snapLayout } from "./snap";
 import { alignBlocks, distributeBlocks, type AlignOp, type DistributeOp } from "./align";
 import { useBlockClipboard } from "./useBlockClipboard";
@@ -31,13 +30,15 @@ interface FreeformCanvasProps {
   blocks: PageBlock[];
   device: DeviceMode;
   settings: CanvasSettings;
+  scale: number;
+  setScale: (scale: number) => void;
+  fitRequest: number;
+  panTool: boolean;
   selectedIds: Set<string>;
   setSelectedIds: (ids: Set<string>) => void;
   onUpdateBlocks: (next: PageBlock[], opts?: { commit?: boolean }) => void;
   onUpdateSettings: (next: CanvasSettings, opts?: { commit?: boolean }) => void;
   onDuplicateBlock?: (block: PageBlock) => void;
-  onUndo?: () => void;
-  onRedo?: () => void;
   persona?: any;
 }
 
@@ -50,17 +51,16 @@ function rectsIntersect(a: MarqueeRect, b: MarqueeRect) {
 function uid() { return Math.random().toString(36).slice(2, 9); }
 
 export function FreeformCanvas({
-  blocks, device, settings,
+  blocks, device, settings, scale, setScale, fitRequest, panTool,
   selectedIds, setSelectedIds, onUpdateBlocks, onUpdateSettings, onDuplicateBlock,
-  onUndo, onRedo, persona,
+  persona,
 }: FreeformCanvasProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(1);
-  const [panTool, setPanTool] = useState(false);
-  const [spaceHeld, setSpaceHeld] = useState(false);
   const [marquee, setMarquee] = useState<MarqueeRect | null>(null);
   const marqueeStart = useRef<{ x: number; y: number } | null>(null);
+  const panStart = useRef<{ x: number; y: number; scrollLeft: number; scrollTop: number; pointerId: number } | null>(null);
+  const [spaceHeld, setSpaceHeld] = useState(false);
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
   const clipboard = useBlockClipboard();
 
@@ -69,25 +69,29 @@ export function FreeformCanvas({
   const { w: canvasW } = DEVICE_SIZES[device];
   const canvasH = sections.reduce((sum, sec) => sum + sec.height, 0);
 
-  // Fit-to-container scaling (initial). User can zoom manually after.
-  const [autoFit, setAutoFit] = useState(true);
-  useEffect(() => {
-    if (!wrapRef.current || !autoFit) return;
-    const ro = new ResizeObserver((entries) => {
-      const cr = entries[0]?.contentRect;
-      if (!cr) return;
-      const fit = Math.min(1, (cr.width - 64) / canvasW);
-      setScale(Math.max(0.25, fit));
-    });
-    ro.observe(wrapRef.current);
-    return () => ro.disconnect();
-  }, [canvasW, autoFit]);
+  const fitCanvas = useCallback(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    const fit = Math.min(1, (wrap.clientWidth - 64) / canvasW);
+    setScale(Math.max(0.25, fit));
+  }, [canvasW, setScale]);
 
-  const setScaleClamped = (v: number) => {
-    setScale(Math.min(4, Math.max(0.25, v)));
-    setAutoFit(false);
-  };
-  const fitToScreen = () => { setAutoFit(true); };
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    let didFit = false;
+    const ro = new ResizeObserver(() => {
+      if (didFit) return;
+      fitCanvas();
+      didFit = true;
+    });
+    ro.observe(wrap);
+    return () => ro.disconnect();
+  }, [fitCanvas]);
+
+  useEffect(() => {
+    if (fitRequest > 0) fitCanvas();
+  }, [fitRequest, fitCanvas]);
 
   // Auto-place blocks that have no layout yet
   useEffect(() => {
@@ -142,27 +146,21 @@ export function FreeformCanvas({
 
   // Marquee + Pan
   const onCanvasPointerDown = (e: RPointerEvent<HTMLDivElement>) => {
-    if (e.target !== e.currentTarget) return;
     const wrap = wrapRef.current;
     if (panTool || spaceHeld) {
-      // pan: capture pointer on wrap, store starting scroll
       if (!wrap) return;
-      const startX = e.clientX;
-      const startY = e.clientY;
-      const startSL = wrap.scrollLeft;
-      const startST = wrap.scrollTop;
-      const onMove = (ev: PointerEvent) => {
-        wrap.scrollLeft = startSL - (ev.clientX - startX);
-        wrap.scrollTop = startST - (ev.clientY - startY);
+      e.preventDefault();
+      panStart.current = {
+        x: e.clientX,
+        y: e.clientY,
+        scrollLeft: wrap.scrollLeft,
+        scrollTop: wrap.scrollTop,
+        pointerId: e.pointerId,
       };
-      const onUp = () => {
-        window.removeEventListener("pointermove", onMove);
-        window.removeEventListener("pointerup", onUp);
-      };
-      window.addEventListener("pointermove", onMove);
-      window.addEventListener("pointerup", onUp);
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
       return;
     }
+    if (e.target !== e.currentTarget) return;
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
     setEditingTextId(null);
@@ -172,6 +170,11 @@ export function FreeformCanvas({
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   };
   const onCanvasPointerMove = (e: RPointerEvent<HTMLDivElement>) => {
+    if (panStart.current && wrapRef.current) {
+      wrapRef.current.scrollLeft = panStart.current.scrollLeft - (e.clientX - panStart.current.x);
+      wrapRef.current.scrollTop = panStart.current.scrollTop - (e.clientY - panStart.current.y);
+      return;
+    }
     if (!marqueeStart.current) return;
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -185,6 +188,11 @@ export function FreeformCanvas({
     });
   };
   const onCanvasPointerUp = (e: RPointerEvent<HTMLDivElement>) => {
+    if (panStart.current) {
+      try { (e.currentTarget as HTMLElement).releasePointerCapture(panStart.current.pointerId); } catch {}
+      panStart.current = null;
+      return;
+    }
     if (!marquee || !marqueeStart.current) {
       marqueeStart.current = null;
       setMarquee(null);
@@ -283,11 +291,11 @@ export function FreeformCanvas({
         const dy = e.key === "ArrowUp" ? -step : e.key === "ArrowDown" ? step : 0;
         moveSelection(dx, dy, { commit: true });
       } else if (meta && (e.key === "=" || e.key === "+")) {
-        e.preventDefault(); setScaleClamped(scale + 0.1);
+        e.preventDefault(); setScale(Math.min(4, Math.max(0.25, scale + 0.1)));
       } else if (meta && e.key === "-") {
-        e.preventDefault(); setScaleClamped(scale - 0.1);
+        e.preventDefault(); setScale(Math.min(4, Math.max(0.25, scale - 0.1)));
       } else if (meta && e.key === "0") {
-        e.preventDefault(); fitToScreen();
+        e.preventDefault(); fitCanvas();
       }
     };
     const onKeyUp = (e: KeyboardEvent) => {
@@ -350,7 +358,7 @@ export function FreeformCanvas({
               }}
             >
               {/* Page background fill */}
-              <div className="absolute inset-0" style={backgroundToCss(s.background)} />
+              <div className="absolute inset-0 pointer-events-none" style={backgroundToCss(s.background)} />
 
               {/* Section bands (visual + per-section bg) */}
               {(() => {
@@ -361,11 +369,11 @@ export function FreeformCanvas({
                   return (
                     <div
                       key={sec.id}
-                      className="absolute left-0 right-0"
+                      className="absolute left-0 right-0 pointer-events-none"
                       style={{ top, height: sec.height }}
                     >
                       {sec.bg && (
-                        <div className="absolute inset-0" style={backgroundToCss(sec.bg)} />
+                        <div className="absolute inset-0 pointer-events-none" style={backgroundToCss(sec.bg)} />
                       )}
                       {/* Section divider line (editor only) */}
                       <div
@@ -400,6 +408,7 @@ export function FreeformCanvas({
                     selected={isSelected || isEditingThis}
                     outOfBounds={outOfBounds}
                     scale={scale}
+                    panActive={isPanning}
                     onSelect={(e) => {
                       if (isEditingThis) return;
                       if (e.shiftKey) {
@@ -495,16 +504,6 @@ export function FreeformCanvas({
         </div>
       </div>
 
-      <CanvasNavBar
-        scale={scale}
-        panTool={panTool}
-        setPanTool={setPanTool}
-        zoomIn={() => setScaleClamped(scale + 0.1)}
-        zoomOut={() => setScaleClamped(scale - 0.1)}
-        fit={fitToScreen}
-        onUndo={onUndo}
-        onRedo={onRedo}
-      />
     </div>
   );
 }
@@ -534,7 +533,7 @@ function SectionResizeHandle({
         onResize(start.current.h + dy, true);
         start.current = null;
       }}
-      className="absolute left-0 right-0 bottom-0 z-20 cursor-ns-resize"
+      className="absolute left-0 right-0 bottom-0 z-20 cursor-ns-resize pointer-events-auto"
       style={{ height: 8, transform: "translateY(4px)" }}
       title="Drag to resize section"
     />

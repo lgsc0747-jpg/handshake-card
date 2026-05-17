@@ -45,6 +45,7 @@ import { PreviewDiffOverlay } from "@/components/page-builder/PreviewDiffOverlay
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Activity, GitCompare, MoveDiagonal, LayoutGrid as LayoutGridIcon, Square as SquareIcon } from "lucide-react";
 import { FreeformCanvas } from "@/components/page-builder/canvas/FreeformCanvas";
+import { CanvasNavBar } from "@/components/page-builder/canvas/CanvasNavBar";
 import type { LayoutMode } from "@/components/page-builder/canvas/types";
 
 const ICON_MAP: Record<string, any> = {
@@ -218,6 +219,9 @@ function PageBuilderPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deviceMode, setDeviceMode] = useState<"desktop" | "tablet" | "mobile">("desktop");
+  const [canvasScale, setCanvasScale] = useState(1);
+  const [canvasPanTool, setCanvasPanTool] = useState(false);
+  const [canvasFitRequest, setCanvasFitRequest] = useState(0);
   const [canvasSelection, setCanvasSelection] = useState<Set<string>>(new Set());
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [addBlockOpen, setAddBlockOpen] = useState(false);
@@ -270,6 +274,10 @@ function PageBuilderPage() {
     historyIdxRef.current++;
     skipHistoryRef.current = true;
     setBlocks(JSON.parse(JSON.stringify(historyRef.current[historyIdxRef.current])));
+  }, []);
+
+  const setCanvasScaleClamped = useCallback((value: number) => {
+    setCanvasScale(Math.min(4, Math.max(0.25, value)));
   }, []);
 
   useEffect(() => {
@@ -626,27 +634,6 @@ function PageBuilderPage() {
               <Smartphone className="w-3 h-3" />
             </Button>
           </div>
-          {selectedPage && (
-            <div className="hidden sm:flex items-center gap-0.5 bg-muted/40 rounded-md p-0.5" title="Layout mode">
-              {([
-                { id: "stack" as LayoutMode, Icon: AlignLeft, label: "Stack" },
-                { id: "grid" as LayoutMode, Icon: LayoutGridIcon, label: "Grid" },
-                { id: "free" as LayoutMode, Icon: MoveDiagonal, label: "Free" },
-              ]).map(({ id, Icon, label }) => (
-                <Button
-                  key={id}
-                  size="sm"
-                  variant={(selectedPage.layout_mode ?? "stack") === id ? "default" : "ghost"}
-                  className="h-6 px-2 rounded-sm text-[10px] gap-1"
-                  onClick={() => updatePageLayoutMode(selectedPage.id, id)}
-                  title={label}
-                >
-                  <Icon className="w-3 h-3" />
-                  <span className="hidden md:inline">{label}</span>
-                </Button>
-              ))}
-            </div>
-          )}
           {import.meta.env.DEV && selectedPersonaId && (
             <Button size="sm" variant="ghost" className="h-7 w-7 p-0 rounded-md" onClick={() => setDiffOpen(true)} title="Compare">
               <GitCompare className="w-3.5 h-3.5" />
@@ -757,6 +744,16 @@ function PageBuilderPage() {
             </ScrollArea>
 
             <div className="p-2 border-t border-border/60">
+              <CanvasNavBar
+                scale={canvasScale}
+                panTool={canvasPanTool}
+                setPanTool={setCanvasPanTool}
+                zoomIn={() => setCanvasScaleClamped(canvasScale + 0.1)}
+                zoomOut={() => setCanvasScaleClamped(canvasScale - 0.1)}
+                fit={() => setCanvasFitRequest((v) => v + 1)}
+                onUndo={undo}
+                onRedo={redo}
+              />
               <Button variant="outline" size="sm" className="w-full text-[10px] h-7 rounded-md border-border/60" onClick={() => setAddBlockOpen(true)}>
                 <Plus className="w-3 h-3 mr-1" /> Insert
               </Button>
@@ -786,6 +783,10 @@ function PageBuilderPage() {
                   blocks={blocks.filter(b => b.is_visible || editingBlockId === b.id)}
                   device={deviceMode}
                   settings={(selectedPage?.canvas_settings ?? {}) as CanvasSettings}
+                  scale={canvasScale}
+                  setScale={setCanvasScaleClamped}
+                  fitRequest={canvasFitRequest}
+                  panTool={canvasPanTool}
                   selectedIds={canvasSelection}
                   setSelectedIds={(s) => {
                     setCanvasSelection(s);
@@ -803,8 +804,6 @@ function PageBuilderPage() {
                     }
                   }}
                   onDuplicateBlock={duplicateBlock}
-                  onUndo={undo}
-                  onRedo={redo}
                   persona={livePersona}
                 />
               </div>
