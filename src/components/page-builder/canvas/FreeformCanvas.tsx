@@ -32,8 +32,8 @@ interface FreeformCanvasProps {
   settings: CanvasSettings;
   scale: number;
   setScale: (scale: number) => void;
+  fitRequest: number;
   panTool: boolean;
-  spaceHeld: boolean;
   selectedIds: Set<string>;
   setSelectedIds: (ids: Set<string>) => void;
   onUpdateBlocks: (next: PageBlock[], opts?: { commit?: boolean }) => void;
@@ -51,7 +51,7 @@ function rectsIntersect(a: MarqueeRect, b: MarqueeRect) {
 function uid() { return Math.random().toString(36).slice(2, 9); }
 
 export function FreeformCanvas({
-  blocks, device, settings, scale, setScale, panTool, spaceHeld,
+  blocks, device, settings, scale, setScale, fitRequest, panTool,
   selectedIds, setSelectedIds, onUpdateBlocks, onUpdateSettings, onDuplicateBlock,
   persona,
 }: FreeformCanvasProps) {
@@ -60,6 +60,7 @@ export function FreeformCanvas({
   const [marquee, setMarquee] = useState<MarqueeRect | null>(null);
   const marqueeStart = useRef<{ x: number; y: number } | null>(null);
   const panStart = useRef<{ x: number; y: number; scrollLeft: number; scrollTop: number; pointerId: number } | null>(null);
+  const [spaceHeld, setSpaceHeld] = useState(false);
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
   const clipboard = useBlockClipboard();
 
@@ -68,21 +69,29 @@ export function FreeformCanvas({
   const { w: canvasW } = DEVICE_SIZES[device];
   const canvasH = sections.reduce((sum, sec) => sum + sec.height, 0);
 
+  const fitCanvas = useCallback(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    const fit = Math.min(1, (wrap.clientWidth - 64) / canvasW);
+    setScale(Math.max(0.25, fit));
+  }, [canvasW, setScale]);
+
   useEffect(() => {
     const wrap = wrapRef.current;
     if (!wrap) return;
     let didFit = false;
-    const ro = new ResizeObserver(([entry]) => {
+    const ro = new ResizeObserver(() => {
       if (didFit) return;
-      const cr = entry?.contentRect;
-      if (!cr) return;
-      const fit = Math.min(1, (cr.width - 64) / canvasW);
-      setScale(Math.max(0.25, fit));
+      fitCanvas();
       didFit = true;
     });
     ro.observe(wrap);
     return () => ro.disconnect();
-  }, [canvasW, setScale]);
+  }, [fitCanvas]);
+
+  useEffect(() => {
+    if (fitRequest > 0) fitCanvas();
+  }, [fitRequest, fitCanvas]);
 
   // Auto-place blocks that have no layout yet
   useEffect(() => {
