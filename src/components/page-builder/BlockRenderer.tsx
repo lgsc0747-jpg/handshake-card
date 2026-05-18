@@ -78,6 +78,41 @@ interface BlockRendererProps {
   onInlineEditCancel?: () => void;
 }
 
+function EditableText({
+  enabled,
+  value,
+  fallback,
+  field,
+  multiline,
+  className,
+  style,
+  onCommit,
+  onCancel,
+}: {
+  enabled?: boolean;
+  value?: string;
+  fallback: string;
+  field: string;
+  multiline?: boolean;
+  className?: string;
+  style?: React.CSSProperties;
+  onCommit?: (field: string, value: string) => void;
+  onCancel?: () => void;
+}) {
+  if (!enabled) return <span className={className} style={style}>{value || fallback}</span>;
+  return (
+    <InlineTextEditor
+      value={value || fallback}
+      multiline={multiline}
+      autoFocus={field === "text" || field === "title"}
+      className={className}
+      style={style}
+      onCommit={(next) => onCommit?.(field, next)}
+      onCancel={onCancel}
+    />
+  );
+}
+
 export function BlockRenderer({ block, isEditing, onClick, persona, onTrackInteraction, inlineEdit, onInlineEditCommit, onInlineEditCancel }: BlockRendererProps) {
   const { block_type, content, styles } = block;
   const animRef = useRef<HTMLDivElement>(null);
