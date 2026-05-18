@@ -10,8 +10,6 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { BlockRenderer } from "@/components/page-builder/BlockRenderer";
 import { BlockEditor } from "@/components/page-builder/BlockEditor";
 import { BLOCK_TYPES, type SitePage, type PageBlock, type BlockTypeId } from "@/components/page-builder/types";
@@ -24,7 +22,7 @@ import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } 
 import { CSS } from "@dnd-kit/utilities";
 import {
   Loader2, Plus, Save, Monitor, Smartphone, Eye, FileText,
-  GripVertical, ChevronLeft, ChevronRight, Trash2, Copy, EyeOff,
+  GripVertical, Trash2, Copy, EyeOff,
   Type, AlignLeft, Image, LayoutGrid, Play, Minus, SeparatorHorizontal,
   MousePointerClick, Quote, Users, BarChart3, MessageSquareQuote,
   HelpCircle, Grid3x3, CreditCard, Mail, Share2, Code,
@@ -37,8 +35,6 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { NfcCardsPanel } from "@/components/page-builder/NfcCardsPanel";
-import { RecentInteractionsPanel } from "@/components/page-builder/RecentInteractionsPanel";
 import { PreviewDiffOverlay } from "@/components/page-builder/PreviewDiffOverlay";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { GitCompare, Square as SquareIcon } from "lucide-react";
