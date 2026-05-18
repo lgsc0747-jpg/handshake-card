@@ -790,11 +790,11 @@ function PageBuilderPage() {
               />
             </div>
           )}
-          <ScrollArea className="flex-1">
-            <div className="flex justify-center p-2 md:p-4 min-h-full">
+          <div className="flex-1 overflow-hidden p-2 md:p-4 pt-14">
+            <div className="flex justify-center h-full min-h-0">
               <div
                 className={cn(
-                  "relative transition-all duration-300 shadow-lg flex flex-col w-full min-h-[calc(100vh-7rem)] rounded-xl border border-white/10 bg-zinc-950",
+                  "relative transition-all duration-300 shadow-lg flex flex-col w-full h-full min-h-0 rounded-xl border border-white/10 bg-zinc-950",
                 )}
               >
                 <FreeformCanvas
@@ -820,7 +820,7 @@ function PageBuilderPage() {
                 />
               </div>
             </div>
-          </ScrollArea>
+          </div>
         </div>
 
         {/* ═══ Right Panel — Inspector (Framer style) ═══ */}
