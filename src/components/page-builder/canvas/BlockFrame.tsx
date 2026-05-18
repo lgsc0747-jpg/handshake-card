@@ -131,8 +131,8 @@ export function BlockFrame({
         transformOrigin: "center",
       }}
       onPointerDown={(e) => { if (panActive) return; onSelect(e); begin("move")(e); }}
-      onPointerMove={move}
-      onPointerUp={end}
+      onPointerMove={(e) => { if (panActive) return; move(e); }}
+      onPointerUp={(e) => { if (panActive) return; end(e); }}
       onDoubleClick={onDoubleClick}
     >
       <div className={cn("w-full h-full overflow-hidden", interactiveChildren ? "pointer-events-auto" : "pointer-events-none")}>{children}</div>
