@@ -596,15 +596,33 @@ export function BlockRenderer({ block, isEditing, onClick, persona, onTrackInter
   }
 }
 
-function FaqItem({ question, answer }: { question: string; answer: string }) {
+function FaqItem({
+  question,
+  answer,
+  index,
+  inlineEdit,
+  onCommit,
+  onCancel,
+}: {
+  question: string;
+  answer: string;
+  index: number;
+  inlineEdit?: boolean;
+  onCommit?: (field: string, value: string) => void;
+  onCancel?: () => void;
+}) {
   const [open, setOpen] = useState(false);
   return (
     <div className="rounded-2xl border border-white/10 overflow-hidden bg-card/40 backdrop-blur-xl shadow-lg">
       <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between p-4 text-left text-sm font-medium">
-        {question}
+        <EditableText enabled={inlineEdit} value={question} fallback="Question?" field={`items.${index}.q`} onCommit={onCommit} onCancel={onCancel} />
         {open ? <ChevronUp className="w-4 h-4 shrink-0" /> : <ChevronDown className="w-4 h-4 shrink-0" />}
       </button>
-      {open && <div className="px-4 pb-4 text-sm text-muted-foreground">{answer}</div>}
+      {(open || inlineEdit) && (
+        <div className="px-4 pb-4 text-sm text-muted-foreground">
+          <EditableText enabled={inlineEdit} value={answer} fallback="Answer goes here." field={`items.${index}.a`} multiline onCommit={onCommit} onCancel={onCancel} />
+        </div>
+      )}
     </div>
   );
 }
