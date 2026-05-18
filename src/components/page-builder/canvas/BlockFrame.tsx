@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback } from "react";
 import type { PointerEvent as RPointerEvent } from "react";
 import { cn } from "@/lib/utils";
 import type { BlockLayout } from "./types";
@@ -36,6 +36,7 @@ export function BlockFrame({
   onSelect, onChange, onDoubleClick, contextMenu, children,
 }: BlockFrameProps) {
   const startRef = useRef<{ x: number; y: number; layout: BlockLayout; handle: Handle } | null>(null);
+  const currentLayoutRef = useRef<BlockLayout>(layout);
   const [dragging, setDragging] = useState(false);
 
   const begin = useCallback(
@@ -44,6 +45,7 @@ export function BlockFrame({
       e.preventDefault();
       (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
       startRef.current = { x: e.clientX, y: e.clientY, layout: { ...layout }, handle };
+      currentLayoutRef.current = { ...layout };
       setDragging(true);
     },
     [layout],
@@ -82,6 +84,7 @@ export function BlockFrame({
           next.y = l.y + (l.h - next.h);
         }
       }
+      currentLayoutRef.current = next;
       onChange(next);
     },
     [onChange, scale],
@@ -91,11 +94,11 @@ export function BlockFrame({
     (e: RPointerEvent<HTMLDivElement>) => {
       if (!startRef.current) return;
       try { (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId); } catch {}
-      onChange(layout, { commit: true });
+      onChange(currentLayoutRef.current, { commit: true });
       startRef.current = null;
       setDragging(false);
     },
-    [layout, onChange],
+    [onChange],
   );
 
   // Counter-scale handles so they stay visually constant regardless of zoom.
@@ -135,6 +138,11 @@ export function BlockFrame({
 
       {selected && (
         <>
+          {outOfBounds && (
+            <div className="absolute left-1 top-1 z-20 rounded-md border border-destructive/40 bg-background/90 px-1.5 py-0.5 text-[10px] font-medium text-destructive shadow-sm backdrop-blur pointer-events-none">
+              Outside canvas
+            </div>
+          )}
           {/* Edge handles */}
           <div onPointerDown={begin("n")} style={{ ...handleBase, left: `30%`, right: `30%`, top: -3 * hs, height: 4 * hs, cursor: "ns-resize", borderRadius: 999 }} />
           <div onPointerDown={begin("s")} style={{ ...handleBase, left: `30%`, right: `30%`, bottom: -3 * hs, height: 4 * hs, cursor: "ns-resize", borderRadius: 999 }} />
@@ -199,5 +207,3 @@ export function BlockFrame({
     </BlockContextMenu>
   );
 }
-
-useEffect;
