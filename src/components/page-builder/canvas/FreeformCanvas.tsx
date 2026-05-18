@@ -50,6 +50,21 @@ function rectsIntersect(a: MarqueeRect, b: MarqueeRect) {
 
 function uid() { return Math.random().toString(36).slice(2, 9); }
 
+function setContentPath(content: Record<string, any>, path: string, value: string) {
+  const next = { ...content };
+  const parts = path.split(".");
+  let cursor: any = next;
+  for (let i = 0; i < parts.length - 1; i += 1) {
+    const key = parts[i];
+    const existing = cursor[key];
+    const clone = Array.isArray(existing) ? [...existing] : { ...(existing ?? {}) };
+    cursor[key] = clone;
+    cursor = clone;
+  }
+  cursor[parts[parts.length - 1]] = value;
+  return next;
+}
+
 export function FreeformCanvas({
   blocks, device, settings, scale, setScale, fitRequest, panTool,
   selectedIds, setSelectedIds, onUpdateBlocks, onUpdateSettings, onDuplicateBlock,
