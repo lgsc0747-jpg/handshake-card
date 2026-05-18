@@ -396,8 +396,12 @@ export function BlockRenderer({ block, isEditing, onClick, persona, onTrackInter
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {(content.items ?? [{ value: "100+", label: "Customers" }, { value: "50K", label: "Sales" }, { value: "4.9", label: "Rating" }]).map((item: { value: string; label: string }, i: number) => (
               <div key={i} className="text-center p-4 rounded-2xl bg-card/40 border border-white/10 backdrop-blur-xl shadow-lg hover:scale-[1.02] transition-transform">
-                <div className="text-2xl font-bold" style={{ color: styles.accentColor ?? "hsl(var(--primary))" }}>{item.value}</div>
-                <div className="text-xs text-muted-foreground mt-1">{item.label}</div>
+                <div className="text-2xl font-bold" style={{ color: styles.accentColor ?? "hsl(var(--primary))" }}>
+                  <EditableText enabled={inlineEdit} value={item.value} fallback="100+" field={`items.${i}.value`} onCommit={onInlineEditCommit} onCancel={onInlineEditCancel} />
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  <EditableText enabled={inlineEdit} value={item.label} fallback="Label" field={`items.${i}.label`} onCommit={onInlineEditCommit} onCancel={onInlineEditCancel} />
+                </div>
               </div>
             ))}
           </div>
@@ -432,7 +436,7 @@ export function BlockRenderer({ block, isEditing, onClick, persona, onTrackInter
           {editOverlay}
           <div className="space-y-2">
             {(content.items ?? [{ q: "Question?", a: "Answer goes here." }]).map((item: { q: string; a: string }, i: number) => (
-              <FaqItem key={i} question={item.q} answer={item.a} />
+              <FaqItem key={i} question={item.q} answer={item.a} index={i} inlineEdit={inlineEdit} onCommit={onInlineEditCommit} onCancel={onInlineEditCancel} />
             ))}
           </div>
         </div>
