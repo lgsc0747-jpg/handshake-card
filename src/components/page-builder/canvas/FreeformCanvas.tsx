@@ -365,7 +365,7 @@ export function FreeformCanvas({
         onPointerUp={onCanvasPointerUp}
       >
         <div
-          className="flex items-start justify-center min-w-max min-h-full p-16 pb-32"
+          className="flex items-start justify-center min-w-max min-h-full p-[40vw] pt-24 pb-[40vh]"
           onPointerDown={(e) => {
             if (!isPanning || e.target !== e.currentTarget) return;
             startPan(e);
