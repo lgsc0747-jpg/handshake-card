@@ -447,6 +447,7 @@ export function FreeformCanvas({
                     outOfBounds={outOfBounds}
                     scale={scale}
                     panActive={isPanning}
+                    interactiveChildren={isEditingThis}
                     onSelect={(e) => {
                       if (isEditingThis) return;
                       if (e.shiftKey) {
@@ -492,7 +493,7 @@ export function FreeformCanvas({
                       onInlineEditCommit={(field, value) => {
                         const next = blocks.map((bb) =>
                           bb.id === b.id
-                            ? { ...bb, content: { ...bb.content, [field]: value } }
+                            ? { ...bb, content: setContentPath(bb.content, field, value) }
                             : bb,
                         );
                         onUpdateBlocks(next, { commit: true });
