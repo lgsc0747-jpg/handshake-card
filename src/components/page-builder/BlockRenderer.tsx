@@ -159,7 +159,7 @@ export function BlockRenderer({ block, isEditing, onClick, persona, onTrackInter
     ...(shouldAnimate && inView ? { ...styleFromMotion(anim.animate), transition: cssTransition(anim.transition) } : {}),
   };
 
-  const editOverlay = isEditing ? (
+  const editOverlay = isEditing && !inlineEdit ? (
     <div
       className="absolute inset-0 border-2 border-dashed border-transparent hover:border-primary/40 rounded-lg cursor-pointer transition-colors group"
       onClick={onClick}
@@ -174,25 +174,29 @@ export function BlockRenderer({ block, isEditing, onClick, persona, onTrackInter
     case "heading":
       return (
         <div ref={animRef} className="relative" style={wrapperStyle}>
-          {inlineEdit ? (
-            <InlineTextEditor
-              value={content.text ?? ""}
-              className="font-display font-bold leading-tight"
+          <h2>
+            <EditableText
+              enabled={inlineEdit}
+              value={content.text}
+              fallback="Heading"
+              field="text"
+              className="font-display font-bold leading-tight block"
               style={{ fontSize: content.fontSize ?? 32, color: styles.textColor ?? "inherit" }}
-              onCommit={(v) => onInlineEditCommit?.("text", v)}
+              onCommit={onInlineEditCommit}
               onCancel={onInlineEditCancel}
             />
-          ) : (
-            <h2
-              className="font-display font-bold leading-tight"
-              style={{ fontSize: content.fontSize ?? 32, color: styles.textColor ?? "inherit" }}
-            >
-              {content.text || "Heading"}
-            </h2>
-          )}
-          {content.subtitle && (
+          </h2>
+          {(content.subtitle || inlineEdit) && (
             <p className="mt-2 text-muted-foreground" style={{ fontSize: (content.fontSize ?? 32) * 0.45 }}>
-              {content.subtitle}
+              <EditableText
+                enabled={inlineEdit}
+                value={content.subtitle}
+                fallback="Subtitle"
+                field="subtitle"
+                className="block"
+                onCommit={onInlineEditCommit}
+                onCancel={onInlineEditCancel}
+              />
             </p>
           )}
         </div>
@@ -202,31 +206,25 @@ export function BlockRenderer({ block, isEditing, onClick, persona, onTrackInter
       return (
         <div ref={animRef} className="relative" style={wrapperStyle}>
           {editOverlay}
-          {inlineEdit ? (
-            <InlineTextEditor
-              value={content.text ?? ""}
+          <div
+            className="leading-relaxed whitespace-pre-wrap"
+            style={{
+              fontSize: content.fontSize ?? 16,
+              color: styles.textColor ?? "inherit",
+              lineHeight: content.lineHeight ?? 1.7,
+            }}
+          >
+            <EditableText
+              enabled={inlineEdit}
+              value={content.text}
+              fallback="Your text goes here. Click to edit and add your content."
+              field="text"
               multiline
-              className="leading-relaxed whitespace-pre-wrap"
-              style={{
-                fontSize: content.fontSize ?? 16,
-                color: styles.textColor ?? "inherit",
-                lineHeight: content.lineHeight ?? 1.7,
-              }}
-              onCommit={(v) => onInlineEditCommit?.("text", v)}
+              className="block"
+              onCommit={onInlineEditCommit}
               onCancel={onInlineEditCancel}
             />
-          ) : (
-            <div
-              className="leading-relaxed whitespace-pre-wrap"
-              style={{
-                fontSize: content.fontSize ?? 16,
-                color: styles.textColor ?? "inherit",
-                lineHeight: content.lineHeight ?? 1.7,
-              }}
-            >
-              {content.text || "Your text goes here. Click to edit and add your content."}
-            </div>
-          )}
+          </div>
         </div>
       );
 
@@ -252,8 +250,10 @@ export function BlockRenderer({ block, isEditing, onClick, persona, onTrackInter
               <span className="text-sm text-muted-foreground">Click to add image</span>
             </div>
           )}
-          {content.caption && (
-            <p className="text-xs text-muted-foreground mt-2 text-center">{content.caption}</p>
+          {(content.caption || inlineEdit) && (
+            <p className="text-xs text-muted-foreground mt-2 text-center">
+              <EditableText enabled={inlineEdit} value={content.caption} fallback="Image caption" field="caption" onCommit={onInlineEditCommit} onCancel={onInlineEditCancel} />
+            </p>
           )}
         </div>
       );
@@ -347,7 +347,7 @@ export function BlockRenderer({ block, isEditing, onClick, persona, onTrackInter
                 fontSize: content.fontSize ?? 14,
               }}
             >
-              {content.text || "Click Me"}
+              <EditableText enabled={inlineEdit} value={content.text} fallback="Click Me" field="text" onCommit={onInlineEditCommit} onCancel={onInlineEditCancel} />
               {content.showArrow && <ExternalLink className="w-4 h-4 ml-2" />}
             </Button>
           </a>
@@ -361,10 +361,10 @@ export function BlockRenderer({ block, isEditing, onClick, persona, onTrackInter
           <blockquote className="relative pl-6 border-l-4" style={{ borderColor: styles.accentColor ?? "hsl(var(--primary))" }}>
             <QuoteIcon className="absolute -left-2 -top-2 w-8 h-8 opacity-10" />
             <p className="text-lg italic leading-relaxed" style={{ color: styles.textColor ?? "inherit" }}>
-              "{content.text || "Your inspirational quote here."}"
+              “<EditableText enabled={inlineEdit} value={content.text} fallback="Your inspirational quote here." field="text" multiline onCommit={onInlineEditCommit} onCancel={onInlineEditCancel} />”
             </p>
-            {content.author && (
-              <footer className="mt-3 text-sm text-muted-foreground font-medium">— {content.author}</footer>
+            {(content.author || inlineEdit) && (
+              <footer className="mt-3 text-sm text-muted-foreground font-medium">— <EditableText enabled={inlineEdit} value={content.author} fallback="Author" field="author" onCommit={onInlineEditCommit} onCancel={onInlineEditCancel} /></footer>
             )}
           </blockquote>
         </div>
@@ -381,9 +381,9 @@ export function BlockRenderer({ block, isEditing, onClick, persona, onTrackInter
               <div className="w-16 h-16 rounded-2xl bg-white/5 shrink-0 ring-2 ring-white/10" />
             )}
             <div>
-              <h3 className="font-semibold text-sm">{content.name || "Team Member"}</h3>
-              <p className="text-xs text-muted-foreground">{content.role || "Role / Title"}</p>
-              {content.description && <p className="text-xs mt-1 opacity-70">{content.description}</p>}
+              <h3 className="font-semibold text-sm"><EditableText enabled={inlineEdit} value={content.name} fallback="Team Member" field="name" onCommit={onInlineEditCommit} onCancel={onInlineEditCancel} /></h3>
+              <p className="text-xs text-muted-foreground"><EditableText enabled={inlineEdit} value={content.role} fallback="Role / Title" field="role" onCommit={onInlineEditCommit} onCancel={onInlineEditCancel} /></p>
+              {(content.description || inlineEdit) && <p className="text-xs mt-1 opacity-70"><EditableText enabled={inlineEdit} value={content.description} fallback="Short bio" field="description" multiline onCommit={onInlineEditCommit} onCancel={onInlineEditCancel} /></p>}
             </div>
           </div>
         </div>
@@ -414,12 +414,12 @@ export function BlockRenderer({ block, isEditing, onClick, persona, onTrackInter
                 <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
               ))}
             </div>
-            <p className="text-sm italic leading-relaxed">"{content.text || "Amazing experience!"}"</p>
+            <p className="text-sm italic leading-relaxed">“<EditableText enabled={inlineEdit} value={content.text} fallback="Amazing experience!" field="text" multiline onCommit={onInlineEditCommit} onCancel={onInlineEditCancel} />”</p>
             <div className="flex items-center gap-3 mt-4">
               {content.avatarUrl && <img src={content.avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover ring-2 ring-white/10" />}
               <div>
-                <p className="text-xs font-semibold">{content.name || "Customer"}</p>
-                {content.company && <p className="text-[10px] text-muted-foreground">{content.company}</p>}
+                <p className="text-xs font-semibold"><EditableText enabled={inlineEdit} value={content.name} fallback="Customer" field="name" onCommit={onInlineEditCommit} onCancel={onInlineEditCancel} /></p>
+                {(content.company || inlineEdit) && <p className="text-[10px] text-muted-foreground"><EditableText enabled={inlineEdit} value={content.company} fallback="Company" field="company" onCommit={onInlineEditCommit} onCancel={onInlineEditCancel} /></p>}
               </div>
             </div>
           </div>
@@ -447,8 +447,8 @@ export function BlockRenderer({ block, isEditing, onClick, persona, onTrackInter
             {(content.items ?? [{ icon: "🚀", label: "Fast" }, { icon: "🔒", label: "Secure" }, { icon: "🎨", label: "Beautiful" }]).map((item: { icon: string; label: string; description?: string }, i: number) => (
               <div key={i} className="text-center p-4 rounded-2xl bg-card/40 border border-white/10 backdrop-blur-xl shadow-lg hover:scale-[1.02] transition-transform">
                 <div className="text-2xl mb-2">{item.icon}</div>
-                <div className="text-xs font-semibold">{item.label}</div>
-                {item.description && <div className="text-[10px] text-muted-foreground mt-1 leading-relaxed">{item.description}</div>}
+                <div className="text-xs font-semibold"><EditableText enabled={inlineEdit} value={item.label} fallback="Label" field={`items.${i}.label`} onCommit={onInlineEditCommit} onCancel={onInlineEditCancel} /></div>
+                {(item.description || inlineEdit) && <div className="text-[10px] text-muted-foreground mt-1 leading-relaxed"><EditableText enabled={inlineEdit} value={item.description} fallback="Description" field={`items.${i}.description`} multiline onCommit={onInlineEditCommit} onCancel={onInlineEditCancel} /></div>}
               </div>
             ))}
           </div>
