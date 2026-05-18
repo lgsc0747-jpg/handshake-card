@@ -510,6 +510,14 @@ function PageBuilderPage() {
 
   const editingBlock = blocks.find(b => b.id === editingBlockId) ?? null;
   const selectedPage = pages.find(p => p.id === selectedPageId);
+  const pageCanvasSettings = (selectedPage?.canvas_settings ?? {}) as CanvasSettings;
+  const updateCanvasSettings = (next: CanvasSettings, opts?: { commit?: boolean }) => {
+    if (!selectedPage) return;
+    setPages(pages.map(p => p.id === selectedPage.id ? { ...p, canvas_settings: next } : p));
+    if (opts?.commit) {
+      supabase.from("site_pages").update({ canvas_settings: next as any }).eq("id", selectedPage.id).then(() => {});
+    }
+  };
   
 
   if (loading || subLoading) {
@@ -792,7 +800,7 @@ function PageBuilderPage() {
                 <FreeformCanvas
                   blocks={blocks.filter(b => b.is_visible || editingBlockId === b.id)}
                   device={deviceMode}
-                  settings={(selectedPage?.canvas_settings ?? {}) as CanvasSettings}
+                  settings={pageCanvasSettings}
                   scale={canvasScale}
                   setScale={setCanvasScaleClamped}
                   fitRequest={canvasFitRequest}
@@ -806,13 +814,7 @@ function PageBuilderPage() {
                     setBlocks(next);
                     if (opts?.commit) pushHistory(next);
                   }}
-                  onUpdateSettings={(next, opts) => {
-                    if (!selectedPage) return;
-                    setPages(pages.map(p => p.id === selectedPage.id ? { ...p, canvas_settings: next } : p));
-                    if (opts?.commit) {
-                      supabase.from("site_pages").update({ canvas_settings: next as any }).eq("id", selectedPage.id).then(() => {});
-                    }
-                  }}
+                  onUpdateSettings={updateCanvasSettings}
                   onDuplicateBlock={duplicateBlock}
                   persona={livePersona}
                 />
@@ -842,11 +844,19 @@ function PageBuilderPage() {
                     onClose={() => setEditingBlockId(null)}
                   />
                 ) : (
-                  <div className="text-center py-16 text-muted-foreground">
-                    <div className="w-8 h-8 mx-auto mb-2 rounded-md border border-dashed border-border flex items-center justify-center">
-                      <PanelLeft className="w-3.5 h-3.5 opacity-50" />
+                  <div className="space-y-5">
+                    <div className="text-center py-5 text-muted-foreground border border-dashed border-border/70 rounded-xl">
+                      <div className="w-8 h-8 mx-auto mb-2 rounded-md border border-dashed border-border flex items-center justify-center">
+                        <Paintbrush className="w-3.5 h-3.5 opacity-50" />
+                      </div>
+                      <p className="text-[11px]">Page appearance</p>
                     </div>
-                    <p className="text-[11px]">Select a layer to edit its properties</p>
+                    <CanvasBackgroundPanel
+                      background={pageCanvasSettings.background as BackgroundFill | null | undefined}
+                      accent={pageCanvasSettings.accent as string | null | undefined}
+                      onChange={(background) => updateCanvasSettings({ ...pageCanvasSettings, background }, { commit: true })}
+                      onAccent={(accent) => updateCanvasSettings({ ...pageCanvasSettings, accent }, { commit: true })}
+                    />
                   </div>
                 )}
               </div>
