@@ -57,7 +57,14 @@ function setContentPath(content: Record<string, any>, path: string, value: strin
   for (let i = 0; i < parts.length - 1; i += 1) {
     const key = parts[i];
     const existing = cursor[key];
-    const clone = Array.isArray(existing) ? [...existing] : { ...(existing ?? {}) };
+    const nextKey = parts[i + 1];
+    const clone = Array.isArray(existing)
+      ? [...existing]
+      : existing && typeof existing === "object"
+        ? { ...existing }
+        : /^\d+$/.test(nextKey)
+          ? []
+          : {};
     cursor[key] = clone;
     cursor = clone;
   }
