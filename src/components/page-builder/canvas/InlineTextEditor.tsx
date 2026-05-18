@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 interface Props {
   value: string;
   multiline?: boolean;
+  autoFocus?: boolean;
   className?: string;
   style?: React.CSSProperties;
   onCommit: (next: string) => void;
@@ -14,7 +15,7 @@ interface Props {
  * Click to place caret, drag to select, type to replace.
  * Esc cancels, click-outside or blur commits.
  */
-export function InlineTextEditor({ value, multiline, className, style, onCommit, onCancel }: Props) {
+export function InlineTextEditor({ value, multiline, autoFocus = true, className, style, onCommit, onCancel }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const initial = useRef(value);
 
@@ -22,6 +23,7 @@ export function InlineTextEditor({ value, multiline, className, style, onCommit,
     const el = ref.current;
     if (!el) return;
     el.textContent = initial.current;
+    if (!autoFocus) return;
     el.focus();
     // Select all on entry
     const range = document.createRange();
@@ -29,7 +31,7 @@ export function InlineTextEditor({ value, multiline, className, style, onCommit,
     const sel = window.getSelection();
     sel?.removeAllRanges();
     sel?.addRange(range);
-  }, []);
+  }, [autoFocus]);
 
   const commit = () => {
     const next = ref.current?.innerText ?? "";

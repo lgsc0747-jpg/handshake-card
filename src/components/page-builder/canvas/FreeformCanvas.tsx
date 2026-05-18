@@ -50,6 +50,28 @@ function rectsIntersect(a: MarqueeRect, b: MarqueeRect) {
 
 function uid() { return Math.random().toString(36).slice(2, 9); }
 
+function setContentPath(content: Record<string, any>, path: string, value: string) {
+  const next = { ...content };
+  const parts = path.split(".");
+  let cursor: any = next;
+  for (let i = 0; i < parts.length - 1; i += 1) {
+    const key = parts[i];
+    const existing = cursor[key];
+    const nextKey = parts[i + 1];
+    const clone = Array.isArray(existing)
+      ? [...existing]
+      : existing && typeof existing === "object"
+        ? { ...existing }
+        : /^\d+$/.test(nextKey)
+          ? []
+          : {};
+    cursor[key] = clone;
+    cursor = clone;
+  }
+  cursor[parts[parts.length - 1]] = value;
+  return next;
+}
+
 export function FreeformCanvas({
   blocks, device, settings, scale, setScale, fitRequest, panTool,
   selectedIds, setSelectedIds, onUpdateBlocks, onUpdateSettings, onDuplicateBlock,
@@ -72,9 +94,17 @@ export function FreeformCanvas({
   const fitCanvas = useCallback(() => {
     const wrap = wrapRef.current;
     if (!wrap) return;
-    const fit = Math.min(1, (wrap.clientWidth - 64) / canvasW);
-    setScale(Math.max(0.25, fit));
-  }, [canvasW, setScale]);
+    const availableW = Math.max(240, wrap.clientWidth - 96);
+    const availableH = Math.max(240, wrap.clientHeight - 96);
+    const fit = Math.min(1, availableW / canvasW, availableH / canvasH);
+    const nextScale = Math.max(0.25, fit);
+    setScale(nextScale);
+    requestAnimationFrame(() => {
+      if (!wrapRef.current) return;
+      wrapRef.current.scrollLeft = Math.max(0, (canvasW * nextScale - wrapRef.current.clientWidth) / 2);
+      wrapRef.current.scrollTop = 0;
+    });
+  }, [canvasH, canvasW, setScale]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -145,22 +175,25 @@ export function FreeformCanvas({
   };
 
   // Marquee + Pan
-  const onCanvasPointerDown = (e: RPointerEvent<HTMLDivElement>) => {
+  const startPan = useCallback((e: RPointerEvent<HTMLElement>) => {
     const wrap = wrapRef.current;
+    if (!wrap) return;
+    e.preventDefault();
+    panStart.current = {
+      x: e.clientX,
+      y: e.clientY,
+      scrollLeft: wrap.scrollLeft,
+      scrollTop: wrap.scrollTop,
+      pointerId: e.pointerId,
+    };
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  }, []);
+
+  const onCanvasPointerDown = (e: RPointerEvent<HTMLDivElement>) => {
     if (panTool || spaceHeld) {
-      if (!wrap) return;
-      e.preventDefault();
-      panStart.current = {
-        x: e.clientX,
-        y: e.clientY,
-        scrollLeft: wrap.scrollLeft,
-        scrollTop: wrap.scrollTop,
-        pointerId: e.pointerId,
-      };
-      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+      startPan(e);
       return;
     }
-    if (e.target !== e.currentTarget) return;
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
     setEditingTextId(null);
@@ -324,8 +357,22 @@ export function FreeformCanvas({
         ref={wrapRef}
         className="flex-1 overflow-auto"
         style={{ cursor: isPanning ? "grab" : undefined }}
+        onPointerDown={(e) => {
+          if (!isPanning || e.target !== e.currentTarget) return;
+          startPan(e);
+        }}
+        onPointerMove={onCanvasPointerMove}
+        onPointerUp={onCanvasPointerUp}
       >
-        <div className="flex items-start justify-center min-w-max min-h-full p-8 pb-24">
+        <div
+          className="flex items-start justify-center min-w-max min-h-full p-[40vw] pt-24 pb-[40vh]"
+          onPointerDown={(e) => {
+            if (!isPanning || e.target !== e.currentTarget) return;
+            startPan(e);
+          }}
+          onPointerMove={onCanvasPointerMove}
+          onPointerUp={onCanvasPointerUp}
+        >
           {/* Selection toolbar */}
           <SelectionToolbar
             count={selectedIds.size}
@@ -348,7 +395,7 @@ export function FreeformCanvas({
               onPointerDown={onCanvasPointerDown}
               onPointerMove={onCanvasPointerMove}
               onPointerUp={onCanvasPointerUp}
-              className="relative rounded-xl shadow-2xl origin-top-left overflow-hidden ring-1 ring-white/10"
+              className="relative rounded-xl shadow-2xl origin-top-left overflow-visible ring-1 ring-white/10"
               style={{
                 width: canvasW,
                 height: canvasH,
@@ -397,7 +444,7 @@ export function FreeformCanvas({
                 const layout = readLayout(b.styles);
                 if (!layout) return null;
                 const isSelected = selectedIds.has(b.id);
-                const outOfBounds = layout.x + layout.w < 0 || layout.x > canvasW || layout.y > canvasH;
+                const outOfBounds = layout.x < 0 || layout.x + layout.w > canvasW || layout.y < 0 || layout.y + layout.h > canvasH;
                 const isEditingThis = editingTextId === b.id;
                 const canEditText = TEXT_BLOCK_TYPES.has(b.block_type);
 
@@ -409,6 +456,7 @@ export function FreeformCanvas({
                     outOfBounds={outOfBounds}
                     scale={scale}
                     panActive={isPanning}
+                    interactiveChildren={isEditingThis}
                     onSelect={(e) => {
                       if (isEditingThis) return;
                       if (e.shiftKey) {
@@ -454,7 +502,7 @@ export function FreeformCanvas({
                       onInlineEditCommit={(field, value) => {
                         const next = blocks.map((bb) =>
                           bb.id === b.id
-                            ? { ...bb, content: { ...bb.content, [field]: value } }
+                            ? { ...bb, content: setContentPath(bb.content, field, value) }
                             : bb,
                         );
                         onUpdateBlocks(next, { commit: true });

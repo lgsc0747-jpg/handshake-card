@@ -10,8 +10,6 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { BlockRenderer } from "@/components/page-builder/BlockRenderer";
 import { BlockEditor } from "@/components/page-builder/BlockEditor";
 import { BLOCK_TYPES, type SitePage, type PageBlock, type BlockTypeId } from "@/components/page-builder/types";
@@ -24,12 +22,12 @@ import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } 
 import { CSS } from "@dnd-kit/utilities";
 import {
   Loader2, Plus, Save, Monitor, Smartphone, Eye, FileText,
-  GripVertical, ChevronLeft, ChevronRight, Trash2, Copy, EyeOff,
+  GripVertical, Trash2, Copy, EyeOff,
   Type, AlignLeft, Image, LayoutGrid, Play, Minus, SeparatorHorizontal,
   MousePointerClick, Quote, Users, BarChart3, MessageSquareQuote,
   HelpCircle, Grid3x3, CreditCard, Mail, Share2, Code,
   Home, PanelLeftClose, PanelLeft, FilePlus, Undo2, Redo2, BookTemplate,
-  CheckSquare, Square, ArrowLeft, Wifi, Paintbrush, Check, Crown,
+  ArrowLeft, Wifi, Paintbrush, Crown,
 } from "lucide-react";
 import { CanvasBackgroundPanel } from "@/components/page-builder/canvas/CanvasBackgroundPanel";
 import type { CanvasSettings, BackgroundFill } from "@/components/page-builder/canvas/types";
@@ -37,16 +35,11 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { NfcCardsPanel } from "@/components/page-builder/NfcCardsPanel";
-import { RecentInteractionsPanel } from "@/components/page-builder/RecentInteractionsPanel";
-import { PageCanvas, PAGE_CANVAS_MAX_W_PX } from "@/components/page-builder/PageCanvas";
 import { PreviewDiffOverlay } from "@/components/page-builder/PreviewDiffOverlay";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Activity, GitCompare, MoveDiagonal, LayoutGrid as LayoutGridIcon, Square as SquareIcon } from "lucide-react";
+import { GitCompare, Square as SquareIcon } from "lucide-react";
 import { FreeformCanvas } from "@/components/page-builder/canvas/FreeformCanvas";
 import { CanvasNavBar } from "@/components/page-builder/canvas/CanvasNavBar";
-import type { LayoutMode } from "@/components/page-builder/canvas/types";
 
 const ICON_MAP: Record<string, any> = {
   Type, AlignLeft, Image, LayoutGrid, Play, Minus, SeparatorHorizontal,
@@ -390,11 +383,6 @@ function PageBuilderPage() {
     setPages(pages.map(p => p.id === id ? { ...p, title, slug: title.toLowerCase().replace(/\s+/g, "-") } : p));
   };
 
-  const updatePageLayoutMode = async (id: string, mode: LayoutMode) => {
-    setPages(pages.map(p => p.id === id ? { ...p, layout_mode: mode } : p));
-    await supabase.from("site_pages").update({ layout_mode: mode } as any).eq("id", id);
-  };
-
   const addBlock = async (type: BlockTypeId) => {
     if (!user || !selectedPageId) return;
     const { data } = await supabase.from("page_blocks").insert({
@@ -510,6 +498,14 @@ function PageBuilderPage() {
 
   const editingBlock = blocks.find(b => b.id === editingBlockId) ?? null;
   const selectedPage = pages.find(p => p.id === selectedPageId);
+  const pageCanvasSettings = (selectedPage?.canvas_settings ?? {}) as CanvasSettings;
+  const updateCanvasSettings = (next: CanvasSettings, opts?: { commit?: boolean }) => {
+    if (!selectedPage) return;
+    setPages(pages.map(p => p.id === selectedPage.id ? { ...p, canvas_settings: next } : p));
+    if (opts?.commit) {
+      supabase.from("site_pages").update({ canvas_settings: next as any }).eq("id", selectedPage.id).then(() => {});
+    }
+  };
   
 
   if (loading || subLoading) {
@@ -744,16 +740,6 @@ function PageBuilderPage() {
             </ScrollArea>
 
             <div className="p-2 border-t border-border/60">
-              <CanvasNavBar
-                scale={canvasScale}
-                panTool={canvasPanTool}
-                setPanTool={setCanvasPanTool}
-                zoomIn={() => setCanvasScaleClamped(canvasScale + 0.1)}
-                zoomOut={() => setCanvasScaleClamped(canvasScale - 0.1)}
-                fit={() => setCanvasFitRequest((v) => v + 1)}
-                onUndo={undo}
-                onRedo={redo}
-              />
               <Button variant="outline" size="sm" className="w-full text-[10px] h-7 rounded-md border-border/60" onClick={() => setAddBlockOpen(true)}>
                 <Plus className="w-3 h-3 mr-1" /> Insert
               </Button>
@@ -771,18 +757,38 @@ function PageBuilderPage() {
         )}
 
         {/* ═══ Center Canvas ═══ */}
-        <div className="flex-1 flex flex-col overflow-hidden bg-muted/20">
-          <ScrollArea className="flex-1">
-            <div className="flex justify-center p-2 md:p-4 min-h-full">
+        <div className="relative flex-1 flex flex-col overflow-hidden bg-muted/20">
+          {!isMobile && (
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2">
+              <button
+                onClick={() => setAddBlockOpen(true)}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-foreground text-background shadow-2xl hover:scale-[1.03] transition-transform text-[11px] font-semibold"
+              >
+                <Plus className="w-3.5 h-3.5" /> Insert
+              </button>
+              <CanvasNavBar
+                scale={canvasScale}
+                panTool={canvasPanTool}
+                setPanTool={setCanvasPanTool}
+                zoomIn={() => setCanvasScaleClamped(canvasScale + 0.1)}
+                zoomOut={() => setCanvasScaleClamped(canvasScale - 0.1)}
+                fit={() => setCanvasFitRequest((v) => v + 1)}
+                onUndo={undo}
+                onRedo={redo}
+              />
+            </div>
+          )}
+          <div className="flex-1 overflow-hidden p-2 md:p-4 pt-14">
+            <div className="flex justify-center h-full min-h-0">
               <div
                 className={cn(
-                  "relative transition-all duration-300 shadow-lg flex flex-col w-full min-h-[calc(100vh-7rem)] rounded-xl border border-white/10 bg-zinc-950",
+                  "relative transition-all duration-300 shadow-lg flex flex-col w-full h-full min-h-0 rounded-xl border border-white/10 bg-zinc-950",
                 )}
               >
                 <FreeformCanvas
                   blocks={blocks.filter(b => b.is_visible || editingBlockId === b.id)}
                   device={deviceMode}
-                  settings={(selectedPage?.canvas_settings ?? {}) as CanvasSettings}
+                  settings={pageCanvasSettings}
                   scale={canvasScale}
                   setScale={setCanvasScaleClamped}
                   fitRequest={canvasFitRequest}
@@ -796,19 +802,13 @@ function PageBuilderPage() {
                     setBlocks(next);
                     if (opts?.commit) pushHistory(next);
                   }}
-                  onUpdateSettings={(next, opts) => {
-                    if (!selectedPage) return;
-                    setPages(pages.map(p => p.id === selectedPage.id ? { ...p, canvas_settings: next } : p));
-                    if (opts?.commit) {
-                      supabase.from("site_pages").update({ canvas_settings: next as any }).eq("id", selectedPage.id).then(() => {});
-                    }
-                  }}
+                  onUpdateSettings={updateCanvasSettings}
                   onDuplicateBlock={duplicateBlock}
                   persona={livePersona}
                 />
               </div>
             </div>
-          </ScrollArea>
+          </div>
         </div>
 
         {/* ═══ Right Panel — Inspector (Framer style) ═══ */}
@@ -832,11 +832,19 @@ function PageBuilderPage() {
                     onClose={() => setEditingBlockId(null)}
                   />
                 ) : (
-                  <div className="text-center py-16 text-muted-foreground">
-                    <div className="w-8 h-8 mx-auto mb-2 rounded-md border border-dashed border-border flex items-center justify-center">
-                      <PanelLeft className="w-3.5 h-3.5 opacity-50" />
+                  <div className="space-y-5">
+                    <div className="text-center py-5 text-muted-foreground border border-dashed border-border/70 rounded-xl">
+                      <div className="w-8 h-8 mx-auto mb-2 rounded-md border border-dashed border-border flex items-center justify-center">
+                        <Paintbrush className="w-3.5 h-3.5 opacity-50" />
+                      </div>
+                      <p className="text-[11px]">Page appearance</p>
                     </div>
-                    <p className="text-[11px]">Select a layer to edit its properties</p>
+                    <CanvasBackgroundPanel
+                      background={pageCanvasSettings.background as BackgroundFill | null | undefined}
+                      accent={pageCanvasSettings.accent as string | null | undefined}
+                      onChange={(background) => updateCanvasSettings({ ...pageCanvasSettings, background }, { commit: true })}
+                      onAccent={(accent) => updateCanvasSettings({ ...pageCanvasSettings, accent }, { commit: true })}
+                    />
                   </div>
                 )}
               </div>
@@ -844,17 +852,6 @@ function PageBuilderPage() {
           </div>
         )}
       </div>
-
-      {/* Floating Insert Pill (Framer-style) */}
-      {!isMobile && (
-        <button
-          onClick={() => setAddBlockOpen(true)}
-          className="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 px-4 py-2 rounded-full bg-foreground text-background shadow-2xl hover:scale-[1.03] transition-transform text-[11px] font-semibold"
-        >
-          <Plus className="w-3.5 h-3.5" /> Insert block
-        </button>
-      )}
-
 
       {/* ═══ Mobile Bottom Bar ═══ */}
       {isMobile && (
