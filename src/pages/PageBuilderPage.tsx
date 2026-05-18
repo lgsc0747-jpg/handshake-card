@@ -387,11 +387,6 @@ function PageBuilderPage() {
     setPages(pages.map(p => p.id === id ? { ...p, title, slug: title.toLowerCase().replace(/\s+/g, "-") } : p));
   };
 
-  const updatePageLayoutMode = async (id: string, mode: LayoutMode) => {
-    setPages(pages.map(p => p.id === id ? { ...p, layout_mode: mode } : p));
-    await supabase.from("site_pages").update({ layout_mode: mode } as any).eq("id", id);
-  };
-
   const addBlock = async (type: BlockTypeId) => {
     if (!user || !selectedPageId) return;
     const { data } = await supabase.from("page_blocks").insert({
