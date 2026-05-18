@@ -29,7 +29,7 @@ import {
   MousePointerClick, Quote, Users, BarChart3, MessageSquareQuote,
   HelpCircle, Grid3x3, CreditCard, Mail, Share2, Code,
   Home, PanelLeftClose, PanelLeft, FilePlus, Undo2, Redo2, BookTemplate,
-  CheckSquare, Square, ArrowLeft, Wifi, Paintbrush, Check, Crown,
+  ArrowLeft, Wifi, Paintbrush, Crown,
 } from "lucide-react";
 import { CanvasBackgroundPanel } from "@/components/page-builder/canvas/CanvasBackgroundPanel";
 import type { CanvasSettings, BackgroundFill } from "@/components/page-builder/canvas/types";
@@ -37,16 +37,13 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { NfcCardsPanel } from "@/components/page-builder/NfcCardsPanel";
 import { RecentInteractionsPanel } from "@/components/page-builder/RecentInteractionsPanel";
-import { PageCanvas, PAGE_CANVAS_MAX_W_PX } from "@/components/page-builder/PageCanvas";
 import { PreviewDiffOverlay } from "@/components/page-builder/PreviewDiffOverlay";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Activity, GitCompare, MoveDiagonal, LayoutGrid as LayoutGridIcon, Square as SquareIcon } from "lucide-react";
+import { GitCompare, Square as SquareIcon } from "lucide-react";
 import { FreeformCanvas } from "@/components/page-builder/canvas/FreeformCanvas";
 import { CanvasNavBar } from "@/components/page-builder/canvas/CanvasNavBar";
-import type { LayoutMode } from "@/components/page-builder/canvas/types";
 
 const ICON_MAP: Record<string, any> = {
   Type, AlignLeft, Image, LayoutGrid, Play, Minus, SeparatorHorizontal,
