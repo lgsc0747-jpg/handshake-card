@@ -370,6 +370,8 @@ export function FreeformCanvas({
             if (!isPanning || e.target !== e.currentTarget) return;
             startPan(e);
           }}
+          onPointerMove={onCanvasPointerMove}
+          onPointerUp={onCanvasPointerUp}
         >
           {/* Selection toolbar */}
           <SelectionToolbar
