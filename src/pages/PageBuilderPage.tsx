@@ -744,16 +744,6 @@ function PageBuilderPage() {
             </ScrollArea>
 
             <div className="p-2 border-t border-border/60">
-              <CanvasNavBar
-                scale={canvasScale}
-                panTool={canvasPanTool}
-                setPanTool={setCanvasPanTool}
-                zoomIn={() => setCanvasScaleClamped(canvasScale + 0.1)}
-                zoomOut={() => setCanvasScaleClamped(canvasScale - 0.1)}
-                fit={() => setCanvasFitRequest((v) => v + 1)}
-                onUndo={undo}
-                onRedo={redo}
-              />
               <Button variant="outline" size="sm" className="w-full text-[10px] h-7 rounded-md border-border/60" onClick={() => setAddBlockOpen(true)}>
                 <Plus className="w-3 h-3 mr-1" /> Insert
               </Button>
@@ -771,7 +761,21 @@ function PageBuilderPage() {
         )}
 
         {/* ═══ Center Canvas ═══ */}
-        <div className="flex-1 flex flex-col overflow-hidden bg-muted/20">
+        <div className="relative flex-1 flex flex-col overflow-hidden bg-muted/20">
+          {!isMobile && (
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-40">
+              <CanvasNavBar
+                scale={canvasScale}
+                panTool={canvasPanTool}
+                setPanTool={setCanvasPanTool}
+                zoomIn={() => setCanvasScaleClamped(canvasScale + 0.1)}
+                zoomOut={() => setCanvasScaleClamped(canvasScale - 0.1)}
+                fit={() => setCanvasFitRequest((v) => v + 1)}
+                onUndo={undo}
+                onRedo={redo}
+              />
+            </div>
+          )}
           <ScrollArea className="flex-1">
             <div className="flex justify-center p-2 md:p-4 min-h-full">
               <div
