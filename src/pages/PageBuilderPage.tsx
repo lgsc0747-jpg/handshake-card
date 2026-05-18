@@ -763,7 +763,13 @@ function PageBuilderPage() {
         {/* ═══ Center Canvas ═══ */}
         <div className="relative flex-1 flex flex-col overflow-hidden bg-muted/20">
           {!isMobile && (
-            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-40">
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2">
+              <button
+                onClick={() => setAddBlockOpen(true)}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-foreground text-background shadow-2xl hover:scale-[1.03] transition-transform text-[11px] font-semibold"
+              >
+                <Plus className="w-3.5 h-3.5" /> Insert
+              </button>
               <CanvasNavBar
                 scale={canvasScale}
                 panTool={canvasPanTool}
@@ -848,17 +854,6 @@ function PageBuilderPage() {
           </div>
         )}
       </div>
-
-      {/* Floating Insert Pill (Framer-style) */}
-      {!isMobile && (
-        <button
-          onClick={() => setAddBlockOpen(true)}
-          className="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 px-4 py-2 rounded-full bg-foreground text-background shadow-2xl hover:scale-[1.03] transition-transform text-[11px] font-semibold"
-        >
-          <Plus className="w-3.5 h-3.5" /> Insert block
-        </button>
-      )}
-
 
       {/* ═══ Mobile Bottom Bar ═══ */}
       {isMobile && (
