@@ -28,12 +28,13 @@ interface BlockFrameProps {
     canPaste: boolean;
   };
   panActive?: boolean;
+  interactiveChildren?: boolean;
   children: React.ReactNode;
 }
 
 export function BlockFrame({
   layout, selected, outOfBounds, scale = 1, panActive = false,
-  onSelect, onChange, onDoubleClick, contextMenu, children,
+  interactiveChildren = false, onSelect, onChange, onDoubleClick, contextMenu, children,
 }: BlockFrameProps) {
   const startRef = useRef<{ x: number; y: number; layout: BlockLayout; handle: Handle } | null>(null);
   const currentLayoutRef = useRef<BlockLayout>(layout);
@@ -134,7 +135,7 @@ export function BlockFrame({
       onPointerUp={end}
       onDoubleClick={onDoubleClick}
     >
-      <div className="w-full h-full overflow-hidden pointer-events-none">{children}</div>
+      <div className={cn("w-full h-full overflow-hidden", interactiveChildren ? "pointer-events-auto" : "pointer-events-none")}>{children}</div>
 
       {selected && (
         <>
