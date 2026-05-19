@@ -658,7 +658,7 @@ function cssTransition(t: Record<string, any>): string {
   return `all ${dur}s cubic-bezier(0.25, 0.46, 0.45, 0.94)`;
 }
 
-function ContactFormBlock({ content, isEditing, persona, onTrackInteraction }: { content: Record<string, any>; isEditing?: boolean; persona?: any; onTrackInteraction?: (type: string, metadata?: Record<string, any>) => void }) {
+function ContactFormBlock({ content, isEditing, persona, onTrackInteraction, inlineEdit, onInlineEditCommit, onInlineEditCancel }: { content: Record<string, any>; isEditing?: boolean; persona?: any; onTrackInteraction?: (type: string, metadata?: Record<string, any>) => void; inlineEdit?: boolean; onInlineEditCommit?: (field: string, value: string) => void; onInlineEditCancel?: () => void }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
