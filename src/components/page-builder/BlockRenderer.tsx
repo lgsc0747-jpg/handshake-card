@@ -510,7 +510,7 @@ export function BlockRenderer({ block, isEditing, onClick, persona, onTrackInter
       return (
         <div ref={animRef} className="relative" style={wrapperStyle}>
           {editOverlay}
-          <ContactFormBlock content={content} isEditing={isEditing} persona={persona} onTrackInteraction={onTrackInteraction} />
+          <ContactFormBlock content={content} isEditing={isEditing} persona={persona} onTrackInteraction={onTrackInteraction} inlineEdit={inlineEdit} onInlineEditCommit={onInlineEditCommit} onInlineEditCancel={onInlineEditCancel} />
         </div>
       );
 
