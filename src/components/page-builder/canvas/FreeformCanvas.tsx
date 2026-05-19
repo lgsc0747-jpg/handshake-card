@@ -323,7 +323,11 @@ export function FreeformCanvas({
     const onKeyDown = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
       const inForm = t?.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t?.tagName);
-      if (e.code === "Space" && !inForm) { setSpaceHeld(true); }
+      if (e.code === "Space" && !inForm) {
+        // Prevent default so the page doesn't scroll while panning.
+        e.preventDefault();
+        setSpaceHeld(true);
+      }
       if (inForm) return;
       const meta = e.metaKey || e.ctrlKey;
       if (meta && e.key === "c") { e.preventDefault(); handleCopySelection(); }
@@ -341,21 +345,23 @@ export function FreeformCanvas({
         const dy = e.key === "ArrowUp" ? -step : e.key === "ArrowDown" ? step : 0;
         moveSelection(dx, dy, { commit: true });
       } else if (meta && (e.key === "=" || e.key === "+")) {
-        e.preventDefault(); setScale(Math.min(4, Math.max(0.25, scale + 0.1)));
+        e.preventDefault(); setScale(Math.min(4, Math.max(0.1, scale + 0.1)));
       } else if (meta && e.key === "-") {
-        e.preventDefault(); setScale(Math.min(4, Math.max(0.25, scale - 0.1)));
+        e.preventDefault(); setScale(Math.min(4, Math.max(0.1, scale - 0.1)));
       } else if (meta && e.key === "0") {
         e.preventDefault(); fitCanvas();
       }
     };
     const onKeyUp = (e: KeyboardEvent) => {
-      if (e.code === "Space") setSpaceHeld(false);
+      if (e.code === "Space") { e.preventDefault(); setSpaceHeld(false); }
     };
-    window.addEventListener("keydown", onKeyDown);
-    window.addEventListener("keyup", onKeyUp);
+    // Use capture phase and non-passive so preventDefault on Space works
+    // before the browser starts scrolling the window.
+    window.addEventListener("keydown", onKeyDown, { capture: true });
+    window.addEventListener("keyup", onKeyUp, { capture: true });
     return () => {
-      window.removeEventListener("keydown", onKeyDown);
-      window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("keydown", onKeyDown, { capture: true } as any);
+      window.removeEventListener("keyup", onKeyUp, { capture: true } as any);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedIds, blocks, scale]);
