@@ -94,7 +94,7 @@ export function withLayout(styles: Record<string, any> | null | undefined, layou
 
 export const TEXT_BLOCK_TYPES = new Set([
   "heading", "text", "quote", "button",
-  "testimonial", "team",
+  "testimonial", "team", "faq", "stats", "icon_grid", "contact",
 ]);
 
 /** Compose a CSS background string from a BackgroundFill. */
