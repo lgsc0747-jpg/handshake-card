@@ -510,7 +510,7 @@ export function BlockRenderer({ block, isEditing, onClick, persona, onTrackInter
       return (
         <div ref={animRef} className="relative" style={wrapperStyle}>
           {editOverlay}
-          <ContactFormBlock content={content} isEditing={isEditing} persona={persona} onTrackInteraction={onTrackInteraction} />
+          <ContactFormBlock content={content} isEditing={isEditing} persona={persona} onTrackInteraction={onTrackInteraction} inlineEdit={inlineEdit} onInlineEditCommit={onInlineEditCommit} onInlineEditCancel={onInlineEditCancel} />
         </div>
       );
 
@@ -658,7 +658,7 @@ function cssTransition(t: Record<string, any>): string {
   return `all ${dur}s cubic-bezier(0.25, 0.46, 0.45, 0.94)`;
 }
 
-function ContactFormBlock({ content, isEditing, persona, onTrackInteraction }: { content: Record<string, any>; isEditing?: boolean; persona?: any; onTrackInteraction?: (type: string, metadata?: Record<string, any>) => void }) {
+function ContactFormBlock({ content, isEditing, persona, onTrackInteraction, inlineEdit, onInlineEditCommit, onInlineEditCancel }: { content: Record<string, any>; isEditing?: boolean; persona?: any; onTrackInteraction?: (type: string, metadata?: Record<string, any>) => void; inlineEdit?: boolean; onInlineEditCommit?: (field: string, value: string) => void; onInlineEditCancel?: () => void }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -707,7 +707,15 @@ function ContactFormBlock({ content, isEditing, persona, onTrackInteraction }: {
 
   return (
     <div className="p-5 rounded-2xl bg-card/40 border border-white/10 space-y-3 backdrop-blur-xl shadow-lg">
-      <h3 className="font-semibold text-sm">{content.title || "Get in Touch"}</h3>
+      <h3 className="font-semibold text-sm">
+        {inlineEdit ? (
+          <InlineTextEditor
+            value={content.title || "Get in Touch"}
+            onCommit={(v) => onInlineEditCommit?.("title", v)}
+            onCancel={onInlineEditCancel}
+          />
+        ) : (content.title || "Get in Touch")}
+      </h3>
       <input className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm backdrop-blur-sm" placeholder="Your name" value={name} onChange={e => setName(e.target.value)} disabled={isEditing} />
       <input className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm backdrop-blur-sm" placeholder="Email *" type="email" value={email} onChange={e => setEmail(e.target.value)} disabled={isEditing} required />
       <input className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm backdrop-blur-sm" placeholder="Phone" value={phone} onChange={e => setPhone(e.target.value)} disabled={isEditing} />
