@@ -94,33 +94,50 @@ export function FreeformCanvas({
   const fitCanvas = useCallback(() => {
     const wrap = wrapRef.current;
     if (!wrap) return;
-    const availableW = Math.max(240, wrap.clientWidth - 96);
-    const availableH = Math.max(240, wrap.clientHeight - 96);
+    // Use actual visible viewport (already excludes the inspector / sidebar).
+    // Small breathing room (32px) so the canvas isn't flush against the edges.
+    const availableW = Math.max(240, wrap.clientWidth - 32);
+    const availableH = Math.max(240, wrap.clientHeight - 32);
     const fit = Math.min(1, availableW / canvasW, availableH / canvasH);
-    const nextScale = Math.max(0.25, fit);
+    const nextScale = Math.max(0.1, fit);
     setScale(nextScale);
     requestAnimationFrame(() => {
       if (!wrapRef.current) return;
-      wrapRef.current.scrollLeft = Math.max(0, (canvasW * nextScale - wrapRef.current.clientWidth) / 2);
-      wrapRef.current.scrollTop = 0;
+      // Center horizontally; account for the workspace overflow padding (40vw).
+      const overflowPadPx = wrapRef.current.clientWidth * 0.4;
+      wrapRef.current.scrollLeft = overflowPadPx + (canvasW * nextScale - wrapRef.current.clientWidth) / 2;
+      wrapRef.current.scrollTop = Math.max(0, 96 - 24);
     });
   }, [canvasH, canvasW, setScale]);
 
+  // Initial fit once the wrapper has a real size, then refit when the wrapper
+  // size changes substantially (e.g. inspector toggled, window resized) AS
+  // LONG AS the user hasn't manually zoomed. Once they zoom, we leave them be.
+  const lastWrapSize = useRef<{ w: number; h: number }>({ w: 0, h: 0 });
   useEffect(() => {
     const wrap = wrapRef.current;
     if (!wrap) return;
-    let didFit = false;
     const ro = new ResizeObserver(() => {
-      if (didFit) return;
+      const w = wrap.clientWidth;
+      const h = wrap.clientHeight;
+      if (w < 100 || h < 100) return;
+      const last = lastWrapSize.current;
+      const significant = Math.abs(w - last.w) > 24 || Math.abs(h - last.h) > 24;
+      if (!significant && last.w > 0) return;
+      lastWrapSize.current = { w, h };
       fitCanvas();
-      didFit = true;
     });
     ro.observe(wrap);
     return () => ro.disconnect();
   }, [fitCanvas]);
 
   useEffect(() => {
-    if (fitRequest > 0) fitCanvas();
+    if (fitRequest > 0) {
+      // Manual fit request — always refit and reset baseline.
+      const wrap = wrapRef.current;
+      if (wrap) lastWrapSize.current = { w: wrap.clientWidth, h: wrap.clientHeight };
+      fitCanvas();
+    }
   }, [fitRequest, fitCanvas]);
 
   // Auto-place blocks that have no layout yet
