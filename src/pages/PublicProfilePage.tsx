@@ -8,6 +8,7 @@ import { ContactMeModal } from "@/components/ContactMeModal";
 import { CardDisabledPage } from "@/components/CardDisabledPage";
 
 import { BlockRenderer } from "@/components/page-builder/BlockRenderer";
+import { FreeformLiveCanvas } from "@/components/page-builder/FreeformLiveCanvas";
 import { PublicPageNav } from "@/components/page-builder/PublicPageNav";
 import { PageCanvas } from "@/components/page-builder/PageCanvas";
 
@@ -102,7 +103,8 @@ const PublicProfilePage = () => {
   const [sitePages, setSitePages] = useState<{ id: string; title: string; slug: string; is_homepage: boolean; page_icon: string | null; layout_mode?: string; canvas_settings?: any }[]>([]);
   const [activePageId, setActivePageId] = useState<string | null>(null);
   const activePage = sitePages.find(p => p.id === activePageId);
-  const activeLayoutMode = (activePage?.layout_mode ?? "stack") as "stack" | "grid" | "free";
+  const activeLayoutMode = (activePage?.layout_mode ?? "free") as "stack" | "grid" | "free";
+  const activeCanvasSettings = (activePage?.canvas_settings ?? {}) as any;
   const [ownerIsPro, setOwnerIsPro] = useState(false);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -859,23 +861,13 @@ const PublicProfilePage = () => {
               const isFreeform = activeLayoutMode !== "stack";
               const isMobileViewport = typeof window !== "undefined" && window.innerWidth < 768;
               if (isFreeform && !isMobileViewport) {
-                const positioned = pageBlocks
-                  .map(b => ({ b, l: (b.styles as any)?.layout }))
-                  .filter(x => x.l && typeof x.l.x === "number");
-                const totalH = Math.max(600, ...positioned.map(({ l }) => (l.y || 0) + (l.h || 160) + 32));
                 return (
-                  <div className="relative w-full" style={{ height: totalH }}>
-                    {positioned.map(({ b, l }) => (
-                      <div
-                        key={b.id}
-                        data-block-id={b.id}
-                        className="absolute"
-                        style={{ left: l.x, top: l.y, width: l.w, height: l.h }}
-                      >
-                        <BlockRenderer block={b} persona={persona} onTrackInteraction={trackInteraction} />
-                      </div>
-                    ))}
-                  </div>
+                  <FreeformLiveCanvas
+                    blocks={pageBlocks}
+                    settings={activeCanvasSettings}
+                    persona={persona}
+                    trackInteraction={trackInteraction}
+                  />
                 );
               }
               // stack mode OR mobile fallback (sort by y, then x)

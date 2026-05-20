@@ -669,9 +669,114 @@ function PageBuilderPage() {
 
       {/* ═══ Main Area ═══ */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Sidebar — Layers (Framer style) */}
+        {/* Left Panel — Inspector */}
+        {!isMobile && (
+          <div className="w-72 shrink-0 border-r border-border/60 bg-card flex flex-col overflow-hidden">
+            <div className="px-3 py-2 border-b border-border/60 flex items-center justify-between shrink-0">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/70">Inspector</span>
+              {editingBlock && (
+                <span className="text-[10px] text-muted-foreground font-mono">
+                  {BLOCK_TYPES.find(b => b.id === editingBlock.block_type)?.label}
+                </span>
+              )}
+            </div>
+            <ScrollArea className="flex-1">
+              <div className="p-3">
+                {editingBlock ? (
+                  <BlockEditor
+                    block={editingBlock}
+                    onChange={updateBlock}
+                    onDelete={() => deleteBlock(editingBlock.id)}
+                    onClose={() => setEditingBlockId(null)}
+                  />
+                ) : (
+                  <div className="space-y-5">
+                    <div className="text-center py-5 text-muted-foreground border border-dashed border-border/70 rounded-xl">
+                      <div className="w-8 h-8 mx-auto mb-2 rounded-md border border-dashed border-border flex items-center justify-center">
+                        <Paintbrush className="w-3.5 h-3.5 opacity-50" />
+                      </div>
+                      <p className="text-[11px]">Page appearance</p>
+                    </div>
+                    <CanvasBackgroundPanel
+                      background={pageCanvasSettings.background as BackgroundFill | null | undefined}
+                      accent={pageCanvasSettings.accent as string | null | undefined}
+                      onChange={(background) => updateCanvasSettings({ ...pageCanvasSettings, background }, { commit: true })}
+                      onAccent={(accent) => updateCanvasSettings({ ...pageCanvasSettings, accent }, { commit: true })}
+                    />
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          </div>
+        )}
+
+        {!isMobile && (
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="flex items-center justify-center w-4 bg-card hover:bg-muted/40 border-r border-border/60 transition-colors shrink-0"
+          >
+            {sidebarOpen ? <PanelLeftClose className="w-3 h-3 text-muted-foreground" /> : <PanelLeft className="w-3 h-3 text-muted-foreground" />}
+          </button>
+        )}
+
+        {/* ═══ Center Canvas ═══ */}
+        <div className="relative flex-1 flex flex-col overflow-hidden bg-muted/20">
+          {!isMobile && (
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2">
+              <button
+                onClick={() => setAddBlockOpen(true)}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-foreground text-background shadow-2xl hover:scale-[1.03] transition-transform text-[11px] font-semibold"
+              >
+                <Plus className="w-3.5 h-3.5" /> Insert
+              </button>
+              <CanvasNavBar
+                scale={canvasScale}
+                panTool={canvasPanTool}
+                setPanTool={setCanvasPanTool}
+                zoomIn={() => setCanvasScaleClamped(canvasScale + 0.1)}
+                zoomOut={() => setCanvasScaleClamped(canvasScale - 0.1)}
+                fit={() => setCanvasFitRequest((v) => v + 1)}
+                onUndo={undo}
+                onRedo={redo}
+              />
+            </div>
+          )}
+          <div className="flex-1 overflow-hidden p-2 md:p-4 pt-14">
+            <div className="flex justify-center h-full min-h-0">
+              <div
+                className={cn(
+                  "relative transition-all duration-300 shadow-lg flex flex-col w-full h-full min-h-0 rounded-xl border border-white/10 bg-zinc-950",
+                )}
+              >
+                <FreeformCanvas
+                  blocks={blocks.filter(b => b.is_visible || editingBlockId === b.id)}
+                  device={deviceMode}
+                  settings={pageCanvasSettings}
+                  scale={canvasScale}
+                  setScale={setCanvasScaleClamped}
+                  fitRequest={canvasFitRequest}
+                  panTool={canvasPanTool}
+                  selectedIds={canvasSelection}
+                  setSelectedIds={(s) => {
+                    setCanvasSelection(s);
+                    if (s.size === 1) setEditingBlockId(Array.from(s)[0]);
+                  }}
+                  onUpdateBlocks={(next, opts) => {
+                    setBlocks(next);
+                    if (opts?.commit) pushHistory(next);
+                  }}
+                  onUpdateSettings={updateCanvasSettings}
+                  onDuplicateBlock={duplicateBlock}
+                  persona={livePersona}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ═══ Right Panel — Layers ═══ */}
         {sidebarOpen && !isMobile && (
-          <div className="w-60 shrink-0 border-r border-border/60 bg-card flex flex-col overflow-hidden">
+          <div className="w-60 shrink-0 border-l border-border/60 bg-card flex flex-col overflow-hidden">
             <div className="px-3 py-2 border-b border-border/60 flex items-center gap-2 shrink-0">
               <Input
                 value={selectedPage?.title ?? ""}
@@ -744,111 +849,6 @@ function PageBuilderPage() {
                 <Plus className="w-3 h-3 mr-1" /> Insert
               </Button>
             </div>
-          </div>
-        )}
-
-        {!isMobile && (
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="flex items-center justify-center w-4 bg-card hover:bg-muted/40 border-r border-border/60 transition-colors shrink-0"
-          >
-            {sidebarOpen ? <PanelLeftClose className="w-3 h-3 text-muted-foreground" /> : <PanelLeft className="w-3 h-3 text-muted-foreground" />}
-          </button>
-        )}
-
-        {/* ═══ Center Canvas ═══ */}
-        <div className="relative flex-1 flex flex-col overflow-hidden bg-muted/20">
-          {!isMobile && (
-            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2">
-              <button
-                onClick={() => setAddBlockOpen(true)}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-foreground text-background shadow-2xl hover:scale-[1.03] transition-transform text-[11px] font-semibold"
-              >
-                <Plus className="w-3.5 h-3.5" /> Insert
-              </button>
-              <CanvasNavBar
-                scale={canvasScale}
-                panTool={canvasPanTool}
-                setPanTool={setCanvasPanTool}
-                zoomIn={() => setCanvasScaleClamped(canvasScale + 0.1)}
-                zoomOut={() => setCanvasScaleClamped(canvasScale - 0.1)}
-                fit={() => setCanvasFitRequest((v) => v + 1)}
-                onUndo={undo}
-                onRedo={redo}
-              />
-            </div>
-          )}
-          <div className="flex-1 overflow-hidden p-2 md:p-4 pt-14">
-            <div className="flex justify-center h-full min-h-0">
-              <div
-                className={cn(
-                  "relative transition-all duration-300 shadow-lg flex flex-col w-full h-full min-h-0 rounded-xl border border-white/10 bg-zinc-950",
-                )}
-              >
-                <FreeformCanvas
-                  blocks={blocks.filter(b => b.is_visible || editingBlockId === b.id)}
-                  device={deviceMode}
-                  settings={pageCanvasSettings}
-                  scale={canvasScale}
-                  setScale={setCanvasScaleClamped}
-                  fitRequest={canvasFitRequest}
-                  panTool={canvasPanTool}
-                  selectedIds={canvasSelection}
-                  setSelectedIds={(s) => {
-                    setCanvasSelection(s);
-                    if (s.size === 1) setEditingBlockId(Array.from(s)[0]);
-                  }}
-                  onUpdateBlocks={(next, opts) => {
-                    setBlocks(next);
-                    if (opts?.commit) pushHistory(next);
-                  }}
-                  onUpdateSettings={updateCanvasSettings}
-                  onDuplicateBlock={duplicateBlock}
-                  persona={livePersona}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ═══ Right Panel — Inspector (Framer style) ═══ */}
-        {!isMobile && (
-          <div className="w-72 shrink-0 border-l border-border/60 bg-card flex flex-col overflow-hidden">
-            <div className="px-3 py-2 border-b border-border/60 flex items-center justify-between shrink-0">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/70">Inspector</span>
-              {editingBlock && (
-                <span className="text-[10px] text-muted-foreground font-mono">
-                  {BLOCK_TYPES.find(b => b.id === editingBlock.block_type)?.label}
-                </span>
-              )}
-            </div>
-            <ScrollArea className="flex-1">
-              <div className="p-3">
-                {editingBlock ? (
-                  <BlockEditor
-                    block={editingBlock}
-                    onChange={updateBlock}
-                    onDelete={() => deleteBlock(editingBlock.id)}
-                    onClose={() => setEditingBlockId(null)}
-                  />
-                ) : (
-                  <div className="space-y-5">
-                    <div className="text-center py-5 text-muted-foreground border border-dashed border-border/70 rounded-xl">
-                      <div className="w-8 h-8 mx-auto mb-2 rounded-md border border-dashed border-border flex items-center justify-center">
-                        <Paintbrush className="w-3.5 h-3.5 opacity-50" />
-                      </div>
-                      <p className="text-[11px]">Page appearance</p>
-                    </div>
-                    <CanvasBackgroundPanel
-                      background={pageCanvasSettings.background as BackgroundFill | null | undefined}
-                      accent={pageCanvasSettings.accent as string | null | undefined}
-                      onChange={(background) => updateCanvasSettings({ ...pageCanvasSettings, background }, { commit: true })}
-                      onAccent={(accent) => updateCanvasSettings({ ...pageCanvasSettings, accent }, { commit: true })}
-                    />
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
           </div>
         )}
       </div>

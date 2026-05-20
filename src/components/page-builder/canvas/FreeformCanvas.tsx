@@ -94,20 +94,18 @@ export function FreeformCanvas({
   const fitCanvas = useCallback(() => {
     const wrap = wrapRef.current;
     if (!wrap) return;
-    // Use actual visible viewport (already excludes the inspector / sidebar).
-    // Small breathing room (32px) so the canvas isn't flush against the edges.
-    const availableW = Math.max(240, wrap.clientWidth - 32);
-    const availableH = Math.max(240, wrap.clientHeight - 32);
+    const availableW = Math.max(240, wrap.clientWidth - 64);
+    const availableH = Math.max(240, wrap.clientHeight - 96);
     const fit = Math.min(1, availableW / canvasW, availableH / canvasH);
     const nextScale = Math.max(0.1, fit);
     setScale(nextScale);
-    requestAnimationFrame(() => {
-      if (!wrapRef.current) return;
-      // Center horizontally; account for the workspace overflow padding (40vw).
-      const overflowPadPx = wrapRef.current.clientWidth * 0.4;
-      wrapRef.current.scrollLeft = overflowPadPx + (canvasW * nextScale - wrapRef.current.clientWidth) / 2;
-      wrapRef.current.scrollTop = Math.max(0, 96 - 24);
-    });
+    // After layout settles (double rAF), center via actual scrollWidth/Height.
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const w = wrapRef.current;
+      if (!w) return;
+      w.scrollLeft = Math.max(0, (w.scrollWidth - w.clientWidth) / 2);
+      w.scrollTop = Math.max(0, (w.scrollHeight - w.clientHeight) / 2);
+    }));
   }, [canvasH, canvasW, setScale]);
 
   // Initial fit once the wrapper has a real size, then refit when the wrapper
@@ -189,6 +187,11 @@ export function FreeformCanvas({
   const resizeSection = (id: string, height: number, opts?: { commit?: boolean }) => {
     const next = sections.map((sec) => sec.id === id ? { ...sec, height: Math.max(MIN_SECTION_H, Math.round(height)) } : sec);
     onUpdateSettings({ ...s, sections: next }, opts);
+  };
+  const deleteSection = (id: string) => {
+    if (sections.length <= 1) return;
+    const next = sections.filter((sec) => sec.id !== id);
+    onUpdateSettings({ ...s, sections: next }, { commit: true });
   };
 
   // Marquee + Pan
@@ -456,6 +459,25 @@ export function FreeformCanvas({
                         scale={scale}
                         onResize={(h, commit) => resizeSection(sec.id, h, { commit })}
                       />
+                      {/* Section delete button (top-right, counter-scaled) */}
+                      {sections.length > 1 && (
+                        <button
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onClick={(e) => { e.stopPropagation(); deleteSection(sec.id); }}
+                          className="absolute z-30 pointer-events-auto rounded-md bg-black/60 text-white border border-white/20 flex items-center justify-center hover:bg-destructive transition-colors"
+                          style={{
+                            top: 8 / scale,
+                            right: 8 / scale,
+                            width: 24 / scale,
+                            height: 24 / scale,
+                            fontSize: 16 / scale,
+                            lineHeight: 1,
+                          }}
+                          title="Delete section"
+                        >
+                          ×
+                        </button>
+                      )}
                     </div>
                   );
                 });
