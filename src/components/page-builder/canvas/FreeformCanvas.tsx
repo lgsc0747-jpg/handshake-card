@@ -462,14 +462,16 @@ export function FreeformCanvas({
                       {/* Section delete button (top-right, counter-scaled) */}
                       {sections.length > 1 && (
                         <button
+                          onPointerDown={(e) => e.stopPropagation()}
                           onClick={(e) => { e.stopPropagation(); deleteSection(sec.id); }}
-                          className="absolute z-30 pointer-events-auto opacity-0 hover:opacity-100 group-hover/sec:opacity-100 transition-opacity rounded-md bg-black/70 text-white border border-white/20 flex items-center justify-center hover:bg-destructive"
+                          className="absolute z-30 pointer-events-auto rounded-md bg-black/60 text-white border border-white/20 flex items-center justify-center hover:bg-destructive transition-colors"
                           style={{
                             top: 8 / scale,
                             right: 8 / scale,
                             width: 24 / scale,
                             height: 24 / scale,
-                            fontSize: 14 / scale,
+                            fontSize: 16 / scale,
+                            lineHeight: 1,
                           }}
                           title="Delete section"
                         >
