@@ -188,6 +188,11 @@ export function FreeformCanvas({
     const next = sections.map((sec) => sec.id === id ? { ...sec, height: Math.max(MIN_SECTION_H, Math.round(height)) } : sec);
     onUpdateSettings({ ...s, sections: next }, opts);
   };
+  const deleteSection = (id: string) => {
+    if (sections.length <= 1) return;
+    const next = sections.filter((sec) => sec.id !== id);
+    onUpdateSettings({ ...s, sections: next }, { commit: true });
+  };
 
   // Marquee + Pan
   const startPan = useCallback((e: RPointerEvent<HTMLElement>) => {
