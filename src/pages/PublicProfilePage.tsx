@@ -860,23 +860,13 @@ const PublicProfilePage = () => {
               const isFreeform = activeLayoutMode !== "stack";
               const isMobileViewport = typeof window !== "undefined" && window.innerWidth < 768;
               if (isFreeform && !isMobileViewport) {
-                const positioned = pageBlocks
-                  .map(b => ({ b, l: (b.styles as any)?.layout }))
-                  .filter(x => x.l && typeof x.l.x === "number");
-                const totalH = Math.max(600, ...positioned.map(({ l }) => (l.y || 0) + (l.h || 160) + 32));
                 return (
-                  <div className="relative w-full" style={{ height: totalH }}>
-                    {positioned.map(({ b, l }) => (
-                      <div
-                        key={b.id}
-                        data-block-id={b.id}
-                        className="absolute"
-                        style={{ left: l.x, top: l.y, width: l.w, height: l.h }}
-                      >
-                        <BlockRenderer block={b} persona={persona} onTrackInteraction={trackInteraction} />
-                      </div>
-                    ))}
-                  </div>
+                  <FreeformLiveCanvas
+                    blocks={pageBlocks}
+                    settings={activeCanvasSettings}
+                    persona={persona}
+                    trackInteraction={trackInteraction}
+                  />
                 );
               }
               // stack mode OR mobile fallback (sort by y, then x)
