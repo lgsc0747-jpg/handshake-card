@@ -8,6 +8,7 @@ import { ContactMeModal } from "@/components/ContactMeModal";
 import { CardDisabledPage } from "@/components/CardDisabledPage";
 
 import { BlockRenderer } from "@/components/page-builder/BlockRenderer";
+import { FreeformLiveCanvas } from "@/components/page-builder/FreeformLiveCanvas";
 import { PublicPageNav } from "@/components/page-builder/PublicPageNav";
 import { PageCanvas } from "@/components/page-builder/PageCanvas";
 
