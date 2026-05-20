@@ -774,44 +774,81 @@ function PageBuilderPage() {
           </div>
         </div>
 
-        {/* ═══ Right Panel — Inspector (Framer style) ═══ */}
-        {!isMobile && (
-          <div className="w-72 shrink-0 border-l border-border/60 bg-card flex flex-col overflow-hidden">
-            <div className="px-3 py-2 border-b border-border/60 flex items-center justify-between shrink-0">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/70">Inspector</span>
-              {editingBlock && (
-                <span className="text-[10px] text-muted-foreground font-mono">
-                  {BLOCK_TYPES.find(b => b.id === editingBlock.block_type)?.label}
-                </span>
+        {/* ═══ Right Panel — Layers ═══ */}
+        {sidebarOpen && !isMobile && (
+          <div className="w-60 shrink-0 border-l border-border/60 bg-card flex flex-col overflow-hidden">
+            <div className="px-3 py-2 border-b border-border/60 flex items-center gap-2 shrink-0">
+              <Input
+                value={selectedPage?.title ?? ""}
+                onChange={(e) => selectedPage && updatePageTitle(selectedPage.id, e.target.value)}
+                className="h-6 text-[11px] font-semibold border-0 bg-transparent px-1 focus-visible:ring-0"
+              />
+              {pages.length > 1 && (
+                <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive shrink-0 rounded-md" onClick={() => selectedPage && setConfirmDeletePage(selectedPage.id)}>
+                  <Trash2 className="w-3 h-3" />
+                </Button>
               )}
             </div>
+
             <ScrollArea className="flex-1">
-              <div className="p-3">
-                {editingBlock ? (
-                  <BlockEditor
-                    block={editingBlock}
-                    onChange={updateBlock}
-                    onDelete={() => deleteBlock(editingBlock.id)}
-                    onClose={() => setEditingBlockId(null)}
-                  />
-                ) : (
-                  <div className="space-y-5">
-                    <div className="text-center py-5 text-muted-foreground border border-dashed border-border/70 rounded-xl">
-                      <div className="w-8 h-8 mx-auto mb-2 rounded-md border border-dashed border-border flex items-center justify-center">
-                        <Paintbrush className="w-3.5 h-3.5 opacity-50" />
-                      </div>
-                      <p className="text-[11px]">Page appearance</p>
-                    </div>
-                    <CanvasBackgroundPanel
-                      background={pageCanvasSettings.background as BackgroundFill | null | undefined}
-                      accent={pageCanvasSettings.accent as string | null | undefined}
-                      onChange={(background) => updateCanvasSettings({ ...pageCanvasSettings, background }, { commit: true })}
-                      onAccent={(accent) => updateCanvasSettings({ ...pageCanvasSettings, accent }, { commit: true })}
-                    />
+              <div className="p-1.5 space-y-0.5">
+                <div className="flex items-center justify-between px-2 py-1.5">
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/70">Layers</p>
+                  <div className="flex items-center gap-0.5">
+                    <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[9px] rounded-sm" onClick={() => { setBulkMode(!bulkMode); setSelectedBlockIds(new Set()); }}>
+                      {bulkMode ? "Done" : "Select"}
+                    </Button>
+                    {bulkMode && selectedBlockIds.size > 0 && (
+                      <>
+                        <Button variant="ghost" size="sm" className="h-5 w-5 p-0 rounded-sm" onClick={() => bulkToggleVisibility(true)} title="Show">
+                          <Eye className="w-3 h-3" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-5 w-5 p-0 rounded-sm" onClick={() => bulkToggleVisibility(false)} title="Hide">
+                          <EyeOff className="w-3 h-3" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-5 w-5 p-0 rounded-sm text-destructive" onClick={() => setConfirmBulkDelete(true)} title="Delete">
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </>
+                    )}
                   </div>
-                )}
+                </div>
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleSortEnd}>
+                  <SortableContext items={blocks.map(b => b.id)} strategy={verticalListSortingStrategy}>
+                    {blocks.map((block) => {
+                      const meta = BLOCK_TYPES.find(b => b.id === block.block_type);
+                      const Icon = meta ? ICON_MAP[meta.icon] ?? FileText : FileText;
+                      return (
+                        <div key={block.id} className="flex items-center gap-1">
+                          {bulkMode && (
+                            <Checkbox
+                              checked={selectedBlockIds.has(block.id)}
+                              onCheckedChange={() => toggleBulkSelect(block.id)}
+                              className="w-3 h-3 ml-1"
+                            />
+                          )}
+                          <div className="flex-1">
+                            <SortableBlockItem
+                              block={block} Icon={Icon} meta={meta}
+                              isActive={editingBlockId === block.id}
+                              onSelect={() => bulkMode ? toggleBulkSelect(block.id) : setEditingBlockId(block.id)}
+                              onDuplicate={() => duplicateBlock(block)}
+                              onDelete={() => setConfirmDeleteBlock(block.id)}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </SortableContext>
+                </DndContext>
               </div>
             </ScrollArea>
+
+            <div className="p-2 border-t border-border/60">
+              <Button variant="outline" size="sm" className="w-full text-[10px] h-7 rounded-md border-border/60" onClick={() => setAddBlockOpen(true)}>
+                <Plus className="w-3 h-3 mr-1" /> Insert
+              </Button>
+            </div>
           </div>
         )}
       </div>
