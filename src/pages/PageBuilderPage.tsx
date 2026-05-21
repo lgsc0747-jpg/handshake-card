@@ -816,9 +816,24 @@ function PageBuilderPage() {
                     <CanvasBackgroundPanel
                       background={pageCanvasSettings.background as BackgroundFill | null | undefined}
                       accent={pageCanvasSettings.accent as string | null | undefined}
+                      overflowPadding={pageCanvasSettings.overflowPadding}
                       onChange={(background) => updateCanvasSettings({ ...pageCanvasSettings, background }, { commit: true })}
                       onAccent={(accent) => updateCanvasSettings({ ...pageCanvasSettings, accent }, { commit: true })}
+                      onOverflowPadding={(overflowPadding) => updateCanvasSettings({ ...pageCanvasSettings, overflowPadding }, { commit: true })}
                     />
+                    <div className="border-t border-border/60 pt-4 space-y-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/70">Sections</p>
+                      {canvasSections.map((section, index) => (
+                        <SectionListItem
+                          key={section.id}
+                          section={section}
+                          index={index}
+                          onMove={reorderCanvasSection}
+                          onDelete={() => deleteCanvasSection(section.id)}
+                          canDelete={canvasSections.length > 1}
+                        />
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -890,8 +905,8 @@ function PageBuilderPage() {
           </div>
         </div>
 
-        {/* ═══ Right Panel — Layers ═══ */}
-        {sidebarOpen && !isMobile && (
+        {/* Old block layer reordering is intentionally hidden; sections live in the left inspector. */}
+        {false && sidebarOpen && !isMobile && (
           <div className="w-60 shrink-0 border-l border-border/60 bg-card flex flex-col overflow-hidden">
             <div className="px-3 py-2 border-b border-border/60 flex items-center gap-2 shrink-0">
               <Input
