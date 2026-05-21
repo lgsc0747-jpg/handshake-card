@@ -336,6 +336,12 @@ function PageBuilderPage() {
 
   const [profileUsername, setProfileUsername] = useState<string | null>(null);
 
+  useEffect(() => { latestBlocksRef.current = blocks; }, [blocks]);
+  useEffect(() => { latestPagesRef.current = pages; }, [pages]);
+  useEffect(() => () => {
+    if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+  }, []);
+
   useEffect(() => {
     if (!user) return;
     supabase.from("personas").select("id, label, slug").eq("user_id", user.id).order("created_at").then(({ data }) => {
@@ -450,6 +456,7 @@ function PageBuilderPage() {
   const updateBlock = (updated: PageBlock) => {
     const newBlocks = blocks.map(b => b.id === updated.id ? updated : b);
     setBlocks(newBlocks); pushHistory(newBlocks);
+    queueAutosave();
   };
 
   const deleteBlock = async (id: string) => {
@@ -472,6 +479,7 @@ function PageBuilderPage() {
   const bulkToggleVisibility = (visible: boolean) => {
     const newBlocks = blocks.map(b => selectedBlockIds.has(b.id) ? { ...b, is_visible: visible } : b);
     setBlocks(newBlocks); pushHistory(newBlocks);
+    queueAutosave();
   };
 
   const duplicateBlock = async (block: PageBlock) => {
@@ -485,6 +493,7 @@ function PageBuilderPage() {
       const updated = [...blocks];
       updated.splice(idx + 1, 0, data as PageBlock);
       setBlocks(updated);
+      queueAutosave();
     }
   };
 
