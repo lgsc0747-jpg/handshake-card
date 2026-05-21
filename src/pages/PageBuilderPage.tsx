@@ -711,7 +711,7 @@ function PageBuilderPage() {
               <GitCompare className="w-3.5 h-3.5" />
             </Button>
           )}
-          <Button onClick={saveAll} disabled={saving} size="sm" className="rounded-md h-7 text-[11px] px-3 ml-1 bg-foreground text-background hover:bg-foreground/90">
+          <Button onClick={() => saveAll(false)} disabled={saving} size="sm" className="rounded-md h-7 text-[11px] px-3 ml-1 bg-foreground text-background hover:bg-foreground/90">
             {saving ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Save className="w-3 h-3 mr-1" />}
             Publish
           </Button>
