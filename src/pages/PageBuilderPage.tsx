@@ -30,7 +30,14 @@ import {
   ArrowLeft, Wifi, Paintbrush, Crown,
 } from "lucide-react";
 import { CanvasBackgroundPanel } from "@/components/page-builder/canvas/CanvasBackgroundPanel";
-import type { CanvasSettings, BackgroundFill } from "@/components/page-builder/canvas/types";
+import {
+  DEFAULT_CANVAS_SETTINGS,
+  readLayout,
+  withLayout,
+  type BackgroundFill,
+  type CanvasSection,
+  type CanvasSettings,
+} from "@/components/page-builder/canvas/types";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator,
