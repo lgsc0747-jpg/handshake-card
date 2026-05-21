@@ -12,11 +12,13 @@ import type { BackgroundFill } from "./types";
 interface Props {
   background: BackgroundFill | null | undefined;
   accent: string | null | undefined;
+  overflowPadding?: number;
   onChange: (bg: BackgroundFill | null) => void;
   onAccent: (color: string) => void;
+  onOverflowPadding?: (padding: number) => void;
 }
 
-export function CanvasBackgroundPanel({ background, accent, onChange, onAccent }: Props) {
+export function CanvasBackgroundPanel({ background, accent, overflowPadding = 360, onChange, onAccent, onOverflowPadding }: Props) {
   const kind = background?.kind ?? "solid";
 
   return (
@@ -124,6 +126,21 @@ export function CanvasBackgroundPanel({ background, accent, onChange, onAccent }
           <ColorPickerField label="Site-wide accent" value={accent ?? "#3b82f6"} onChange={onAccent} />
         </div>
         <p className="text-[10px] text-zinc-500 mt-1">Used as the default for buttons & links.</p>
+      </div>
+
+      <div className="border-t border-white/10 pt-3 space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <Label className="text-[10px] uppercase tracking-wider text-zinc-400">Overflow Padding</Label>
+          <span className="text-[10px] tabular-nums text-zinc-500">{Math.round(overflowPadding)}px</span>
+        </div>
+        <Slider
+          min={120}
+          max={800}
+          step={20}
+          value={[overflowPadding]}
+          onValueChange={([v]) => onOverflowPadding?.(v)}
+        />
+        <p className="text-[10px] text-zinc-500">Extra workspace around the page for off-canvas handles.</p>
       </div>
     </div>
   );

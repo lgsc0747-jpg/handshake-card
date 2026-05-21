@@ -48,14 +48,17 @@ export interface CanvasSettings {
   accent?: string | null;
   /** Page sections (vertical bands stacked top-to-bottom). */
   sections?: CanvasSection[];
+  /** Workspace padding around the page so off-canvas handles remain reachable. */
+  overflowPadding?: number;
 }
 
 export const DEFAULT_CANVAS_SETTINGS: Required<
-  Pick<CanvasSettings, "snap" | "snapStep" | "showGuides">
+  Pick<CanvasSettings, "snap" | "snapStep" | "showGuides" | "overflowPadding">
 > & { background: BackgroundFill | null; accent: string | null; sections: CanvasSection[] } = {
   snap: true,
   snapStep: 8,
   showGuides: true,
+  overflowPadding: 360,
   background: { kind: "solid", color: "#0a0a0a", opacity: 1 },
   accent: "#3b82f6",
   sections: [{ id: "default", height: 1080 }],

@@ -30,7 +30,14 @@ import {
   ArrowLeft, Wifi, Paintbrush, Crown,
 } from "lucide-react";
 import { CanvasBackgroundPanel } from "@/components/page-builder/canvas/CanvasBackgroundPanel";
-import type { CanvasSettings, BackgroundFill } from "@/components/page-builder/canvas/types";
+import {
+  DEFAULT_CANVAS_SETTINGS,
+  readLayout,
+  withLayout,
+  type BackgroundFill,
+  type CanvasSection,
+  type CanvasSettings,
+} from "@/components/page-builder/canvas/types";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator,
@@ -195,6 +202,44 @@ function SortablePreviewBlock({ block, editingBlockId, onSelect, persona }: {
   );
 }
 
+function SectionListItem({ section, index, onMove, onDelete, canDelete }: {
+  section: CanvasSection;
+  index: number;
+  onMove: (fromId: string, toId: string) => void;
+  onDelete: () => void;
+  canDelete: boolean;
+}) {
+  return (
+    <div
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData("text/page-builder-section", section.id);
+        e.dataTransfer.effectAllowed = "move";
+      }}
+      onDragOver={(e) => {
+        if (e.dataTransfer.types.includes("text/page-builder-section")) e.preventDefault();
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        const fromId = e.dataTransfer.getData("text/page-builder-section");
+        if (fromId) onMove(fromId, section.id);
+      }}
+      className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/20 px-2 py-2 text-xs"
+    >
+      <GripVertical className="h-3.5 w-3.5 shrink-0 cursor-grab text-muted-foreground" />
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-medium">{section.label || `Section ${index + 1}`}</p>
+        <p className="text-[10px] text-muted-foreground">{section.height}px tall</p>
+      </div>
+      {canDelete && (
+        <button onClick={onDelete} className="rounded-md p-1 text-muted-foreground hover:text-destructive" title="Delete section">
+          <Trash2 className="h-3 w-3" />
+        </button>
+      )}
+    </div>
+  );
+}
+
 function PageBuilderPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -220,6 +265,10 @@ function PageBuilderPage() {
   const [addBlockOpen, setAddBlockOpen] = useState(false);
   const [templateOpen, setTemplateOpen] = useState(false);
   const [diffOpen, setDiffOpen] = useState(false);
+  const [saveState, setSaveState] = useState<"saved" | "saving" | "dirty" | "error">("saved");
+  const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestBlocksRef = useRef<PageBlock[]>([]);
+  const latestPagesRef = useRef<SitePage[]>([]);
 
   // Confirmation dialogs
   const [confirmDeleteBlock, setConfirmDeleteBlock] = useState<string | null>(null);
@@ -287,6 +336,12 @@ function PageBuilderPage() {
 
   const [profileUsername, setProfileUsername] = useState<string | null>(null);
 
+  useEffect(() => { latestBlocksRef.current = blocks; }, [blocks]);
+  useEffect(() => { latestPagesRef.current = pages; }, [pages]);
+  useEffect(() => () => {
+    if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+  }, []);
+
   useEffect(() => {
     if (!user) return;
     supabase.from("personas").select("id, label, slug").eq("user_id", user.id).order("created_at").then(({ data }) => {
@@ -331,6 +386,7 @@ function PageBuilderPage() {
       const { data: newPage } = await supabase.from("site_pages").insert({
         persona_id: selectedPersonaId!, user_id: user!.id,
         title: "Home", slug: "home", is_homepage: true, sort_order: 0,
+        layout_mode: "free", canvas_settings: DEFAULT_CANVAS_SETTINGS as any,
       }).select().single();
       if (newPage) {
         setPages([newPage as SitePage]);
@@ -364,6 +420,7 @@ function PageBuilderPage() {
     const { data } = await supabase.from("site_pages").insert({
       persona_id: selectedPersonaId, user_id: user.id,
       title, slug: title.toLowerCase().replace(/\s+/g, "-"), sort_order: pages.length,
+      layout_mode: "free", canvas_settings: DEFAULT_CANVAS_SETTINGS as any,
     }).select().single();
     if (data) { setPages([...pages, data as SitePage]); setSelectedPageId(data.id); }
   };
@@ -399,6 +456,7 @@ function PageBuilderPage() {
   const updateBlock = (updated: PageBlock) => {
     const newBlocks = blocks.map(b => b.id === updated.id ? updated : b);
     setBlocks(newBlocks); pushHistory(newBlocks);
+    queueAutosave();
   };
 
   const deleteBlock = async (id: string) => {
@@ -421,6 +479,7 @@ function PageBuilderPage() {
   const bulkToggleVisibility = (visible: boolean) => {
     const newBlocks = blocks.map(b => selectedBlockIds.has(b.id) ? { ...b, is_visible: visible } : b);
     setBlocks(newBlocks); pushHistory(newBlocks);
+    queueAutosave();
   };
 
   const duplicateBlock = async (block: PageBlock) => {
@@ -434,19 +493,45 @@ function PageBuilderPage() {
       const updated = [...blocks];
       updated.splice(idx + 1, 0, data as PageBlock);
       setBlocks(updated);
+      queueAutosave();
     }
   };
 
-  const saveAll = async () => {
+  const saveAll = async (silent = false) => {
+    if (!selectedPageId) return;
     setSaving(true);
-    for (const block of blocks) {
+    setSaveState("saving");
+    const currentPage = latestPagesRef.current.find((p) => p.id === selectedPageId);
+    const currentBlocks = latestBlocksRef.current;
+    try {
+      if (currentPage) {
+        await supabase.from("site_pages")
+          .update({ canvas_settings: currentPage.canvas_settings as any, layout_mode: "free" })
+          .eq("id", currentPage.id);
+      }
+      if (selectedPersonaId) {
+        await supabase.from("personas").update({ page_mode: "builder" }).eq("id", selectedPersonaId).eq("user_id", user!.id);
+      }
+      for (const block of currentBlocks) {
       await supabase.from("page_blocks")
         .update({ content: block.content as any, styles: block.styles as any, sort_order: block.sort_order, is_visible: block.is_visible })
         .eq("id", block.id);
+      }
+      setSaveState("saved");
+      if (!silent) toast({ title: "Saved to live page" });
+    } catch {
+      setSaveState("error");
+      if (!silent) toast({ title: "Save failed", variant: "destructive" });
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
-    toast({ title: "All changes saved!" });
   };
+
+  const queueAutosave = useCallback(() => {
+    setSaveState("dirty");
+    if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+    autosaveTimerRef.current = setTimeout(() => saveAll(true), 900);
+  }, [selectedPageId, selectedPersonaId, user?.id]);
 
   const pointerSensor = useSensor(PointerSensor, { activationConstraint: { distance: 5 } });
   const touchSensor = useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } });
@@ -498,13 +583,44 @@ function PageBuilderPage() {
 
   const editingBlock = blocks.find(b => b.id === editingBlockId) ?? null;
   const selectedPage = pages.find(p => p.id === selectedPageId);
-  const pageCanvasSettings = (selectedPage?.canvas_settings ?? {}) as CanvasSettings;
+  const pageCanvasSettings = { ...DEFAULT_CANVAS_SETTINGS, ...((selectedPage?.canvas_settings ?? {}) as CanvasSettings) } as CanvasSettings;
+  const canvasSections = pageCanvasSettings.sections?.length ? pageCanvasSettings.sections : DEFAULT_CANVAS_SETTINGS.sections;
   const updateCanvasSettings = (next: CanvasSettings, opts?: { commit?: boolean }) => {
     if (!selectedPage) return;
     setPages(pages.map(p => p.id === selectedPage.id ? { ...p, canvas_settings: next } : p));
     if (opts?.commit) {
-      supabase.from("site_pages").update({ canvas_settings: next as any }).eq("id", selectedPage.id).then(() => {});
+      queueAutosave();
     }
+  };
+  const reorderCanvasSection = (fromId: string, toId: string) => {
+    if (fromId === toId) return;
+    const oldTop = new Map<string, number>();
+    let y = 0;
+    canvasSections.forEach((sec) => { oldTop.set(sec.id, y); y += sec.height; });
+    const from = canvasSections.findIndex((sec) => sec.id === fromId);
+    const to = canvasSections.findIndex((sec) => sec.id === toId);
+    if (from < 0 || to < 0) return;
+    const nextSections = [...canvasSections];
+    const [moved] = nextSections.splice(from, 1);
+    nextSections.splice(to, 0, moved);
+    const newTop = new Map<string, number>();
+    y = 0;
+    nextSections.forEach((sec) => { newTop.set(sec.id, y); y += sec.height; });
+    const ranges = canvasSections.map((sec) => ({ id: sec.id, top: oldTop.get(sec.id) ?? 0, bottom: (oldTop.get(sec.id) ?? 0) + sec.height }));
+    const nextBlocks = blocks.map((b) => {
+      const layout = readLayout(b.styles);
+      if (!layout) return b;
+      const center = layout.y + layout.h / 2;
+      const range = ranges.find((r) => center >= r.top && center < r.bottom) ?? ranges[ranges.length - 1];
+      const delta = (newTop.get(range.id) ?? 0) - (oldTop.get(range.id) ?? 0);
+      return { ...b, styles: withLayout(b.styles, { ...layout, y: layout.y + delta }) };
+    });
+    setBlocks(nextBlocks); pushHistory(nextBlocks);
+    updateCanvasSettings({ ...pageCanvasSettings, sections: nextSections }, { commit: true });
+  };
+  const deleteCanvasSection = (id: string) => {
+    if (canvasSections.length <= 1) return;
+    updateCanvasSettings({ ...pageCanvasSettings, sections: canvasSections.filter((sec) => sec.id !== id) }, { commit: true });
   };
   
 
@@ -635,7 +751,7 @@ function PageBuilderPage() {
               <GitCompare className="w-3.5 h-3.5" />
             </Button>
           )}
-          <Button onClick={saveAll} disabled={saving} size="sm" className="rounded-md h-7 text-[11px] px-3 ml-1 bg-foreground text-background hover:bg-foreground/90">
+          <Button onClick={() => saveAll(false)} disabled={saving} size="sm" className="rounded-md h-7 text-[11px] px-3 ml-1 bg-foreground text-background hover:bg-foreground/90">
             {saving ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Save className="w-3 h-3 mr-1" />}
             Publish
           </Button>
@@ -700,9 +816,24 @@ function PageBuilderPage() {
                     <CanvasBackgroundPanel
                       background={pageCanvasSettings.background as BackgroundFill | null | undefined}
                       accent={pageCanvasSettings.accent as string | null | undefined}
+                      overflowPadding={pageCanvasSettings.overflowPadding}
                       onChange={(background) => updateCanvasSettings({ ...pageCanvasSettings, background }, { commit: true })}
                       onAccent={(accent) => updateCanvasSettings({ ...pageCanvasSettings, accent }, { commit: true })}
+                      onOverflowPadding={(overflowPadding) => updateCanvasSettings({ ...pageCanvasSettings, overflowPadding }, { commit: true })}
                     />
+                    <div className="border-t border-border/60 pt-4 space-y-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/70">Sections</p>
+                      {canvasSections.map((section, index) => (
+                        <SectionListItem
+                          key={section.id}
+                          section={section}
+                          index={index}
+                          onMove={reorderCanvasSection}
+                          onDelete={() => deleteCanvasSection(section.id)}
+                          canDelete={canvasSections.length > 1}
+                        />
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -713,7 +844,7 @@ function PageBuilderPage() {
         {!isMobile && (
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="flex items-center justify-center w-4 bg-card hover:bg-muted/40 border-r border-border/60 transition-colors shrink-0"
+            className="hidden items-center justify-center w-4 bg-card hover:bg-muted/40 border-r border-border/60 transition-colors shrink-0"
           >
             {sidebarOpen ? <PanelLeftClose className="w-3 h-3 text-muted-foreground" /> : <PanelLeft className="w-3 h-3 text-muted-foreground" />}
           </button>
@@ -763,7 +894,7 @@ function PageBuilderPage() {
                   }}
                   onUpdateBlocks={(next, opts) => {
                     setBlocks(next);
-                    if (opts?.commit) pushHistory(next);
+                    if (opts?.commit) { pushHistory(next); queueAutosave(); }
                   }}
                   onUpdateSettings={updateCanvasSettings}
                   onDuplicateBlock={duplicateBlock}
@@ -774,8 +905,8 @@ function PageBuilderPage() {
           </div>
         </div>
 
-        {/* ═══ Right Panel — Layers ═══ */}
-        {sidebarOpen && !isMobile && (
+        {/* Old block layer reordering is intentionally hidden; sections live in the left inspector. */}
+        {false && sidebarOpen && !isMobile && (
           <div className="w-60 shrink-0 border-l border-border/60 bg-card flex flex-col overflow-hidden">
             <div className="px-3 py-2 border-b border-border/60 flex items-center gap-2 shrink-0">
               <Input

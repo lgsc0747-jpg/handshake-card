@@ -8,7 +8,7 @@ import { SelectionToolbar } from "./SelectionToolbar";
 import { snapLayout } from "./snap";
 import { alignBlocks, distributeBlocks, type AlignOp, type DistributeOp } from "./align";
 import { useBlockClipboard } from "./useBlockClipboard";
-import { Plus } from "lucide-react";
+import { GripVertical, Plus } from "lucide-react";
 import {
   type BlockLayout,
   type CanvasSettings,
@@ -90,6 +90,7 @@ export function FreeformCanvas({
   const sections: CanvasSection[] = s.sections?.length ? s.sections : DEFAULT_CANVAS_SETTINGS.sections;
   const { w: canvasW } = DEVICE_SIZES[device];
   const canvasH = sections.reduce((sum, sec) => sum + sec.height, 0);
+  const overflowPadding = Math.max(120, Math.min(800, s.overflowPadding ?? DEFAULT_CANVAS_SETTINGS.overflowPadding));
 
   const fitCanvas = useCallback(() => {
     const wrap = wrapRef.current;
@@ -179,7 +180,7 @@ export function FreeformCanvas({
     onUpdateBlocks(next, opts);
   };
 
-  // Sections: add / resize
+  // Sections: add / resize / reorder
   const addSection = () => {
     const next: CanvasSection[] = [...sections, { id: uid(), height: DEFAULT_SECTION_H }];
     onUpdateSettings({ ...s, sections: next }, { commit: true });
@@ -192,6 +193,34 @@ export function FreeformCanvas({
     if (sections.length <= 1) return;
     const next = sections.filter((sec) => sec.id !== id);
     onUpdateSettings({ ...s, sections: next }, { commit: true });
+  };
+  const reorderSection = (fromId: string, toId: string) => {
+    if (fromId === toId) return;
+    const oldTop = new Map<string, number>();
+    let running = 0;
+    sections.forEach((sec) => { oldTop.set(sec.id, running); running += sec.height; });
+
+    const fromIndex = sections.findIndex((sec) => sec.id === fromId);
+    const toIndex = sections.findIndex((sec) => sec.id === toId);
+    if (fromIndex < 0 || toIndex < 0) return;
+    const nextSections = [...sections];
+    const [moved] = nextSections.splice(fromIndex, 1);
+    nextSections.splice(toIndex, 0, moved);
+
+    const newTop = new Map<string, number>();
+    running = 0;
+    nextSections.forEach((sec) => { newTop.set(sec.id, running); running += sec.height; });
+    const oldRanges = sections.map((sec) => ({ id: sec.id, top: oldTop.get(sec.id) ?? 0, bottom: (oldTop.get(sec.id) ?? 0) + sec.height }));
+    const nextBlocks = blocks.map((b) => {
+      const layout = readLayout(b.styles);
+      if (!layout) return b;
+      const centerY = layout.y + layout.h / 2;
+      const range = oldRanges.find((r) => centerY >= r.top && centerY < r.bottom) ?? oldRanges[oldRanges.length - 1];
+      const delta = (newTop.get(range.id) ?? 0) - (oldTop.get(range.id) ?? 0);
+      return { ...b, styles: withLayout(b.styles, { ...layout, y: layout.y + delta }) };
+    });
+    onUpdateSettings({ ...s, sections: nextSections }, { commit: true });
+    onUpdateBlocks(nextBlocks, { commit: true });
   };
 
   // Marquee + Pan
@@ -391,7 +420,8 @@ export function FreeformCanvas({
         onPointerUp={onCanvasPointerUp}
       >
         <div
-          className="flex items-start justify-center min-w-max min-h-full p-[40vw] pt-24 pb-[40vh]"
+          className="flex items-start justify-center min-w-max min-h-full pt-24"
+          style={{ paddingLeft: overflowPadding, paddingRight: overflowPadding, paddingBottom: Math.max(220, overflowPadding) }}
           onPointerDown={(e) => {
             if (!isPanning || e.target !== e.currentTarget) return;
             startPan(e);
@@ -454,6 +484,12 @@ export function FreeformCanvas({
                         style={{ borderBottom: "1px dashed rgb(59 130 246 / 0.3)" }}
                       />
                       {/* Resize handle on bottom edge */}
+                      <SectionDragHandle
+                        id={sec.id}
+                        index={sections.findIndex((s2) => s2.id === sec.id)}
+                        scale={scale}
+                        onMove={reorderSection}
+                      />
                       <SectionResizeHandle
                         height={sec.height}
                         scale={scale}
@@ -523,6 +559,7 @@ export function FreeformCanvas({
                       }
                       updateBlockLayout(b.id, next, opts);
                     }}
+                    onAutoSize={(next) => updateBlockLayout(b.id, next)}
                     onDoubleClick={() => { if (canEditText) setEditingTextId(b.id); }}
                     contextMenu={{
                       bringForward: () => reorderBlock(b.id, "forward"),
@@ -630,5 +667,35 @@ function SectionResizeHandle({
       style={{ height: 8, transform: "translateY(4px)" }}
       title="Drag to resize section"
     />
+  );
+}
+
+function SectionDragHandle({
+  id, index, scale, onMove,
+}: { id: string; index: number; scale: number; onMove: (fromId: string, toId: string) => void }) {
+  return (
+    <div
+      draggable
+      onDragStart={(e) => {
+        e.stopPropagation();
+        e.dataTransfer.setData("text/page-builder-section", id);
+        e.dataTransfer.effectAllowed = "move";
+      }}
+      onDragOver={(e) => {
+        if (e.dataTransfer.types.includes("text/page-builder-section")) e.preventDefault();
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const fromId = e.dataTransfer.getData("text/page-builder-section");
+        if (fromId) onMove(fromId, id);
+      }}
+      onPointerDown={(e) => e.stopPropagation()}
+      className="absolute z-30 pointer-events-auto flex items-center gap-1 rounded-md bg-black/60 text-white border border-white/20 px-2 py-1 text-[10px] font-medium cursor-grab active:cursor-grabbing hover:bg-black/75"
+      style={{ top: 8 / scale, left: 8 / scale, transform: `scale(${1 / Math.max(scale, 0.01)})`, transformOrigin: "top left" }}
+      title="Drag to reorder section"
+    >
+      <GripVertical className="w-3 h-3" /> Section {index + 1}
+    </div>
   );
 }
