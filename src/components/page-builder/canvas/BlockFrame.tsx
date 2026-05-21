@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import type { PointerEvent as RPointerEvent } from "react";
 import { cn } from "@/lib/utils";
 import type { BlockLayout } from "./types";
@@ -15,6 +15,7 @@ interface BlockFrameProps {
   scale?: number;
   onSelect: (e: React.PointerEvent) => void;
   onChange: (next: BlockLayout, opts?: { commit?: boolean }) => void;
+  onAutoSize?: (next: BlockLayout, opts?: { commit?: boolean }) => void;
   onDoubleClick?: () => void;
   contextMenu?: {
     bringForward: () => void;
@@ -35,10 +36,28 @@ interface BlockFrameProps {
 export function BlockFrame({
   layout, selected, outOfBounds, scale = 1, panActive = false,
   interactiveChildren = false, onSelect, onChange, onDoubleClick, contextMenu, children,
+  onAutoSize,
 }: BlockFrameProps) {
   const startRef = useRef<{ x: number; y: number; layout: BlockLayout; handle: Handle } | null>(null);
   const currentLayoutRef = useRef<BlockLayout>(layout);
+  const contentRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
+
+  useEffect(() => {
+    const el = contentRef.current;
+    if (!el || !onAutoSize || dragging) return;
+    let frame = 0;
+    const measure = () => {
+      frame = requestAnimationFrame(() => {
+        const nextH = Math.max(MIN_BLOCK_H, Math.ceil(el.scrollHeight));
+        if (Math.abs(nextH - layout.h) > 2) onAutoSize({ ...layout, h: nextH });
+      });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => { cancelAnimationFrame(frame); ro.disconnect(); };
+  }, [children, dragging, layout, onAutoSize]);
 
   const begin = useCallback(
     (handle: Handle) => (e: RPointerEvent<HTMLDivElement>) => {
@@ -135,7 +154,7 @@ export function BlockFrame({
       onPointerUp={(e) => { if (panActive) return; end(e); }}
       onDoubleClick={onDoubleClick}
     >
-      <div className={cn("w-full h-full overflow-hidden", interactiveChildren ? "pointer-events-auto" : "pointer-events-none")}>{children}</div>
+      <div ref={contentRef} className={cn("w-full overflow-visible", interactiveChildren ? "pointer-events-auto" : "pointer-events-none")}>{children}</div>
 
       {selected && (
         <>
