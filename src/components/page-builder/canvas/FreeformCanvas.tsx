@@ -420,7 +420,8 @@ export function FreeformCanvas({
         onPointerUp={onCanvasPointerUp}
       >
         <div
-          className="flex items-start justify-center min-w-max min-h-full p-[40vw] pt-24 pb-[40vh]"
+          className="flex items-start justify-center min-w-max min-h-full pt-24"
+          style={{ paddingLeft: overflowPadding, paddingRight: overflowPadding, paddingBottom: Math.max(220, overflowPadding) }}
           onPointerDown={(e) => {
             if (!isPanning || e.target !== e.currentTarget) return;
             startPan(e);
@@ -483,6 +484,12 @@ export function FreeformCanvas({
                         style={{ borderBottom: "1px dashed rgb(59 130 246 / 0.3)" }}
                       />
                       {/* Resize handle on bottom edge */}
+                      <SectionDragHandle
+                        id={sec.id}
+                        index={sections.findIndex((s2) => s2.id === sec.id)}
+                        scale={scale}
+                        onMove={reorderSection}
+                      />
                       <SectionResizeHandle
                         height={sec.height}
                         scale={scale}
