@@ -8,7 +8,7 @@ import { SelectionToolbar } from "./SelectionToolbar";
 import { snapLayout } from "./snap";
 import { alignBlocks, distributeBlocks, type AlignOp, type DistributeOp } from "./align";
 import { useBlockClipboard } from "./useBlockClipboard";
-import { Plus } from "lucide-react";
+import { GripVertical, Plus } from "lucide-react";
 import {
   type BlockLayout,
   type CanvasSettings,
@@ -90,6 +90,7 @@ export function FreeformCanvas({
   const sections: CanvasSection[] = s.sections?.length ? s.sections : DEFAULT_CANVAS_SETTINGS.sections;
   const { w: canvasW } = DEVICE_SIZES[device];
   const canvasH = sections.reduce((sum, sec) => sum + sec.height, 0);
+  const overflowPadding = Math.max(120, Math.min(800, s.overflowPadding ?? DEFAULT_CANVAS_SETTINGS.overflowPadding));
 
   const fitCanvas = useCallback(() => {
     const wrap = wrapRef.current;
@@ -179,7 +180,7 @@ export function FreeformCanvas({
     onUpdateBlocks(next, opts);
   };
 
-  // Sections: add / resize
+  // Sections: add / resize / reorder
   const addSection = () => {
     const next: CanvasSection[] = [...sections, { id: uid(), height: DEFAULT_SECTION_H }];
     onUpdateSettings({ ...s, sections: next }, { commit: true });
@@ -192,6 +193,34 @@ export function FreeformCanvas({
     if (sections.length <= 1) return;
     const next = sections.filter((sec) => sec.id !== id);
     onUpdateSettings({ ...s, sections: next }, { commit: true });
+  };
+  const reorderSection = (fromId: string, toId: string) => {
+    if (fromId === toId) return;
+    const oldTop = new Map<string, number>();
+    let running = 0;
+    sections.forEach((sec) => { oldTop.set(sec.id, running); running += sec.height; });
+
+    const fromIndex = sections.findIndex((sec) => sec.id === fromId);
+    const toIndex = sections.findIndex((sec) => sec.id === toId);
+    if (fromIndex < 0 || toIndex < 0) return;
+    const nextSections = [...sections];
+    const [moved] = nextSections.splice(fromIndex, 1);
+    nextSections.splice(toIndex, 0, moved);
+
+    const newTop = new Map<string, number>();
+    running = 0;
+    nextSections.forEach((sec) => { newTop.set(sec.id, running); running += sec.height; });
+    const oldRanges = sections.map((sec) => ({ id: sec.id, top: oldTop.get(sec.id) ?? 0, bottom: (oldTop.get(sec.id) ?? 0) + sec.height }));
+    const nextBlocks = blocks.map((b) => {
+      const layout = readLayout(b.styles);
+      if (!layout) return b;
+      const centerY = layout.y + layout.h / 2;
+      const range = oldRanges.find((r) => centerY >= r.top && centerY < r.bottom) ?? oldRanges[oldRanges.length - 1];
+      const delta = (newTop.get(range.id) ?? 0) - (oldTop.get(range.id) ?? 0);
+      return { ...b, styles: withLayout(b.styles, { ...layout, y: layout.y + delta }) };
+    });
+    onUpdateSettings({ ...s, sections: nextSections }, { commit: true });
+    onUpdateBlocks(nextBlocks, { commit: true });
   };
 
   // Marquee + Pan
