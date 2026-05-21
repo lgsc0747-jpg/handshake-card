@@ -559,6 +559,7 @@ export function FreeformCanvas({
                       }
                       updateBlockLayout(b.id, next, opts);
                     }}
+                    onAutoSize={(next) => updateBlockLayout(b.id, next)}
                     onDoubleClick={() => { if (canEditText) setEditingTextId(b.id); }}
                     contextMenu={{
                       bringForward: () => reorderBlock(b.id, "forward"),
