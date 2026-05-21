@@ -668,3 +668,33 @@ function SectionResizeHandle({
     />
   );
 }
+
+function SectionDragHandle({
+  id, index, scale, onMove,
+}: { id: string; index: number; scale: number; onMove: (fromId: string, toId: string) => void }) {
+  return (
+    <div
+      draggable
+      onDragStart={(e) => {
+        e.stopPropagation();
+        e.dataTransfer.setData("text/page-builder-section", id);
+        e.dataTransfer.effectAllowed = "move";
+      }}
+      onDragOver={(e) => {
+        if (e.dataTransfer.types.includes("text/page-builder-section")) e.preventDefault();
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const fromId = e.dataTransfer.getData("text/page-builder-section");
+        if (fromId) onMove(fromId, id);
+      }}
+      onPointerDown={(e) => e.stopPropagation()}
+      className="absolute z-30 pointer-events-auto flex items-center gap-1 rounded-md bg-black/60 text-white border border-white/20 px-2 py-1 text-[10px] font-medium cursor-grab active:cursor-grabbing hover:bg-black/75"
+      style={{ top: 8 / scale, left: 8 / scale, transform: `scale(${1 / Math.max(scale, 0.01)})`, transformOrigin: "top left" }}
+      title="Drag to reorder section"
+    >
+      <GripVertical className="w-3 h-3" /> Section {index + 1}
+    </div>
+  );
+}
