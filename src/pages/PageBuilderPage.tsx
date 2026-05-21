@@ -380,6 +380,7 @@ function PageBuilderPage() {
       const { data: newPage } = await supabase.from("site_pages").insert({
         persona_id: selectedPersonaId!, user_id: user!.id,
         title: "Home", slug: "home", is_homepage: true, sort_order: 0,
+        layout_mode: "free", canvas_settings: DEFAULT_CANVAS_SETTINGS as any,
       }).select().single();
       if (newPage) {
         setPages([newPage as SitePage]);
@@ -413,6 +414,7 @@ function PageBuilderPage() {
     const { data } = await supabase.from("site_pages").insert({
       persona_id: selectedPersonaId, user_id: user.id,
       title, slug: title.toLowerCase().replace(/\s+/g, "-"), sort_order: pages.length,
+      layout_mode: "free", canvas_settings: DEFAULT_CANVAS_SETTINGS as any,
     }).select().single();
     if (data) { setPages([...pages, data as SitePage]); setSelectedPageId(data.id); }
   };
