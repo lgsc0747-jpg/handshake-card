@@ -488,16 +488,41 @@ function PageBuilderPage() {
     }
   };
 
-  const saveAll = async () => {
+  const saveAll = async (silent = false) => {
+    if (!selectedPageId) return;
     setSaving(true);
-    for (const block of blocks) {
+    setSaveState("saving");
+    const currentPage = latestPagesRef.current.find((p) => p.id === selectedPageId);
+    const currentBlocks = latestBlocksRef.current;
+    try {
+      if (currentPage) {
+        await supabase.from("site_pages")
+          .update({ canvas_settings: currentPage.canvas_settings as any, layout_mode: "free" })
+          .eq("id", currentPage.id);
+      }
+      if (selectedPersonaId) {
+        await supabase.from("personas").update({ page_mode: "builder" }).eq("id", selectedPersonaId).eq("user_id", user!.id);
+      }
+      for (const block of currentBlocks) {
       await supabase.from("page_blocks")
         .update({ content: block.content as any, styles: block.styles as any, sort_order: block.sort_order, is_visible: block.is_visible })
         .eq("id", block.id);
+      }
+      setSaveState("saved");
+      if (!silent) toast({ title: "Saved to live page" });
+    } catch {
+      setSaveState("error");
+      if (!silent) toast({ title: "Save failed", variant: "destructive" });
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
-    toast({ title: "All changes saved!" });
   };
+
+  const queueAutosave = useCallback(() => {
+    setSaveState("dirty");
+    if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+    autosaveTimerRef.current = setTimeout(() => saveAll(true), 900);
+  }, [selectedPageId, selectedPersonaId, user?.id]);
 
   const pointerSensor = useSensor(PointerSensor, { activationConstraint: { distance: 5 } });
   const touchSensor = useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } });
