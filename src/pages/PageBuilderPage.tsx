@@ -202,6 +202,44 @@ function SortablePreviewBlock({ block, editingBlockId, onSelect, persona }: {
   );
 }
 
+function SectionListItem({ section, index, onMove, onDelete, canDelete }: {
+  section: CanvasSection;
+  index: number;
+  onMove: (fromId: string, toId: string) => void;
+  onDelete: () => void;
+  canDelete: boolean;
+}) {
+  return (
+    <div
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData("text/page-builder-section", section.id);
+        e.dataTransfer.effectAllowed = "move";
+      }}
+      onDragOver={(e) => {
+        if (e.dataTransfer.types.includes("text/page-builder-section")) e.preventDefault();
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        const fromId = e.dataTransfer.getData("text/page-builder-section");
+        if (fromId) onMove(fromId, section.id);
+      }}
+      className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/20 px-2 py-2 text-xs"
+    >
+      <GripVertical className="h-3.5 w-3.5 shrink-0 cursor-grab text-muted-foreground" />
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-medium">{section.label || `Section ${index + 1}`}</p>
+        <p className="text-[10px] text-muted-foreground">{section.height}px tall</p>
+      </div>
+      {canDelete && (
+        <button onClick={onDelete} className="rounded-md p-1 text-muted-foreground hover:text-destructive" title="Delete section">
+          <Trash2 className="h-3 w-3" />
+        </button>
+      )}
+    </div>
+  );
+}
+
 function PageBuilderPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
