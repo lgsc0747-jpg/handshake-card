@@ -583,13 +583,44 @@ function PageBuilderPage() {
 
   const editingBlock = blocks.find(b => b.id === editingBlockId) ?? null;
   const selectedPage = pages.find(p => p.id === selectedPageId);
-  const pageCanvasSettings = (selectedPage?.canvas_settings ?? {}) as CanvasSettings;
+  const pageCanvasSettings = { ...DEFAULT_CANVAS_SETTINGS, ...((selectedPage?.canvas_settings ?? {}) as CanvasSettings) } as CanvasSettings;
+  const canvasSections = pageCanvasSettings.sections?.length ? pageCanvasSettings.sections : DEFAULT_CANVAS_SETTINGS.sections;
   const updateCanvasSettings = (next: CanvasSettings, opts?: { commit?: boolean }) => {
     if (!selectedPage) return;
     setPages(pages.map(p => p.id === selectedPage.id ? { ...p, canvas_settings: next } : p));
     if (opts?.commit) {
-      supabase.from("site_pages").update({ canvas_settings: next as any }).eq("id", selectedPage.id).then(() => {});
+      queueAutosave();
     }
+  };
+  const reorderCanvasSection = (fromId: string, toId: string) => {
+    if (fromId === toId) return;
+    const oldTop = new Map<string, number>();
+    let y = 0;
+    canvasSections.forEach((sec) => { oldTop.set(sec.id, y); y += sec.height; });
+    const from = canvasSections.findIndex((sec) => sec.id === fromId);
+    const to = canvasSections.findIndex((sec) => sec.id === toId);
+    if (from < 0 || to < 0) return;
+    const nextSections = [...canvasSections];
+    const [moved] = nextSections.splice(from, 1);
+    nextSections.splice(to, 0, moved);
+    const newTop = new Map<string, number>();
+    y = 0;
+    nextSections.forEach((sec) => { newTop.set(sec.id, y); y += sec.height; });
+    const ranges = canvasSections.map((sec) => ({ id: sec.id, top: oldTop.get(sec.id) ?? 0, bottom: (oldTop.get(sec.id) ?? 0) + sec.height }));
+    const nextBlocks = blocks.map((b) => {
+      const layout = readLayout(b.styles);
+      if (!layout) return b;
+      const center = layout.y + layout.h / 2;
+      const range = ranges.find((r) => center >= r.top && center < r.bottom) ?? ranges[ranges.length - 1];
+      const delta = (newTop.get(range.id) ?? 0) - (oldTop.get(range.id) ?? 0);
+      return { ...b, styles: withLayout(b.styles, { ...layout, y: layout.y + delta }) };
+    });
+    setBlocks(nextBlocks); pushHistory(nextBlocks);
+    updateCanvasSettings({ ...pageCanvasSettings, sections: nextSections }, { commit: true });
+  };
+  const deleteCanvasSection = (id: string) => {
+    if (canvasSections.length <= 1) return;
+    updateCanvasSettings({ ...pageCanvasSettings, sections: canvasSections.filter((sec) => sec.id !== id) }, { commit: true });
   };
   
 
