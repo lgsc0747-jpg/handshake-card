@@ -844,7 +844,7 @@ function PageBuilderPage() {
         {!isMobile && (
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="flex items-center justify-center w-4 bg-card hover:bg-muted/40 border-r border-border/60 transition-colors shrink-0"
+            className="hidden items-center justify-center w-4 bg-card hover:bg-muted/40 border-r border-border/60 transition-colors shrink-0"
           >
             {sidebarOpen ? <PanelLeftClose className="w-3 h-3 text-muted-foreground" /> : <PanelLeft className="w-3 h-3 text-muted-foreground" />}
           </button>
@@ -894,7 +894,7 @@ function PageBuilderPage() {
                   }}
                   onUpdateBlocks={(next, opts) => {
                     setBlocks(next);
-                    if (opts?.commit) pushHistory(next);
+                    if (opts?.commit) { pushHistory(next); queueAutosave(); }
                   }}
                   onUpdateSettings={updateCanvasSettings}
                   onDuplicateBlock={duplicateBlock}
