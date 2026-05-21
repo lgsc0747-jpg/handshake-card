@@ -265,6 +265,10 @@ function PageBuilderPage() {
   const [addBlockOpen, setAddBlockOpen] = useState(false);
   const [templateOpen, setTemplateOpen] = useState(false);
   const [diffOpen, setDiffOpen] = useState(false);
+  const [saveState, setSaveState] = useState<"saved" | "saving" | "dirty" | "error">("saved");
+  const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestBlocksRef = useRef<PageBlock[]>([]);
+  const latestPagesRef = useRef<SitePage[]>([]);
 
   // Confirmation dialogs
   const [confirmDeleteBlock, setConfirmDeleteBlock] = useState<string | null>(null);
