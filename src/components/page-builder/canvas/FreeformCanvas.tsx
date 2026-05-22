@@ -715,31 +715,66 @@ function SectionResizeHandle({
 }
 
 function SectionDragHandle({
-  id, index, scale, onMove,
-}: { id: string; index: number; scale: number; onMove: (fromId: string, toId: string) => void }) {
+  id, index, sections, scale, onReorder,
+}: {
+  id: string;
+  index: number;
+  sections: CanvasSection[];
+  scale: number;
+  onReorder: (fromId: string, toId: string) => void;
+}) {
+  const start = useRef<{ y: number; pointerId: number } | null>(null);
   return (
     <div
-      draggable
-      onDragStart={(e) => {
+      onPointerDown={(e) => {
         e.stopPropagation();
-        e.dataTransfer.setData("text/page-builder-section", id);
-        e.dataTransfer.effectAllowed = "move";
-      }}
-      onDragOver={(e) => {
-        if (e.dataTransfer.types.includes("text/page-builder-section")) e.preventDefault();
-      }}
-      onDrop={(e) => {
         e.preventDefault();
-        e.stopPropagation();
-        const fromId = e.dataTransfer.getData("text/page-builder-section");
-        if (fromId) onMove(fromId, id);
+        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+        start.current = { y: e.clientY, pointerId: e.pointerId };
       }}
-      onPointerDown={(e) => e.stopPropagation()}
-      className="absolute z-30 pointer-events-auto flex items-center gap-1 rounded-md bg-black/60 text-white border border-white/20 px-2 py-1 text-[10px] font-medium cursor-grab active:cursor-grabbing hover:bg-black/75"
-      style={{ top: 8 / scale, left: 8 / scale, transform: `scale(${1 / Math.max(scale, 0.01)})`, transformOrigin: "top left" }}
-      title="Drag to reorder section"
+      onPointerMove={(e) => {
+        // Visual feedback only — we resolve target on pointer up.
+        if (!start.current) return;
+        e.preventDefault();
+      }}
+      onPointerUp={(e) => {
+        if (!start.current) return;
+        try { (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId); } catch {}
+        const dy = (e.clientY - start.current.y) / Math.max(scale, 0.01);
+        // Walk through section heights to find which slot the pointer landed in.
+        let cursor = 0;
+        let targetId = id;
+        // Cumulative top of THIS section in canvas coords (not absolute screen).
+        let myTop = 0;
+        for (let i = 0; i < index; i += 1) myTop += sections[i].height;
+        const dropY = myTop + dy;
+        cursor = 0;
+        for (const sec of sections) {
+          if (dropY >= cursor && dropY < cursor + sec.height) {
+            targetId = sec.id;
+            break;
+          }
+          cursor += sec.height;
+        }
+        // Last section if dropped past the bottom.
+        if (dropY >= cursor) targetId = sections[sections.length - 1].id;
+        start.current = null;
+        if (targetId !== id) onReorder(id, targetId);
+      }}
+      className="absolute z-30 pointer-events-auto flex items-center gap-1 rounded-md bg-black/60 text-white border border-white/20 px-2 py-1 text-[10px] font-medium cursor-grab active:cursor-grabbing hover:bg-black/75 select-none"
+      style={{
+        top: 8 / scale,
+        left: 8 / scale,
+        transform: `scale(${1 / Math.max(scale, 0.01)})`,
+        transformOrigin: "top left",
+        touchAction: "none",
+      }}
+      title="Drag up/down to reorder section"
     >
       <GripVertical className="w-3 h-3" /> Section {index + 1}
     </div>
+  );
+}
+
   );
 }
