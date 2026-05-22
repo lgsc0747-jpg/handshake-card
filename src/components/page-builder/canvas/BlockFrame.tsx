@@ -16,6 +16,7 @@ interface BlockFrameProps {
   onSelect: (e: React.PointerEvent) => void;
   onChange: (next: BlockLayout, opts?: { commit?: boolean }) => void;
   onAutoSize?: (next: BlockLayout, opts?: { commit?: boolean }) => void;
+  onDragStateChange?: (dragging: boolean, layout: BlockLayout | null) => void;
   onDoubleClick?: () => void;
   contextMenu?: {
     bringForward: () => void;
@@ -33,15 +34,20 @@ interface BlockFrameProps {
   children: React.ReactNode;
 }
 
+
 export function BlockFrame({
   layout, selected, outOfBounds, scale = 1, panActive = false,
   interactiveChildren = false, onSelect, onChange, onDoubleClick, contextMenu, children,
-  onAutoSize,
+  onAutoSize, onDragStateChange,
 }: BlockFrameProps) {
   const startRef = useRef<{ x: number; y: number; layout: BlockLayout; handle: Handle } | null>(null);
   const currentLayoutRef = useRef<BlockLayout>(layout);
   const contentRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
+  /** Local override so the frame visually follows the pointer at native rAF,
+   *  independent of parent re-render latency. */
+  const [liveLayout, setLiveLayout] = useState<BlockLayout | null>(null);
+
 
   useEffect(() => {
     const el = contentRef.current;
@@ -67,9 +73,12 @@ export function BlockFrame({
       startRef.current = { x: e.clientX, y: e.clientY, layout: { ...layout }, handle };
       currentLayoutRef.current = { ...layout };
       setDragging(true);
+      setLiveLayout({ ...layout });
+      onDragStateChange?.(true, { ...layout });
     },
-    [layout],
+    [layout, onDragStateChange],
   );
+
 
   const move = useCallback(
     (e: RPointerEvent<HTMLDivElement>) => {
@@ -105,9 +114,11 @@ export function BlockFrame({
         }
       }
       currentLayoutRef.current = next;
+      setLiveLayout(next);
+      onDragStateChange?.(true, next);
       onChange(next);
     },
-    [onChange, scale],
+    [onChange, scale, onDragStateChange],
   );
 
   const end = useCallback(
@@ -117,9 +128,12 @@ export function BlockFrame({
       onChange(currentLayoutRef.current, { commit: true });
       startRef.current = null;
       setDragging(false);
+      setLiveLayout(null);
+      onDragStateChange?.(false, null);
     },
-    [onChange],
+    [onChange, onDragStateChange],
   );
+
 
   // Counter-scale handles so they stay visually constant regardless of zoom.
   const hs = 1 / Math.max(scale, 0.01);
@@ -131,7 +145,8 @@ export function BlockFrame({
     transformOrigin: "center",
   };
   const cornerSize = 10 * hs;
-  const rotation = layout.rotate ?? 0;
+  const display = liveLayout ?? layout;
+  const rotation = display.rotate ?? 0;
 
   const frame = (
     <div
@@ -142,13 +157,15 @@ export function BlockFrame({
         outOfBounds && "z-10 ring-2 ring-red-500 ring-offset-1 ring-offset-transparent",
       )}
       style={{
-        left: layout.x,
-        top: layout.y,
-        width: layout.w,
-        height: layout.h,
+        left: display.x,
+        top: display.y,
+        width: display.w,
+        height: display.h,
         transform: rotation ? `rotate(${rotation}deg)` : undefined,
         transformOrigin: "center",
+        willChange: dragging ? "left, top, width, height" : undefined,
       }}
+
       onPointerDown={(e) => { if (panActive) return; onSelect(e); begin("move")(e); }}
       onPointerMove={(e) => { if (panActive) return; move(e); }}
       onPointerUp={(e) => { if (panActive) return; end(e); }}
