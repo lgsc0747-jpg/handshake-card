@@ -73,9 +73,12 @@ export function BlockFrame({
       startRef.current = { x: e.clientX, y: e.clientY, layout: { ...layout }, handle };
       currentLayoutRef.current = { ...layout };
       setDragging(true);
+      setLiveLayout({ ...layout });
+      onDragStateChange?.(true, { ...layout });
     },
-    [layout],
+    [layout, onDragStateChange],
   );
+
 
   const move = useCallback(
     (e: RPointerEvent<HTMLDivElement>) => {
