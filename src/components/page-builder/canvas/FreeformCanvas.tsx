@@ -514,9 +514,11 @@ export function FreeformCanvas({
                       <SectionDragHandle
                         id={sec.id}
                         index={sections.findIndex((s2) => s2.id === sec.id)}
+                        sections={sections}
                         scale={scale}
-                        onMove={reorderSection}
+                        onReorder={reorderSection}
                       />
+
                       <SectionResizeHandle
                         height={sec.height}
                         scale={scale}
