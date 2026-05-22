@@ -141,6 +141,31 @@ export function FreeformCanvas({
     }
   }, [fitRequest, fitCanvas]);
 
+  // Ctrl/Cmd + wheel = zoom around cursor. Plain wheel still scrolls.
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    const onWheel = (e: WheelEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      e.preventDefault();
+      const rect = wrap.getBoundingClientRect();
+      const cursorX = e.clientX - rect.left + wrap.scrollLeft;
+      const cursorY = e.clientY - rect.top + wrap.scrollTop;
+      const factor = Math.exp(-e.deltaY * 0.0015);
+      const nextScale = Math.max(0.1, Math.min(4, scale * factor));
+      const ratio = nextScale / scale;
+      setScale(nextScale);
+      requestAnimationFrame(() => {
+        if (!wrapRef.current) return;
+        wrapRef.current.scrollLeft = cursorX * ratio - (e.clientX - rect.left);
+        wrapRef.current.scrollTop = cursorY * ratio - (e.clientY - rect.top);
+      });
+    };
+    wrap.addEventListener("wheel", onWheel, { passive: false });
+    return () => wrap.removeEventListener("wheel", onWheel as any);
+  }, [scale, setScale]);
+
+
   // Auto-place blocks that have no layout yet
   useEffect(() => {
     let nextY = 24;
