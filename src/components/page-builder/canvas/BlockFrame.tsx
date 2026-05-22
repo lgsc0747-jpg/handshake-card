@@ -114,9 +114,11 @@ export function BlockFrame({
         }
       }
       currentLayoutRef.current = next;
+      setLiveLayout(next);
+      onDragStateChange?.(true, next);
       onChange(next);
     },
-    [onChange, scale],
+    [onChange, scale, onDragStateChange],
   );
 
   const end = useCallback(
@@ -126,9 +128,12 @@ export function BlockFrame({
       onChange(currentLayoutRef.current, { commit: true });
       startRef.current = null;
       setDragging(false);
+      setLiveLayout(null);
+      onDragStateChange?.(false, null);
     },
-    [onChange],
+    [onChange, onDragStateChange],
   );
+
 
   // Counter-scale handles so they stay visually constant regardless of zoom.
   const hs = 1 / Math.max(scale, 0.01);
