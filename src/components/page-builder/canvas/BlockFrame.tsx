@@ -145,7 +145,8 @@ export function BlockFrame({
     transformOrigin: "center",
   };
   const cornerSize = 10 * hs;
-  const rotation = layout.rotate ?? 0;
+  const display = liveLayout ?? layout;
+  const rotation = display.rotate ?? 0;
 
   const frame = (
     <div
@@ -156,13 +157,15 @@ export function BlockFrame({
         outOfBounds && "z-10 ring-2 ring-red-500 ring-offset-1 ring-offset-transparent",
       )}
       style={{
-        left: layout.x,
-        top: layout.y,
-        width: layout.w,
-        height: layout.h,
+        left: display.x,
+        top: display.y,
+        width: display.w,
+        height: display.h,
         transform: rotation ? `rotate(${rotation}deg)` : undefined,
         transformOrigin: "center",
+        willChange: dragging ? "left, top, width, height" : undefined,
       }}
+
       onPointerDown={(e) => { if (panActive) return; onSelect(e); begin("move")(e); }}
       onPointerMove={(e) => { if (panActive) return; move(e); }}
       onPointerUp={(e) => { if (panActive) return; end(e); }}
