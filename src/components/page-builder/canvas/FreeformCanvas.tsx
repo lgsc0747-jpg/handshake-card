@@ -546,7 +546,17 @@ export function FreeformCanvas({
                 });
               })()}
 
-              <GuideOverlay settings={s} width={canvasW} height={canvasH} />
+              <GuideOverlay
+                settings={s}
+                width={canvasW}
+                height={canvasH}
+                active={activeDrag?.layout ?? null}
+                others={blocks
+                  .filter((b) => b.id !== activeDrag?.id)
+                  .map((b) => readLayout(b.styles))
+                  .filter((l): l is BlockLayout => !!l)}
+              />
+
 
               {orderedBlocks.map((b) => {
                 const layout = readLayout(b.styles);
