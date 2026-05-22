@@ -16,6 +16,7 @@ interface BlockFrameProps {
   onSelect: (e: React.PointerEvent) => void;
   onChange: (next: BlockLayout, opts?: { commit?: boolean }) => void;
   onAutoSize?: (next: BlockLayout, opts?: { commit?: boolean }) => void;
+  onDragStateChange?: (dragging: boolean, layout: BlockLayout | null) => void;
   onDoubleClick?: () => void;
   contextMenu?: {
     bringForward: () => void;
@@ -32,6 +33,7 @@ interface BlockFrameProps {
   interactiveChildren?: boolean;
   children: React.ReactNode;
 }
+
 
 export function BlockFrame({
   layout, selected, outOfBounds, scale = 1, panActive = false,
