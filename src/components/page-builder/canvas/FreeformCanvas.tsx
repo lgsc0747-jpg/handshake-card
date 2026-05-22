@@ -84,6 +84,7 @@ export function FreeformCanvas({
   const panStart = useRef<{ x: number; y: number; scrollLeft: number; scrollTop: number; pointerId: number } | null>(null);
   const [spaceHeld, setSpaceHeld] = useState(false);
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
+  const [activeDrag, setActiveDrag] = useState<{ id: string; layout: BlockLayout } | null>(null);
   const clipboard = useBlockClipboard();
 
   const s = { ...DEFAULT_CANVAS_SETTINGS, ...settings };
@@ -91,6 +92,7 @@ export function FreeformCanvas({
   const { w: canvasW } = DEVICE_SIZES[device];
   const canvasH = sections.reduce((sum, sec) => sum + sec.height, 0);
   const overflowPadding = Math.max(120, Math.min(800, s.overflowPadding ?? DEFAULT_CANVAS_SETTINGS.overflowPadding));
+
 
   const fitCanvas = useCallback(() => {
     const wrap = wrapRef.current;
