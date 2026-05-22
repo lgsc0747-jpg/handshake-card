@@ -38,12 +38,16 @@ interface BlockFrameProps {
 export function BlockFrame({
   layout, selected, outOfBounds, scale = 1, panActive = false,
   interactiveChildren = false, onSelect, onChange, onDoubleClick, contextMenu, children,
-  onAutoSize,
+  onAutoSize, onDragStateChange,
 }: BlockFrameProps) {
   const startRef = useRef<{ x: number; y: number; layout: BlockLayout; handle: Handle } | null>(null);
   const currentLayoutRef = useRef<BlockLayout>(layout);
   const contentRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
+  /** Local override so the frame visually follows the pointer at native rAF,
+   *  independent of parent re-render latency. */
+  const [liveLayout, setLiveLayout] = useState<BlockLayout | null>(null);
+
 
   useEffect(() => {
     const el = contentRef.current;
