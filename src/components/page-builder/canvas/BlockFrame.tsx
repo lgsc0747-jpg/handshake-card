@@ -235,6 +235,23 @@ export function BlockFrame({
           />
         </>
       )}
+      {endpointGhost && liveLayout && (
+        <div
+          className="pointer-events-none"
+          style={{
+            position: "absolute",
+            left: liveLayout.x - layout.x,
+            top: liveLayout.y - layout.y,
+            width: liveLayout.w,
+            height: liveLayout.h,
+            border: "1.5px dashed #3b82f6",
+            background: "rgb(59 130 246 / 0.08)",
+            borderRadius: 4,
+            transform: liveLayout.rotate ? `rotate(${liveLayout.rotate}deg)` : undefined,
+            transformOrigin: "center",
+          }}
+        />
+      )}
     </div>
   );
 
