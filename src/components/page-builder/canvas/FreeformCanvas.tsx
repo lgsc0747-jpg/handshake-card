@@ -194,8 +194,11 @@ export function FreeformCanvas({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canvasW, blocks.length]);
 
-  const updateBlockLayout = (id: string, layout: BlockLayout, opts?: { commit?: boolean }) => {
-    const snapped = snapLayout(layout, s, canvasW);
+  const updateBlockLayout = (id: string, layout: BlockLayout, opts?: { commit?: boolean }, others?: BlockLayout[]) => {
+    let snapped = snapLayout(layout, s, canvasW);
+    if (s.smartSnap !== false && others && others.length) {
+      snapped = snapToSmartGuides(snapped, others, canvasW, canvasH, 6);
+    }
     const next = blocks.map((b) => (b.id === id ? { ...b, styles: withLayout(b.styles, snapped) } : b));
     onUpdateBlocks(next, opts);
   };
@@ -209,6 +212,27 @@ export function FreeformCanvas({
       return { ...b, styles: withLayout(b.styles, moved) };
     });
     onUpdateBlocks(next, opts);
+  };
+
+  /** Move every selected block by (endpoint - originalAnchor) deltas, applied
+   *  to each block's ORIGINAL captured layout. No accumulation. */
+  const moveSelectionFromStart = (dx: number, dy: number, opts?: { commit?: boolean }) => {
+    const starts = multiDragStart.current?.layouts;
+    if (!starts) return;
+    const next = blocks.map((b) => {
+      const start = starts.get(b.id);
+      if (!start) return b;
+      const moved = snapLayout({ ...start, x: start.x + dx, y: start.y + dy }, s, canvasW);
+      return { ...b, styles: withLayout(b.styles, moved) };
+    });
+    onUpdateBlocks(next, opts);
+  };
+
+  const setTextAlignSelection = (a: TextAlign) => {
+    const next = blocks.map((b) =>
+      selectedIds.has(b.id) ? { ...b, styles: { ...b.styles, alignment: a } } : b,
+    );
+    onUpdateBlocks(next, { commit: true });
   };
 
   // Sections: add / resize / reorder
