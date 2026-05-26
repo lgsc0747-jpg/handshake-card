@@ -869,7 +869,10 @@ function PageBuilderPage() {
                 fit={() => setCanvasFitRequest((v) => v + 1)}
                 onUndo={undo}
                 onRedo={redo}
+                dragPreview={pageCanvasSettings.dragPreview ?? "live"}
+                setDragPreview={(v) => updateCanvasSettings({ ...pageCanvasSettings, dragPreview: v }, { commit: true })}
               />
+
             </div>
           )}
           <div className="flex-1 overflow-hidden p-2 md:p-4 pt-14">
