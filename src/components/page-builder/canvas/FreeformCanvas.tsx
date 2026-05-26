@@ -85,6 +85,10 @@ export function FreeformCanvas({
   const [spaceHeld, setSpaceHeld] = useState(false);
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
   const [activeDrag, setActiveDrag] = useState<{ id: string; layout: BlockLayout } | null>(null);
+  /** When a multi-selected block starts dragging, capture every selected block's
+   *  starting layout so we can apply (endpoint - start) deltas to all of them
+   *  on every move without accumulating error. */
+  const multiDragStart = useRef<{ anchorId: string; anchor: BlockLayout; layouts: Map<string, BlockLayout> } | null>(null);
   const clipboard = useBlockClipboard();
 
   const s = { ...DEFAULT_CANVAS_SETTINGS, ...settings };
