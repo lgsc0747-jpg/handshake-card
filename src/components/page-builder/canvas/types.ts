@@ -36,28 +36,27 @@ export interface CanvasSection {
 }
 
 export interface CanvasSettings {
-  /** Snap-to-grid toggle (free mode). */
   snap?: boolean;
-  /** Pixel step for free-mode snapping. */
   snapStep?: number;
-  /** Center crosshair guides visibility. */
   showGuides?: boolean;
-  /** Canvas / page background fill (page-wide, behind sections). */
+  /** Snap blocks to smart symmetry guides while dragging. */
+  smartSnap?: boolean;
+  /** Render only an endpoint outline while dragging (no smooth motion). */
+  dragPreview?: "live" | "endpoint";
   background?: BackgroundFill | null;
-  /** Global accent color (default for new buttons/links). */
   accent?: string | null;
-  /** Page sections (vertical bands stacked top-to-bottom). */
   sections?: CanvasSection[];
-  /** Workspace padding around the page so off-canvas handles remain reachable. */
   overflowPadding?: number;
 }
 
 export const DEFAULT_CANVAS_SETTINGS: Required<
-  Pick<CanvasSettings, "snap" | "snapStep" | "showGuides" | "overflowPadding">
+  Pick<CanvasSettings, "snap" | "snapStep" | "showGuides" | "overflowPadding" | "smartSnap" | "dragPreview">
 > & { background: BackgroundFill | null; accent: string | null; sections: CanvasSection[] } = {
   snap: true,
   snapStep: 8,
   showGuides: true,
+  smartSnap: true,
+  dragPreview: "live",
   overflowPadding: 360,
   background: { kind: "solid", color: "#0a0a0a", opacity: 1 },
   accent: "#3b82f6",
