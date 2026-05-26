@@ -116,11 +116,17 @@ export function BlockFrame({
         }
       }
       currentLayoutRef.current = next;
+      if (dragPreview === "endpoint" && handle === "move") {
+        // Only show ghost outline at the endpoint; do NOT commit to parent.
+        setLiveLayout(next);
+        onDragStateChange?.(true, next);
+        return;
+      }
       setLiveLayout(next);
       onDragStateChange?.(true, next);
       onChange(next);
     },
-    [onChange, scale, onDragStateChange],
+    [onChange, scale, onDragStateChange, dragPreview],
   );
 
   const end = useCallback(
