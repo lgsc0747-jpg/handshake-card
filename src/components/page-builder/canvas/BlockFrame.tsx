@@ -40,7 +40,7 @@ interface BlockFrameProps {
 export function BlockFrame({
   layout, selected, outOfBounds, scale = 1, panActive = false,
   interactiveChildren = false, onSelect, onChange, onDoubleClick, contextMenu, children,
-  onAutoSize, onDragStateChange,
+  onAutoSize, onDragStateChange, dragPreview = "live",
 }: BlockFrameProps) {
   const startRef = useRef<{ x: number; y: number; layout: BlockLayout; handle: Handle } | null>(null);
   const currentLayoutRef = useRef<BlockLayout>(layout);
