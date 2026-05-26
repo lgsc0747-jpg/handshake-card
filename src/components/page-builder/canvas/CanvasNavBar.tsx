@@ -32,9 +32,11 @@ const Btn = ({ active, onClick, title, children }: any) => (
 export function CanvasNavBar({
   scale, panTool, setPanTool,
   zoomIn, zoomOut, fit, onUndo, onRedo,
+  dragPreview, setDragPreview,
 }: Props) {
   return (
     <div className="flex items-center gap-1 px-2 py-1.5 rounded-xl bg-card/95 backdrop-blur-md border border-border/60 shadow-2xl">
+
       <Btn active={!panTool} onClick={() => setPanTool(false)} title="Select (V)">
         <MousePointer2 className="w-3.5 h-3.5" />
       </Btn>
