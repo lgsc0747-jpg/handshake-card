@@ -461,12 +461,33 @@ export function FreeformCanvas({
 
   const isPanning = panTool || spaceHeld;
 
+  // Selection-derived text alignment state
+  const selectedBlocks = blocks.filter((b) => selectedIds.has(b.id));
+  const hasTextBlock = selectedBlocks.some((b) => TEXT_BLOCK_TYPES.has(b.block_type));
+  const firstTextAlign = (selectedBlocks.find((b) => TEXT_BLOCK_TYPES.has(b.block_type))?.styles?.alignment ?? "left") as TextAlign;
+
   return (
     <div className="relative w-full h-full flex flex-col bg-zinc-900">
+      {/* Selection toolbar — sits at the viewport bottom, never overlaps the
+          top nav bar and doesn't move with canvas scroll. */}
+      <SelectionToolbar
+        count={selectedIds.size}
+        textAlign={firstTextAlign}
+        hasTextBlock={hasTextBlock}
+        onAlign={handleAlign}
+        onDistribute={handleDistribute}
+        onSetTextAlign={setTextAlignSelection}
+        onDuplicate={handleDuplicateSelection}
+        onDelete={handleDeleteSelection}
+      />
       <div
         ref={wrapRef}
         className="flex-1 overflow-auto"
-        style={{ cursor: isPanning ? "grab" : undefined }}
+        style={{
+          cursor: isPanning ? "grab" : undefined,
+          overscrollBehavior: "contain",
+          touchAction: isPanning ? "none" : "auto",
+        }}
         onPointerDown={(e) => {
           if (!isPanning || e.target !== e.currentTarget) return;
           startPan(e);
@@ -484,14 +505,7 @@ export function FreeformCanvas({
           onPointerMove={onCanvasPointerMove}
           onPointerUp={onCanvasPointerUp}
         >
-          {/* Selection toolbar */}
-          <SelectionToolbar
-            count={selectedIds.size}
-            onAlign={handleAlign}
-            onDistribute={handleDistribute}
-            onDuplicate={handleDuplicateSelection}
-            onDelete={handleDeleteSelection}
-          />
+
 
           <div
             style={{
