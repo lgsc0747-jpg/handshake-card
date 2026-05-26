@@ -31,6 +31,8 @@ interface BlockFrameProps {
   };
   panActive?: boolean;
   interactiveChildren?: boolean;
+  /** "live" = block moves with pointer; "endpoint" = ghost outline only until release. */
+  dragPreview?: "live" | "endpoint";
   children: React.ReactNode;
 }
 
