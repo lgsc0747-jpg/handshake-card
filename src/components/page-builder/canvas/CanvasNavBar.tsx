@@ -60,6 +60,18 @@ export function CanvasNavBar({
       <Btn onClick={fit} title="Fit to screen">
         <Maximize className="w-3.5 h-3.5" />
       </Btn>
+      {setDragPreview && (
+        <>
+          <div className="w-px h-4 bg-border/60 mx-0.5" />
+          <Btn
+            active={dragPreview === "endpoint"}
+            onClick={() => setDragPreview(dragPreview === "endpoint" ? "live" : "endpoint")}
+            title={dragPreview === "endpoint" ? "Drag preview: endpoint only" : "Drag preview: live motion"}
+          >
+            {dragPreview === "endpoint" ? <ZapOff className="w-3.5 h-3.5" /> : <Zap className="w-3.5 h-3.5" />}
+          </Btn>
+        </>
+      )}
       {(onUndo || onRedo) && <div className="w-px h-4 bg-border/60 mx-0.5" />}
       {onUndo && (
         <Btn onClick={onUndo} title="Undo (⌘Z)">
