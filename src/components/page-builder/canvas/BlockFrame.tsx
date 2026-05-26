@@ -153,7 +153,10 @@ export function BlockFrame({
     transformOrigin: "center",
   };
   const cornerSize = 10 * hs;
-  const display = liveLayout ?? layout;
+  // In endpoint mode, the live block stays at its original layout while a
+  // dashed ghost is drawn at the endpoint.
+  const endpointGhost = dragPreview === "endpoint" && dragging && liveLayout;
+  const display = endpointGhost ? layout : (liveLayout ?? layout);
   const rotation = display.rotate ?? 0;
 
   const frame = (
