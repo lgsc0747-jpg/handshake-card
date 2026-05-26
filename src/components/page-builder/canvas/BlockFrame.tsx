@@ -31,6 +31,8 @@ interface BlockFrameProps {
   };
   panActive?: boolean;
   interactiveChildren?: boolean;
+  /** "live" = block moves with pointer; "endpoint" = ghost outline only until release. */
+  dragPreview?: "live" | "endpoint";
   children: React.ReactNode;
 }
 
@@ -38,7 +40,7 @@ interface BlockFrameProps {
 export function BlockFrame({
   layout, selected, outOfBounds, scale = 1, panActive = false,
   interactiveChildren = false, onSelect, onChange, onDoubleClick, contextMenu, children,
-  onAutoSize, onDragStateChange,
+  onAutoSize, onDragStateChange, dragPreview = "live",
 }: BlockFrameProps) {
   const startRef = useRef<{ x: number; y: number; layout: BlockLayout; handle: Handle } | null>(null);
   const currentLayoutRef = useRef<BlockLayout>(layout);
@@ -114,11 +116,17 @@ export function BlockFrame({
         }
       }
       currentLayoutRef.current = next;
+      if (dragPreview === "endpoint" && handle === "move") {
+        // Only show ghost outline at the endpoint; do NOT commit to parent.
+        setLiveLayout(next);
+        onDragStateChange?.(true, next);
+        return;
+      }
       setLiveLayout(next);
       onDragStateChange?.(true, next);
       onChange(next);
     },
-    [onChange, scale, onDragStateChange],
+    [onChange, scale, onDragStateChange, dragPreview],
   );
 
   const end = useCallback(
@@ -145,7 +153,10 @@ export function BlockFrame({
     transformOrigin: "center",
   };
   const cornerSize = 10 * hs;
-  const display = liveLayout ?? layout;
+  // In endpoint mode, the live block stays at its original layout while a
+  // dashed ghost is drawn at the endpoint.
+  const endpointGhost = dragPreview === "endpoint" && dragging && liveLayout;
+  const display = endpointGhost ? layout : (liveLayout ?? layout);
   const rotation = display.rotate ?? 0;
 
   const frame = (
@@ -223,6 +234,23 @@ export function BlockFrame({
             }}
           />
         </>
+      )}
+      {endpointGhost && liveLayout && (
+        <div
+          className="pointer-events-none"
+          style={{
+            position: "absolute",
+            left: liveLayout.x - layout.x,
+            top: liveLayout.y - layout.y,
+            width: liveLayout.w,
+            height: liveLayout.h,
+            border: "1.5px dashed #3b82f6",
+            background: "rgb(59 130 246 / 0.08)",
+            borderRadius: 4,
+            transform: liveLayout.rotate ? `rotate(${liveLayout.rotate}deg)` : undefined,
+            transformOrigin: "center",
+          }}
+        />
       )}
     </div>
   );

@@ -1,4 +1,4 @@
-import { Hand, MousePointer2, ZoomIn, ZoomOut, Maximize, Undo2, Redo2 } from "lucide-react";
+import { Hand, MousePointer2, ZoomIn, ZoomOut, Maximize, Undo2, Redo2, Zap, ZapOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -10,6 +10,8 @@ interface Props {
   fit: () => void;
   onUndo?: () => void;
   onRedo?: () => void;
+  dragPreview?: "live" | "endpoint";
+  setDragPreview?: (v: "live" | "endpoint") => void;
 }
 
 const Btn = ({ active, onClick, title, children }: any) => (
@@ -30,9 +32,11 @@ const Btn = ({ active, onClick, title, children }: any) => (
 export function CanvasNavBar({
   scale, panTool, setPanTool,
   zoomIn, zoomOut, fit, onUndo, onRedo,
+  dragPreview, setDragPreview,
 }: Props) {
   return (
     <div className="flex items-center gap-1 px-2 py-1.5 rounded-xl bg-card/95 backdrop-blur-md border border-border/60 shadow-2xl">
+
       <Btn active={!panTool} onClick={() => setPanTool(false)} title="Select (V)">
         <MousePointer2 className="w-3.5 h-3.5" />
       </Btn>
@@ -56,6 +60,18 @@ export function CanvasNavBar({
       <Btn onClick={fit} title="Fit to screen">
         <Maximize className="w-3.5 h-3.5" />
       </Btn>
+      {setDragPreview && (
+        <>
+          <div className="w-px h-4 bg-border/60 mx-0.5" />
+          <Btn
+            active={dragPreview === "endpoint"}
+            onClick={() => setDragPreview(dragPreview === "endpoint" ? "live" : "endpoint")}
+            title={dragPreview === "endpoint" ? "Drag preview: endpoint only" : "Drag preview: live motion"}
+          >
+            {dragPreview === "endpoint" ? <ZapOff className="w-3.5 h-3.5" /> : <Zap className="w-3.5 h-3.5" />}
+          </Btn>
+        </>
+      )}
       {(onUndo || onRedo) && <div className="w-px h-4 bg-border/60 mx-0.5" />}
       {onUndo && (
         <Btn onClick={onUndo} title="Undo (⌘Z)">

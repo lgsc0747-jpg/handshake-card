@@ -4,8 +4,8 @@ import { BlockRenderer } from "@/components/page-builder/BlockRenderer";
 import type { PageBlock } from "@/components/page-builder/types";
 import { BlockFrame } from "./BlockFrame";
 import { GuideOverlay } from "./GuideOverlay";
-import { SelectionToolbar } from "./SelectionToolbar";
-import { snapLayout } from "./snap";
+import { SelectionToolbar, type TextAlign } from "./SelectionToolbar";
+import { snapLayout, snapToSmartGuides } from "./snap";
 import { alignBlocks, distributeBlocks, type AlignOp, type DistributeOp } from "./align";
 import { useBlockClipboard } from "./useBlockClipboard";
 import { GripVertical, Plus } from "lucide-react";
@@ -85,6 +85,10 @@ export function FreeformCanvas({
   const [spaceHeld, setSpaceHeld] = useState(false);
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
   const [activeDrag, setActiveDrag] = useState<{ id: string; layout: BlockLayout } | null>(null);
+  /** When a multi-selected block starts dragging, capture every selected block's
+   *  starting layout so we can apply (endpoint - start) deltas to all of them
+   *  on every move without accumulating error. */
+  const multiDragStart = useRef<{ anchorId: string; anchor: BlockLayout; layouts: Map<string, BlockLayout> } | null>(null);
   const clipboard = useBlockClipboard();
 
   const s = { ...DEFAULT_CANVAS_SETTINGS, ...settings };
@@ -190,8 +194,11 @@ export function FreeformCanvas({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canvasW, blocks.length]);
 
-  const updateBlockLayout = (id: string, layout: BlockLayout, opts?: { commit?: boolean }) => {
-    const snapped = snapLayout(layout, s, canvasW);
+  const updateBlockLayout = (id: string, layout: BlockLayout, opts?: { commit?: boolean }, others?: BlockLayout[]) => {
+    let snapped = snapLayout(layout, s, canvasW);
+    if (s.smartSnap !== false && others && others.length) {
+      snapped = snapToSmartGuides(snapped, others, canvasW, canvasH, 6);
+    }
     const next = blocks.map((b) => (b.id === id ? { ...b, styles: withLayout(b.styles, snapped) } : b));
     onUpdateBlocks(next, opts);
   };
@@ -205,6 +212,27 @@ export function FreeformCanvas({
       return { ...b, styles: withLayout(b.styles, moved) };
     });
     onUpdateBlocks(next, opts);
+  };
+
+  /** Move every selected block by (endpoint - originalAnchor) deltas, applied
+   *  to each block's ORIGINAL captured layout. No accumulation. */
+  const moveSelectionFromStart = (dx: number, dy: number, opts?: { commit?: boolean }) => {
+    const starts = multiDragStart.current?.layouts;
+    if (!starts) return;
+    const next = blocks.map((b) => {
+      const start = starts.get(b.id);
+      if (!start) return b;
+      const moved = snapLayout({ ...start, x: start.x + dx, y: start.y + dy }, s, canvasW);
+      return { ...b, styles: withLayout(b.styles, moved) };
+    });
+    onUpdateBlocks(next, opts);
+  };
+
+  const setTextAlignSelection = (a: TextAlign) => {
+    const next = blocks.map((b) =>
+      selectedIds.has(b.id) ? { ...b, styles: { ...b.styles, alignment: a } } : b,
+    );
+    onUpdateBlocks(next, { commit: true });
   };
 
   // Sections: add / resize / reorder
@@ -433,12 +461,33 @@ export function FreeformCanvas({
 
   const isPanning = panTool || spaceHeld;
 
+  // Selection-derived text alignment state
+  const selectedBlocks = blocks.filter((b) => selectedIds.has(b.id));
+  const hasTextBlock = selectedBlocks.some((b) => TEXT_BLOCK_TYPES.has(b.block_type));
+  const firstTextAlign = (selectedBlocks.find((b) => TEXT_BLOCK_TYPES.has(b.block_type))?.styles?.alignment ?? "left") as TextAlign;
+
   return (
     <div className="relative w-full h-full flex flex-col bg-zinc-900">
+      {/* Selection toolbar — sits at the viewport bottom, never overlaps the
+          top nav bar and doesn't move with canvas scroll. */}
+      <SelectionToolbar
+        count={selectedIds.size}
+        textAlign={firstTextAlign}
+        hasTextBlock={hasTextBlock}
+        onAlign={handleAlign}
+        onDistribute={handleDistribute}
+        onSetTextAlign={setTextAlignSelection}
+        onDuplicate={handleDuplicateSelection}
+        onDelete={handleDeleteSelection}
+      />
       <div
         ref={wrapRef}
         className="flex-1 overflow-auto"
-        style={{ cursor: isPanning ? "grab" : undefined }}
+        style={{
+          cursor: isPanning ? "grab" : undefined,
+          overscrollBehavior: "contain",
+          touchAction: isPanning ? "none" : "auto",
+        }}
         onPointerDown={(e) => {
           if (!isPanning || e.target !== e.currentTarget) return;
           startPan(e);
@@ -456,14 +505,7 @@ export function FreeformCanvas({
           onPointerMove={onCanvasPointerMove}
           onPointerUp={onCanvasPointerUp}
         >
-          {/* Selection toolbar */}
-          <SelectionToolbar
-            count={selectedIds.size}
-            onAlign={handleAlign}
-            onDistribute={handleDistribute}
-            onDuplicate={handleDuplicateSelection}
-            onDelete={handleDeleteSelection}
-          />
+
 
           <div
             style={{
@@ -577,6 +619,7 @@ export function FreeformCanvas({
                     scale={scale}
                     panActive={isPanning}
                     interactiveChildren={isEditingThis}
+                    dragPreview={s.dragPreview ?? "live"}
                     onSelect={(e) => {
                       if (isEditingThis) return;
                       if (e.shiftKey) {
@@ -588,21 +631,43 @@ export function FreeformCanvas({
                       }
                     }}
                     onChange={(next, opts) => {
-                      if (selectedIds.has(b.id) && selectedIds.size > 1) {
-                        const dx = next.x - layout.x;
-                        const dy = next.y - layout.y;
-                        if (next.w === layout.w && next.h === layout.h) {
-                          moveSelection(dx, dy, opts);
-                          return;
-                        }
+                      const isMultiMove =
+                        selectedIds.has(b.id) && selectedIds.size > 1 &&
+                        next.w === layout.w && next.h === layout.h;
+                      if (isMultiMove && multiDragStart.current?.anchorId === b.id) {
+                        const anchor = multiDragStart.current.anchor;
+                        const dx = next.x - anchor.x;
+                        const dy = next.y - anchor.y;
+                        moveSelectionFromStart(dx, dy, opts);
+                        return;
                       }
-                      updateBlockLayout(b.id, next, opts);
+                      const others = blocks
+                        .filter((bb) => bb.id !== b.id)
+                        .map((bb) => readLayout(bb.styles))
+                        .filter((l): l is BlockLayout => !!l);
+                      updateBlockLayout(b.id, next, opts, others);
                     }}
                     onAutoSize={(next) => updateBlockLayout(b.id, next)}
                     onDragStateChange={(isDragging, l) => {
-                      if (isDragging && l) setActiveDrag({ id: b.id, layout: l });
-                      else setActiveDrag(null);
+                      if (isDragging && l) {
+                        setActiveDrag({ id: b.id, layout: l });
+                        // Capture starts for every selected block on first drag fire.
+                        if (!multiDragStart.current && selectedIds.has(b.id) && selectedIds.size > 1) {
+                          const map = new Map<string, BlockLayout>();
+                          blocks.forEach((bb) => {
+                            if (selectedIds.has(bb.id)) {
+                              const ll = readLayout(bb.styles);
+                              if (ll) map.set(bb.id, ll);
+                            }
+                          });
+                          multiDragStart.current = { anchorId: b.id, anchor: { ...layout }, layouts: map };
+                        }
+                      } else {
+                        setActiveDrag(null);
+                        multiDragStart.current = null;
+                      }
                     }}
+
 
                     onDoubleClick={() => { if (canEditText) setEditingTextId(b.id); }}
                     contextMenu={{
