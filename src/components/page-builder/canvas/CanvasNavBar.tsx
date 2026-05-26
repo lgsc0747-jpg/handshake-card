@@ -1,4 +1,4 @@
-import { Hand, MousePointer2, ZoomIn, ZoomOut, Maximize, Undo2, Redo2 } from "lucide-react";
+import { Hand, MousePointer2, ZoomIn, ZoomOut, Maximize, Undo2, Redo2, Zap, ZapOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -10,6 +10,8 @@ interface Props {
   fit: () => void;
   onUndo?: () => void;
   onRedo?: () => void;
+  dragPreview?: "live" | "endpoint";
+  setDragPreview?: (v: "live" | "endpoint") => void;
 }
 
 const Btn = ({ active, onClick, title, children }: any) => (
