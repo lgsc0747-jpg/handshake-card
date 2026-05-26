@@ -619,6 +619,7 @@ export function FreeformCanvas({
                     scale={scale}
                     panActive={isPanning}
                     interactiveChildren={isEditingThis}
+                    dragPreview={s.dragPreview ?? "live"}
                     onSelect={(e) => {
                       if (isEditingThis) return;
                       if (e.shiftKey) {
@@ -630,21 +631,43 @@ export function FreeformCanvas({
                       }
                     }}
                     onChange={(next, opts) => {
-                      if (selectedIds.has(b.id) && selectedIds.size > 1) {
-                        const dx = next.x - layout.x;
-                        const dy = next.y - layout.y;
-                        if (next.w === layout.w && next.h === layout.h) {
-                          moveSelection(dx, dy, opts);
-                          return;
-                        }
+                      const isMultiMove =
+                        selectedIds.has(b.id) && selectedIds.size > 1 &&
+                        next.w === layout.w && next.h === layout.h;
+                      if (isMultiMove && multiDragStart.current?.anchorId === b.id) {
+                        const anchor = multiDragStart.current.anchor;
+                        const dx = next.x - anchor.x;
+                        const dy = next.y - anchor.y;
+                        moveSelectionFromStart(dx, dy, opts);
+                        return;
                       }
-                      updateBlockLayout(b.id, next, opts);
+                      const others = blocks
+                        .filter((bb) => bb.id !== b.id)
+                        .map((bb) => readLayout(bb.styles))
+                        .filter((l): l is BlockLayout => !!l);
+                      updateBlockLayout(b.id, next, opts, others);
                     }}
                     onAutoSize={(next) => updateBlockLayout(b.id, next)}
                     onDragStateChange={(isDragging, l) => {
-                      if (isDragging && l) setActiveDrag({ id: b.id, layout: l });
-                      else setActiveDrag(null);
+                      if (isDragging && l) {
+                        setActiveDrag({ id: b.id, layout: l });
+                        // Capture starts for every selected block on first drag fire.
+                        if (!multiDragStart.current && selectedIds.has(b.id) && selectedIds.size > 1) {
+                          const map = new Map<string, BlockLayout>();
+                          blocks.forEach((bb) => {
+                            if (selectedIds.has(bb.id)) {
+                              const ll = readLayout(bb.styles);
+                              if (ll) map.set(bb.id, ll);
+                            }
+                          });
+                          multiDragStart.current = { anchorId: b.id, anchor: { ...layout }, layouts: map };
+                        }
+                      } else {
+                        setActiveDrag(null);
+                        multiDragStart.current = null;
+                      }
                     }}
+
 
                     onDoubleClick={() => { if (canEditText) setEditingTextId(b.id); }}
                     contextMenu={{
