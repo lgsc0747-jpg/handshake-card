@@ -41,6 +41,12 @@ export interface CanvasSettings {
   showGuides?: boolean;
   /** Snap blocks to smart symmetry guides while dragging. */
   smartSnap?: boolean;
+  /** Tolerance (canvas px) used by smart snap + guide detection. */
+  snapTolerance?: number;
+  /** Snap targets: edges only, or edges + centers. */
+  snapMode?: "edges" | "edges-centers";
+  /** Render snap-debug markers (highlighted guide + intersection dots). */
+  snapDebug?: boolean;
   /** Render only an endpoint outline while dragging (no smooth motion). */
   dragPreview?: "live" | "endpoint";
   background?: BackgroundFill | null;
@@ -50,12 +56,15 @@ export interface CanvasSettings {
 }
 
 export const DEFAULT_CANVAS_SETTINGS: Required<
-  Pick<CanvasSettings, "snap" | "snapStep" | "showGuides" | "overflowPadding" | "smartSnap" | "dragPreview">
+  Pick<CanvasSettings, "snap" | "snapStep" | "showGuides" | "overflowPadding" | "smartSnap" | "dragPreview" | "snapTolerance" | "snapMode" | "snapDebug">
 > & { background: BackgroundFill | null; accent: string | null; sections: CanvasSection[] } = {
   snap: true,
   snapStep: 8,
   showGuides: true,
   smartSnap: true,
+  snapTolerance: 6,
+  snapMode: "edges-centers",
+  snapDebug: false,
   dragPreview: "live",
   overflowPadding: 360,
   background: { kind: "solid", color: "#0a0a0a", opacity: 1 },
