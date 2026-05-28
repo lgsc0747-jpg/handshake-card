@@ -871,6 +871,14 @@ function PageBuilderPage() {
                 onRedo={redo}
                 dragPreview={pageCanvasSettings.dragPreview ?? "live"}
                 setDragPreview={(v) => updateCanvasSettings({ ...pageCanvasSettings, dragPreview: v }, { commit: true })}
+                smartSnap={pageCanvasSettings.smartSnap ?? true}
+                setSmartSnap={(v) => updateCanvasSettings({ ...pageCanvasSettings, smartSnap: v }, { commit: true })}
+                snapTolerance={pageCanvasSettings.snapTolerance ?? 6}
+                setSnapTolerance={(v) => updateCanvasSettings({ ...pageCanvasSettings, snapTolerance: v }, { commit: true })}
+                snapMode={pageCanvasSettings.snapMode ?? "edges-centers"}
+                setSnapMode={(v) => updateCanvasSettings({ ...pageCanvasSettings, snapMode: v }, { commit: true })}
+                snapDebug={pageCanvasSettings.snapDebug ?? false}
+                setSnapDebug={(v) => updateCanvasSettings({ ...pageCanvasSettings, snapDebug: v }, { commit: true })}
               />
 
             </div>

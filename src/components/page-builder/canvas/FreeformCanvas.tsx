@@ -197,7 +197,7 @@ export function FreeformCanvas({
   const updateBlockLayout = (id: string, layout: BlockLayout, opts?: { commit?: boolean }, others?: BlockLayout[]) => {
     let snapped = snapLayout(layout, s, canvasW);
     if (s.smartSnap !== false && others && others.length) {
-      snapped = snapToSmartGuides(snapped, others, canvasW, canvasH, 6);
+      snapped = snapToSmartGuides(snapped, others, canvasW, canvasH, s.snapTolerance ?? 6, s.snapMode ?? "edges-centers");
     }
     const next = blocks.map((b) => (b.id === id ? { ...b, styles: withLayout(b.styles, snapped) } : b));
     onUpdateBlocks(next, opts);
@@ -437,6 +437,23 @@ export function FreeformCanvas({
         e.preventDefault(); setScale(Math.min(4, Math.max(0.1, scale - 0.1)));
       } else if (meta && e.key === "0") {
         e.preventDefault(); fitCanvas();
+      } else if (meta && selectedIds.size && ["l", "e", "r", "j"].includes(e.key.toLowerCase())) {
+        // Text alignment: ⌘L / ⌘E (center) / ⌘R / ⌘J
+        // Block alignment when ⇧ is held: ⌘⇧L (left), ⌘⇧E (center-h), ⌘⇧R (right), ⌘⇧J (justify horizontally distribute)
+        const k = e.key.toLowerCase();
+        if (e.shiftKey) {
+          e.preventDefault();
+          if (k === "l") handleAlign("left");
+          else if (k === "e") handleAlign("center-h");
+          else if (k === "r") handleAlign("right");
+          else if (k === "j") handleDistribute("horizontal");
+        } else {
+          const hasText = blocks.some((b) => selectedIds.has(b.id) && TEXT_BLOCK_TYPES.has(b.block_type));
+          if (!hasText) return;
+          e.preventDefault();
+          const map: Record<string, TextAlign> = { l: "left", e: "center", r: "right", j: "justify" };
+          setTextAlignSelection(map[k]);
+        }
       }
     };
     const onKeyUp = (e: KeyboardEvent) => {
