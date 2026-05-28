@@ -197,7 +197,7 @@ export function FreeformCanvas({
   const updateBlockLayout = (id: string, layout: BlockLayout, opts?: { commit?: boolean }, others?: BlockLayout[]) => {
     let snapped = snapLayout(layout, s, canvasW);
     if (s.smartSnap !== false && others && others.length) {
-      snapped = snapToSmartGuides(snapped, others, canvasW, canvasH, 6);
+      snapped = snapToSmartGuides(snapped, others, canvasW, canvasH, s.snapTolerance ?? 6, s.snapMode ?? "edges-centers");
     }
     const next = blocks.map((b) => (b.id === id ? { ...b, styles: withLayout(b.styles, snapped) } : b));
     onUpdateBlocks(next, opts);
