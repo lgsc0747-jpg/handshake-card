@@ -22,9 +22,10 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["Inter", "-apple-system", "BlinkMacSystemFont", "SF Pro Text", "system-ui", "sans-serif"],
-        display: ["Inter", "-apple-system", "BlinkMacSystemFont", "SF Pro Display", "system-ui", "sans-serif"],
-        mono: ["JetBrains Mono", "SF Mono", "ui-monospace", "Menlo", "monospace"],
+        sans: ["'Fira Sans'", "-apple-system", "BlinkMacSystemFont", "system-ui", "sans-serif"],
+        display: ["'DM Serif Display'", "Georgia", "'Times New Roman'", "serif"],
+        serif: ["'DM Serif Display'", "Georgia", "'Times New Roman'", "serif"],
+        mono: ["'JetBrains Mono'", "'SF Mono'", "ui-monospace", "Menlo", "monospace"],
       },
       colors: {
         border: "hsl(var(--border))",

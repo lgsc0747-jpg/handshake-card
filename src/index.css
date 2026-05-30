@@ -4,53 +4,55 @@
 
 @layer base {
   /* ─────────────────────────────────────────────────────────
-     blocks.so design language · Soft Neutral + Dark-first OS
-     Warm zinc neutrals, generous whitespace, 8–12px radii,
-     subtle 1px borders + soft shadows, indigo accent.
+     Paper & Ink · Editorial Design System
+     Warm off-white paper, deep ink, DM Serif Display headings,
+     Fira Sans body. Sharp 2-6px radii, hairline borders, soft
+     letterpress shadows. Reads like a printed broadsheet.
      ───────────────────────────────────────────────────────── */
   :root {
-    --background: 30 8% 98%;
-    --foreground: 240 6% 10%;
+    --background: 43 25% 95%;        /* #f5f3ee — warm paper */
+    --foreground: 0 0% 10%;          /* near-ink */
 
     --card: 0 0% 100%;
-    --card-foreground: 240 6% 10%;
+    --card-foreground: 0 0% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 240 6% 10%;
+    --popover-foreground: 0 0% 10%;
 
-    --primary: 240 6% 10%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 0 0% 5%;              /* #0d0d0d — pure ink */
+    --primary-foreground: 43 25% 96%;
 
-    --secondary: 30 6% 95%;
-    --secondary-foreground: 240 6% 14%;
+    --secondary: 40 19% 89%;         /* #e8e4dd — secondary paper */
+    --secondary-foreground: 0 0% 18%;
 
-    --muted: 30 6% 95%;
-    --muted-foreground: 240 4% 44%;
+    --muted: 40 19% 92%;
+    --muted-foreground: 0 0% 36%;
 
-    --accent: 235 84% 60%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 0 0% 10%;              /* monochrome — ink itself */
+    --accent-foreground: 43 25% 96%;
 
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 65% 42%;
+    --destructive-foreground: 43 25% 96%;
 
-    --success: 152 60% 36%;
-    --success-foreground: 0 0% 100%;
+    --success: 152 50% 28%;
+    --success-foreground: 43 25% 96%;
 
-    --warning: 32 95% 50%;
-    --warning-foreground: 240 6% 10%;
+    --warning: 32 80% 42%;
+    --warning-foreground: 43 25% 96%;
 
-    --border: 30 6% 90%;
-    --input: 30 6% 90%;
-    --ring: 235 84% 60%;
+    --border: 36 14% 82%;            /* hairline paper edge */
+    --input: 36 14% 82%;
+    --ring: 0 0% 10%;
 
-    --radius: 0.5rem;
-    --radius-sm: 0.375rem;
-    --radius-md: 0.5rem;
-    --radius-lg: 0.625rem;
-    --radius-xl: 0.875rem;
-    --radius-2xl: 1.125rem;
+    /* Sharper, editorial radii */
+    --radius: 0.25rem;
+    --radius-sm: 0.125rem;
+    --radius-md: 0.25rem;
+    --radius-lg: 0.375rem;
+    --radius-xl: 0.5rem;
+    --radius-2xl: 0.625rem;
 
-    /* Apple motion curves */
+    /* Motion curves */
     --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
     --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
     --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
@@ -58,81 +60,83 @@
     --dur-base: 240ms;
     --dur-slow: 420ms;
 
-    --sidebar-background: 30 8% 97%;
-    --sidebar-foreground: 240 5% 28%;
-    --sidebar-primary: 240 6% 10%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 30 6% 93%;
-    --sidebar-accent-foreground: 240 6% 14%;
-    --sidebar-border: 30 6% 90%;
-    --sidebar-ring: 235 84% 60%;
+    --sidebar-background: 40 22% 93%;
+    --sidebar-foreground: 0 0% 22%;
+    --sidebar-primary: 0 0% 5%;
+    --sidebar-primary-foreground: 43 25% 96%;
+    --sidebar-accent: 40 19% 87%;
+    --sidebar-accent-foreground: 0 0% 10%;
+    --sidebar-border: 36 14% 82%;
+    --sidebar-ring: 0 0% 10%;
 
-    --chart-1: 235 84% 60%;
-    --chart-2: 198 88% 48%;
-    --chart-3: 152 60% 42%;
-    --chart-4: 32 95% 55%;
-    --chart-5: 280 70% 60%;
+    --chart-1: 0 0% 10%;
+    --chart-2: 0 0% 35%;
+    --chart-3: 0 0% 55%;
+    --chart-4: 32 60% 45%;
+    --chart-5: 152 40% 32%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(235 84% 60%), hsl(258 78% 64%));
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(30 8% 98%));
-    --shadow-card: 0 1px 2px hsl(240 6% 10% / 0.04), 0 1px 0 hsl(240 6% 10% / 0.02);
-    --shadow-elevated: 0 4px 12px -2px hsl(240 6% 10% / 0.08), 0 2px 4px hsl(240 6% 10% / 0.04);
+    --gradient-primary: linear-gradient(135deg, hsl(0 0% 10%), hsl(0 0% 22%));
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(43 25% 97%));
+    /* Letterpress: tight, soft, paper-grain shadow */
+    --shadow-card: 0 1px 0 hsl(0 0% 10% / 0.04), 0 1px 2px hsl(0 0% 10% / 0.05);
+    --shadow-elevated: 0 1px 0 hsl(0 0% 10% / 0.04), 0 8px 24px -10px hsl(0 0% 10% / 0.18);
   }
 
   .dark {
-    --background: 224 14% 6%;
-    --foreground: 220 12% 94%;
+    /* Ink mode — inverted broadsheet */
+    --background: 0 0% 5%;
+    --foreground: 43 22% 92%;
 
-    --card: 224 13% 9%;
-    --card-foreground: 220 12% 94%;
+    --card: 0 0% 8%;
+    --card-foreground: 43 22% 92%;
 
-    --popover: 224 13% 10%;
-    --popover-foreground: 220 12% 94%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 43 22% 92%;
 
-    --primary: 220 12% 94%;
-    --primary-foreground: 224 14% 6%;
+    --primary: 43 22% 92%;
+    --primary-foreground: 0 0% 5%;
 
-    --secondary: 224 10% 14%;
-    --secondary-foreground: 220 12% 88%;
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 43 22% 88%;
 
-    --muted: 224 10% 13%;
-    --muted-foreground: 220 8% 58%;
+    --muted: 0 0% 11%;
+    --muted-foreground: 40 8% 60%;
 
-    --accent: 235 90% 68%;
-    --accent-foreground: 224 14% 6%;
+    --accent: 43 22% 92%;
+    --accent-foreground: 0 0% 5%;
 
-    --destructive: 0 72% 58%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 68% 55%;
+    --destructive-foreground: 43 22% 92%;
 
-    --success: 152 56% 48%;
-    --success-foreground: 0 0% 100%;
+    --success: 152 45% 50%;
+    --success-foreground: 0 0% 5%;
 
-    --warning: 32 92% 58%;
-    --warning-foreground: 224 14% 6%;
+    --warning: 32 80% 58%;
+    --warning-foreground: 0 0% 5%;
 
-    --border: 224 10% 16%;
-    --input: 224 10% 16%;
-    --ring: 235 90% 68%;
+    --border: 0 0% 16%;
+    --input: 0 0% 16%;
+    --ring: 43 22% 92%;
 
-    --sidebar-background: 224 16% 5%;
-    --sidebar-foreground: 220 8% 65%;
-    --sidebar-primary: 220 12% 94%;
-    --sidebar-primary-foreground: 224 14% 6%;
-    --sidebar-accent: 224 10% 12%;
-    --sidebar-accent-foreground: 220 12% 94%;
-    --sidebar-border: 224 10% 13%;
-    --sidebar-ring: 235 90% 68%;
+    --sidebar-background: 0 0% 4%;
+    --sidebar-foreground: 40 8% 65%;
+    --sidebar-primary: 43 22% 92%;
+    --sidebar-primary-foreground: 0 0% 5%;
+    --sidebar-accent: 0 0% 10%;
+    --sidebar-accent-foreground: 43 22% 92%;
+    --sidebar-border: 0 0% 14%;
+    --sidebar-ring: 43 22% 92%;
 
-    --chart-1: 235 90% 68%;
-    --chart-2: 198 88% 58%;
-    --chart-3: 152 56% 52%;
-    --chart-4: 32 92% 60%;
-    --chart-5: 280 70% 68%;
+    --chart-1: 43 22% 92%;
+    --chart-2: 40 8% 65%;
+    --chart-3: 0 0% 45%;
+    --chart-4: 32 70% 60%;
+    --chart-5: 152 45% 55%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(235 90% 68%), hsl(258 84% 70%));
-    --gradient-card: linear-gradient(180deg, hsl(224 13% 10%), hsl(224 14% 8%));
-    --shadow-card: 0 1px 2px hsl(0 0% 0% / 0.4), 0 0 0 1px hsl(224 10% 16%);
-    --shadow-elevated: 0 8px 24px -4px hsl(0 0% 0% / 0.5), 0 0 0 1px hsl(224 10% 18%);
+    --gradient-primary: linear-gradient(135deg, hsl(43 22% 92%), hsl(40 10% 75%));
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 9%), hsl(0 0% 6%));
+    --shadow-card: 0 1px 0 hsl(0 0% 0% / 0.5), 0 0 0 1px hsl(0 0% 14%);
+    --shadow-elevated: 0 1px 0 hsl(0 0% 0% / 0.5), 0 12px 32px -10px hsl(0 0% 0% / 0.6);
   }
 }
 
@@ -148,52 +152,56 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1, "cv11" 1;
+    font-feature-settings: "ss01" 1, "cv11" 1, "kern" 1, "liga" 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Subtle paper grain via radial vignette */
+    background-image:
+      radial-gradient(ellipse at top, hsl(43 35% 97% / 0.6), transparent 60%),
+      radial-gradient(ellipse at bottom right, hsl(40 25% 90% / 0.4), transparent 60%);
+    background-attachment: fixed;
   }
 
-  /*
-   * Dashboard layout owns its own scroll container (main[overflow-y-auto]).
-   * Public profile and auth pages rely on the natural document scroll.
-   * We do NOT lock body overflow globally — that would break /p/:username and
-   * any standalone landing pages on mobile Safari.
-   */
+  .dark body {
+    background-image:
+      radial-gradient(ellipse at top, hsl(0 0% 8% / 0.8), transparent 60%),
+      radial-gradient(ellipse at bottom right, hsl(0 0% 6% / 0.6), transparent 60%);
+  }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+    font-family: 'DM Serif Display', Georgia, 'Times New Roman', serif;
     @apply tracking-tight;
-    letter-spacing: -0.018em;
-    font-weight: 600;
+    font-weight: 400;
+    letter-spacing: -0.01em;
   }
 
-  h1 { letter-spacing: -0.028em; font-weight: 700; }
-  h2 { letter-spacing: -0.022em; }
+  h1 { letter-spacing: -0.02em; }
+  h2 { letter-spacing: -0.015em; }
 }
 
 @layer utilities {
-  /* ── blocks.so surfaces — soft cards, subtle elevation, rounded ── */
+  /* ── Paper-card surfaces — hairline border, letterpress shadow ── */
   .glass-card,
   .ios-card {
-    @apply bg-card border border-border/60 rounded-xl shadow-[var(--shadow-card)];
+    @apply bg-card border border-border rounded-md shadow-[var(--shadow-card)];
   }
 
   .glass-elevated {
-    @apply bg-card border border-border/60 rounded-xl shadow-[var(--shadow-elevated)];
+    @apply bg-card border border-border rounded-md shadow-[var(--shadow-elevated)];
   }
 
   .ios-panel {
-    @apply bg-card border border-border/60 rounded-xl;
+    @apply bg-card border border-border rounded-md;
   }
 
   .ios-row {
-    @apply rounded-lg transition-colors duration-150;
+    @apply rounded-sm transition-colors duration-150;
   }
   .ios-row:hover { @apply bg-muted; }
   .ios-row:active { @apply bg-muted; }
 
   .ios-pill {
-    @apply rounded-full px-3 py-1.5 text-sm font-medium transition-all duration-150;
+    @apply rounded-sm px-3 py-1.5 text-sm font-medium transition-all duration-150;
   }
 
   /* Motion presets */
@@ -208,47 +216,55 @@
   .safe-pb { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
   .safe-pt { padding-top: max(0.5rem, env(safe-area-inset-top)); }
 
-  /* blocks.so type scale — refined, not brutalist */
+  /* Editorial type scale — serif display, sans body */
   .text-display {
-    font-family: 'Inter', system-ui, sans-serif;
-    font-size: clamp(1.625rem, 1.1rem + 2vw, 2.375rem);
-    line-height: 1.08;
-    letter-spacing: -0.028em;
-    font-weight: 700;
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-size: clamp(2rem, 1.3rem + 3vw, 3.5rem);
+    line-height: 1.02;
+    letter-spacing: -0.025em;
+    font-weight: 400;
   }
   .text-title-1 {
-    font-size: clamp(1.25rem, 1rem + 0.9vw, 1.625rem);
-    line-height: 1.15;
-    letter-spacing: -0.02em;
-    font-weight: 600;
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-size: clamp(1.5rem, 1.1rem + 1.4vw, 2rem);
+    line-height: 1.1;
+    letter-spacing: -0.018em;
+    font-weight: 400;
   }
   .text-title-2 {
-    font-size: clamp(1rem, 0.92rem + 0.35vw, 1.125rem);
-    line-height: 1.3;
-    letter-spacing: -0.014em;
-    font-weight: 600;
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-size: clamp(1.125rem, 0.95rem + 0.6vw, 1.375rem);
+    line-height: 1.2;
+    letter-spacing: -0.012em;
+    font-weight: 400;
   }
   .text-eyebrow {
-    @apply text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground;
+    font-family: 'Fira Sans', sans-serif;
+    @apply text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground;
+  }
+
+  /* Editorial rule — thin printed divider */
+  .rule {
+    @apply h-px bg-border w-full;
   }
 
   /* Hide scrollbars but keep scrolling */
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
 
-  /* ── Apple-grade Recharts polish ── */
+  /* ── Recharts polish for paper aesthetic ── */
   .recharts-cartesian-grid line {
     stroke: hsl(var(--border));
-    stroke-opacity: 0.35;
+    stroke-opacity: 0.5;
   }
   .recharts-cartesian-axis-line,
   .recharts-cartesian-axis-tick-line {
     stroke: transparent;
   }
   .recharts-text {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'Fira Sans', system-ui, sans-serif;
     font-size: 11px;
-    letter-spacing: 0.01em;
+    letter-spacing: 0.02em;
     fill: hsl(var(--muted-foreground));
   }
   .recharts-tooltip-wrapper {
@@ -260,6 +276,7 @@
     border-radius: 2px !important;
     box-shadow: var(--shadow-elevated) !important;
     padding: 8px 10px !important;
+    font-family: 'Fira Sans', sans-serif !important;
   }
   .recharts-tooltip-label {
     color: hsl(var(--foreground)) !important;
@@ -271,7 +288,7 @@
     font-size: 11px !important;
   }
   .recharts-active-dot {
-    filter: drop-shadow(0 0 6px hsl(var(--primary) / 0.5));
+    filter: drop-shadow(0 0 4px hsl(var(--primary) / 0.4));
   }
 
   .gradient-primary {
@@ -296,10 +313,10 @@
   }
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar — thin ink */
 * {
   scrollbar-width: thin;
-  scrollbar-color: hsl(var(--muted-foreground) / 0.25) transparent;
+  scrollbar-color: hsl(var(--foreground) / 0.2) transparent;
 }
 
 ::-webkit-scrollbar {
@@ -312,13 +329,13 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.25);
+  background: hsl(var(--foreground) / 0.2);
   border-radius: 9999px;
   transition: background 0.2s;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.45);
+  background: hsl(var(--foreground) / 0.4);
 }
 
 ::-webkit-scrollbar-corner {
@@ -331,22 +348,15 @@
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
   }
-  /* Prevent input zoom on iOS Safari */
   input, select, textarea { font-size: 16px; }
-  /* Smooth, momentum-friendly scrolling on every scroll container */
   main, [data-scroll-area], .overflow-auto, .overflow-y-auto {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
   }
-  /* Bigger comfortable tap targets for icon-only buttons */
   button[class*="h-7"], button[class*="h-8"] { min-height: 36px; }
 }
 
 /* ─── Page Builder Themed Preview ─────────────────────────────────────── */
-/* Applied to .page-themed wrapper inside the builder canvas + public render. */
-/* Allows theme tokens (--page-bg, --page-text, --page-accent, etc.) to flow */
-/* down to nested block placeholders, dashed borders, and muted text without */
-/* fighting the global dashboard tokens. */
 .page-themed {
   background-color: var(--page-bg, transparent);
   color: var(--page-text, inherit);
