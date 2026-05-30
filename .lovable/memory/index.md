@@ -1,7 +1,7 @@
 # Project Memory
 
 ## Core
-- blocks.so design language: soft warm-neutral + dark-first, 8–12px radii, subtle shadows, indigo accent, Inter only.
+- Paper & Ink editorial aesthetic: warm off-white (#f5f3ee), deep ink, hairline borders, 2–6px radii, DM Serif Display + Fira Sans. No glassmorphism.
 - Supabase relational DB: strict RLS, Security Definer RPCs for public access.
 - React 18 SPA: strict pin @tanstack/react-query@5.56.2, use react-router-dom Link.
 - Privacy-First: NEVER implement location tracking. Follow Philippine Data Privacy Act.
