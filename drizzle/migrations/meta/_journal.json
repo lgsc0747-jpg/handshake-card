@@ -8,6 +8,13 @@
       "when": 1791185984659,
       "tag": "0000_harden_short_links_and_email_fns",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791186507862,
+      "tag": "0001_handle_new_user_account_type",
+      "breakpoints": true
     }
   ]
 }

@@ -164,6 +164,19 @@ Deno.serve(async (req) => {
     const { data: authData, error: authError } =
       await authClient.auth.signInWithPassword({ email, password });
 
+    // Unconfirmed email: correct password, but the user hasn't clicked the
+    // verification link yet. Don't count it as a failed attempt.
+    if (
+      authError &&
+      ((authError as any).code === "email_not_confirmed" ||
+        /email not confirmed/i.test(authError.message))
+    ) {
+      return jsonResponse({
+        error: "Please confirm your email first — check your inbox (and spam folder) for the verification link.",
+        code: "email_not_confirmed",
+      }, 403);
+    }
+
     if (authError || !authData?.session) {
       await adminClient.from("login_attempts").insert({
         email,
