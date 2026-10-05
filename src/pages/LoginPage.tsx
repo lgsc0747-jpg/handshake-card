@@ -99,6 +99,17 @@ const LoginPage = () => {
           description: "Too many failed attempts. Please wait before trying again.",
           variant: "destructive",
         });
+      } else if (payload.code === "email_not_confirmed") {
+        // Re-send the verification email so the user isn't stuck.
+        await supabase.auth.resend({
+          type: "signup",
+          email,
+          options: { emailRedirectTo: window.location.origin },
+        });
+        toast({
+          title: "Confirm your email first",
+          description: "We just re-sent your verification link. Check your inbox and spam folder.",
+        });
       } else if (payload.code === "captcha_failed") {
         toast({
           title: "Security check couldn't connect",
