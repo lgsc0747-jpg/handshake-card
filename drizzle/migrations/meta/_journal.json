@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1791185984659,
+      "tag": "0000_harden_short_links_and_email_fns",
+      "breakpoints": true
+    }
+  ]
+}
